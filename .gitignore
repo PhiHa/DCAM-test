@@ -1,0 +1,32 @@
+# Build output and caches
+**/build/
+/.gradle/
+/.kotlin/
+/.externalNativeBuild/
+/.cxx/
+/captures/
+
+# Local Android configuration
+/local.properties
+
+# Tests (kept locally, not versioned)
+/app/src/test/
+/app/src/androidTest/
+/app/DCIM/
+
+# IDE and editor metadata
+/.idea/
+/.vscode/
+*.iml
+
+# AI assistant metadata
+/.agents/
+/.codex/
+/.claude/
+/.cursor/
+/.aider*
+
+# Operating-system files
+.DS_Store
+Thumbs.db
+desktop.ini
