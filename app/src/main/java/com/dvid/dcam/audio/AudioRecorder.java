@@ -9,6 +9,7 @@ import android.os.Build;
 import android.os.ParcelFileDescriptor;
 import androidx.core.content.ContextCompat;
 import com.dvid.dcam.config.DcamConfig;
+import com.dvid.dcam.logging.DcamLogger;
 import com.dvid.dcam.storage.DcamFileName;
 import com.dvid.dcam.storage.DcamFileType;
 import com.dvid.dcam.storage.DcamMediaStore;
@@ -31,10 +32,14 @@ public final class AudioRecorder {
     public String toggle(DcamConfig config) {
         if (recorder != null) {
             try { recorder.stop(); } finally { recorder.release(); recorder = null; closeDescriptor(); }
-            return outputUri != null ? outputUri.toString() : outputFile == null ? null : outputFile.getAbsolutePath();
+            String output = outputUri != null ? outputUri.toString() : outputFile == null ? null : outputFile.getAbsolutePath();
+            DcamLogger.i("Audio saved: " + output);
+            return output;
         }
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            DcamLogger.w("Audio permission missing", null);
             return null;
+        }
 
         try {
             LocalDateTime at = LocalDateTime.now();
@@ -63,10 +68,13 @@ public final class AudioRecorder {
             next.prepare();
             next.start();
             recorder = next;
-            return outputUri != null ? outputUri.toString() : outputFile.getAbsolutePath();
+            String output = outputUri != null ? outputUri.toString() : outputFile.getAbsolutePath();
+            DcamLogger.i("Audio started: " + output);
+            return output;
         } catch (Exception error) {
             if (recorder != null) recorder.release();
             recorder = null; closeDescriptor();
+            DcamLogger.e("Audio failed", error);
             return null;
         }
     }

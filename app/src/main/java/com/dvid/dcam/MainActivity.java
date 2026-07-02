@@ -9,7 +9,7 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.GridLayout;
 import android.widget.LinearLayout;
-import android.widget.Space;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import androidx.activity.ComponentActivity;
 import com.dvid.dcam.app.AppState;
@@ -24,6 +24,7 @@ import com.dvid.dcam.camera.VideoActions;
 import com.dvid.dcam.config.CsonConfigStore;
 import com.dvid.dcam.config.DcamConfig;
 import com.dvid.dcam.input.HardwareButtonHandler;
+import com.dvid.dcam.logging.DcamLogger;
 import com.dvid.dcam.permissions.DcamPermissions;
 import com.dvid.dcam.storage.DcamFileName;
 import com.dvid.dcam.storage.DcamFileType;
@@ -44,13 +45,15 @@ public final class MainActivity extends ComponentActivity {
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        DcamLogger.init(this);
         getWindow().setStatusBarColor(Color.BLACK);
         getWindow().setNavigationBarColor(Color.BLACK);
         requestPermissions(DcamPermissions.runtime(), PERMISSIONS_REQUEST);
         storage = new DcamStorage();
         DcamConfig config;
         try { config = new CsonConfigStore(storage.configsFile()).load(); }
-        catch (Exception ignored) { config = new DcamConfig(); }
+        catch (Exception error) { DcamLogger.w("Using default config", error); config = new DcamConfig(); }
+        DcamLogger.setCamId(config.getAccountUserId());
         CameraState camera = new CameraState(RecordingMode.IDLE, null, null);
         state = new AppState(config, camera);
         audioRecorder = new AudioRecorder(this, storage);
@@ -65,6 +68,8 @@ public final class MainActivity extends ComponentActivity {
     private void connectActions() {
         DcamActions.takePhoto = () -> CameraActions.takePhoto.run();
         DcamActions.toggleVideo = () -> VideoActions.toggleVideo.run();
+        DcamActions.startVideo = () -> VideoActions.startVideo.run();
+        DcamActions.stopVideo = () -> VideoActions.stopVideo.run();
         DcamActions.toggleAudio = () -> audioRecorder.toggle(state.getConfig());
         DcamActions.startSos = () -> {
             VideoActions.startSos.run();
@@ -74,6 +79,13 @@ public final class MainActivity extends ComponentActivity {
                     DcamFileName.build(DcamFileType.SOS, config.getAccountUserId(), config.getPoliceUserId(), at,
                             config.isVideoEncrypted()), System.currentTimeMillis()));
             updateStatus();
+        };
+        DcamActions.toggleSos = () -> {
+            if (state.getCamera().getMode() == RecordingMode.SOS) {
+                DcamActions.stopVideo.run();
+                state.setCamera(new CameraState(RecordingMode.IDLE, null, null));
+                updateStatus();
+            } else DcamActions.startSos.run();
         };
     }
 
@@ -85,6 +97,7 @@ public final class MainActivity extends ComponentActivity {
         page.addView(statusHeader());
         LinearLayout.LayoutParams previewParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f);
         previewParams.setMargins(0, dp(16), 0, dp(16));
+        if (cameraPreview.getParent() instanceof ViewGroup) ((ViewGroup) cameraPreview.getParent()).removeView(cameraPreview);
         page.addView(cameraPreview, previewParams);
         page.addView(statusFooter());
         root.addView(page, match());
@@ -127,21 +140,22 @@ public final class MainActivity extends ComponentActivity {
         LinearLayout page = column(); page.setPadding(dp(16), dp(12), dp(16), dp(12));
         LinearLayout bar = row(); bar.addView(label(state.getCamera().getMode() == RecordingMode.IDLE ? "READY" : "REC ●", true), weighted());
         TextView battery = label("BAT 83%", false); battery.setGravity(Gravity.END); bar.addView(battery, weighted()); page.addView(bar);
-        GridLayout grid = new GridLayout(this); grid.setColumnCount(3); grid.setUseDefaultMargins(true);
+        GridLayout grid = new GridLayout(this); grid.setColumnCount(3); grid.setUseDefaultMargins(false);
         addTile(grid, "Files", Screen.FILES); addTile(grid, "Record\nSettings", Screen.RECORD_SETTINGS);
         addTile(grid, "User\nSettings", Screen.USER_SETTINGS); addTile(grid, "Server\nSettings", Screen.SERVER_SETTINGS);
         addTile(grid, "Storage\nSettings", Screen.STORAGE_SETTINGS); addTile(grid, "Device\nSettings", Screen.DEVICE_SETTINGS);
         addTile(grid, "Audio\nSettings", Screen.AUDIO_SETTINGS); addTile(grid, "Camera\nSettings", Screen.CAMERA_SETTINGS);
         addTile(grid, "About", Screen.ABOUT);
-        page.addView(grid, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        ScrollView scroll = new ScrollView(this); scroll.addView(grid, new ScrollView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        page.addView(scroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
         root.addView(page, match());
     }
 
     private void addTile(GridLayout grid, String title, Screen screen) {
         TextView tile = label(title, false); tile.setGravity(Gravity.CENTER); tile.setTextSize(16); tile.setBackgroundColor(Color.rgb(30, 30, 30));
         tile.setOnClickListener(v -> showPlaceholder(screen));
-        GridLayout.LayoutParams params = new GridLayout.LayoutParams(); params.width = 0; params.height = dp(116);
-        params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f); params.setMargins(dp(4), dp(4), dp(4), dp(4));
+        GridLayout.LayoutParams params = new GridLayout.LayoutParams(); params.width = (getResources().getDisplayMetrics().widthPixels - dp(56)) / 3; params.height = dp(116);
+        params.setMargins(dp(4), dp(4), dp(4), dp(4));
         grid.addView(tile, params);
     }
 
@@ -159,7 +173,11 @@ public final class MainActivity extends ComponentActivity {
     }
 
     @Override public boolean onKeyDown(int keyCode, KeyEvent event) {
-        return HardwareButtonHandler.onKeyDown(keyCode) || super.onKeyDown(keyCode, event);
+        return HardwareButtonHandler.onKeyDown(keyCode, event.getRepeatCount(), event.getEventTime()) || super.onKeyDown(keyCode, event);
+    }
+
+    @Override public boolean onKeyUp(int keyCode, KeyEvent event) {
+        return HardwareButtonHandler.onKeyUp(keyCode) || super.onKeyUp(keyCode, event);
     }
 
     @Override public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
@@ -168,8 +186,9 @@ public final class MainActivity extends ComponentActivity {
     }
 
     @Override protected void onDestroy() {
+        DcamLogger.i("MainActivity destroyed");
         cameraPreview.release(); audioRecorder.release();
-        DcamActions.takePhoto = () -> {}; DcamActions.toggleVideo = () -> {}; DcamActions.toggleAudio = () -> {}; DcamActions.startSos = () -> {};
+        DcamActions.takePhoto = () -> {}; DcamActions.toggleVideo = () -> {}; DcamActions.startVideo = () -> {}; DcamActions.stopVideo = () -> {}; DcamActions.toggleAudio = () -> {}; DcamActions.startSos = () -> {}; DcamActions.toggleSos = () -> {};
         super.onDestroy();
     }
 

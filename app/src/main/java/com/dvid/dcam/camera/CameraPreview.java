@@ -27,6 +27,7 @@ import androidx.camera.view.PreviewView;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.LifecycleOwner;
 import com.dvid.dcam.config.DcamConfig;
+import com.dvid.dcam.logging.DcamLogger;
 import com.dvid.dcam.storage.DcamFileName;
 import com.dvid.dcam.storage.DcamFileType;
 import com.dvid.dcam.storage.DcamMediaStore;
@@ -59,6 +60,8 @@ public final class CameraPreview extends FrameLayout {
         videoCapture = VideoCapture.withOutput(recorder);
         CameraActions.takePhoto = this::takePhoto;
         VideoActions.toggleVideo = this::toggleVideo;
+        VideoActions.startVideo = this::startVideo;
+        VideoActions.stopVideo = this::stopVideo;
         VideoActions.startSos = () -> startRecording(DcamFileType.SOS);
         bindIfPermitted();
     }
@@ -92,14 +95,22 @@ public final class CameraPreview extends FrameLayout {
                     config.getAccountUserId(), config.getPoliceUserId(), at, false)).build();
         }
         imageCapture.takePicture(options, ContextCompat.getMainExecutor(getContext()), new ImageCapture.OnImageSavedCallback() {
-            @Override public void onImageSaved(ImageCapture.OutputFileResults result) { message.setText("SAVED " + name); }
-            @Override public void onError(ImageCaptureException error) { showError(error.getMessage()); }
+            @Override public void onImageSaved(ImageCapture.OutputFileResults result) { message.setText("SAVED " + name); DcamLogger.i("Photo saved: " + name); }
+            @Override public void onError(ImageCaptureException error) { DcamLogger.e("Photo failed", error); showError(error.getMessage()); }
         });
     }
 
     private void toggleVideo() {
-        if (activeRecording != null) { activeRecording.stop(); }
-        else startRecording(DcamFileType.VIDEO);
+        if (activeRecording != null) stopVideo();
+        else startVideo();
+    }
+
+    private void startVideo() {
+        if (activeRecording == null) startRecording(DcamFileType.VIDEO);
+    }
+
+    private void stopVideo() {
+        if (activeRecording != null) activeRecording.stop();
     }
 
     private void startRecording(DcamFileType type) {
@@ -119,22 +130,24 @@ public final class CameraPreview extends FrameLayout {
         if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED)
             pending = pending.withAudioEnabled();
         activeRecording = pending.start(ContextCompat.getMainExecutor(getContext()), event -> {
-            if (event instanceof VideoRecordEvent.Start) message.setText("REC " + name);
+            if (event instanceof VideoRecordEvent.Start) { message.setText("REC " + name); DcamLogger.i("Recording started: " + name); }
             else if (event instanceof VideoRecordEvent.Finalize) {
                 VideoRecordEvent.Finalize done = (VideoRecordEvent.Finalize) event;
                 message.setText(done.hasError() ? "VIDEO ERROR " + done.getError() : "SAVED " + name);
+                if (done.hasError()) DcamLogger.e("Recording failed: " + name + " error=" + done.getError(), null);
+                else DcamLogger.i("Recording saved: " + name);
                 activeRecording = null;
             }
         });
     }
 
-    private void showError(String text) { message.setTextColor(Color.RED); message.setText(text == null ? "Camera failed" : text); }
+    private void showError(String text) { DcamLogger.e("Camera error: " + text, null); message.setTextColor(Color.RED); message.setText(text == null ? "Camera failed" : text); }
 
     public void release() {
         if (activeRecording != null) activeRecording.stop();
         if (providerFuture != null && providerFuture.isDone()) {
             try { providerFuture.get().unbindAll(); } catch (Exception ignored) {}
         }
-        CameraActions.takePhoto = () -> {}; VideoActions.toggleVideo = () -> {}; VideoActions.startSos = () -> {};
+        CameraActions.takePhoto = () -> {}; VideoActions.toggleVideo = () -> {}; VideoActions.startVideo = () -> {}; VideoActions.stopVideo = () -> {}; VideoActions.startSos = () -> {};
     }
 }

@@ -1,7 +1,7 @@
 package com.dvid.dcam.config;
 
 public final class DcamConfig {
-    public static final String DEFAULT_ACCOUNT_USER_ID = "36NCC009910";
+    public static final String DEFAULT_ACCOUNT_USER_ID = "000000";
     public static final String DEFAULT_POLICE_USER_ID = "000000";
 
     private final String accountUserId;
@@ -18,7 +18,15 @@ public final class DcamConfig {
         this.videoEncrypted = videoEncrypted;
     }
 
-    public String getAccountUserId() { return accountUserId; }
-    public String getPoliceUserId() { return policeUserId; }
-    public boolean isVideoEncrypted() { return videoEncrypted; }
+    public String getAccountUserId() {
+        return accountUserId;
+    }
+
+    public String getPoliceUserId() {
+        return policeUserId;
+    }
+
+    public boolean isVideoEncrypted() {
+        return videoEncrypted;
+    }
 }
