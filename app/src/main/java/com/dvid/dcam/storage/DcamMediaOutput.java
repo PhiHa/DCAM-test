@@ -5,7 +5,7 @@ import androidx.camera.core.ImageCapture;
 import androidx.camera.video.PendingRecording;
 import androidx.camera.video.Recorder;
 import androidx.camera.video.VideoCapture;
-import com.dvid.dcam.config.DcamConfig;
+import com.dvid.dcam.domain.model.DcamConfig;
 import java.io.File;
 import java.time.LocalDateTime;
 

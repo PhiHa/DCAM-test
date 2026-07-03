@@ -4,7 +4,7 @@ import android.content.Context;
 import android.util.Log;
 import com.dvid.dcam.BuildConfig;
 import com.dvid.dcam.device.AndroidDeviceInfoProvider;
-import com.dvid.dcam.device.DeviceInfo;
+import com.dvid.dcam.domain.model.DeviceInfo;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;

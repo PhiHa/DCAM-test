@@ -1,211 +1,369 @@
 package com.dvid.dcam;
 
+import android.content.ActivityNotFoundException;
+import android.content.Intent;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
-import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
-import android.widget.GridLayout;
-import android.widget.LinearLayout;
-import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 import androidx.activity.ComponentActivity;
-import com.dvid.dcam.app.AppState;
-import com.dvid.dcam.app.DcamActions;
-import com.dvid.dcam.app.Screen;
+import androidx.activity.OnBackPressedCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.core.content.FileProvider;
 import com.dvid.dcam.audio.AudioRecorder;
-import com.dvid.dcam.camera.CameraActions;
 import com.dvid.dcam.camera.CameraPreview;
-import com.dvid.dcam.camera.CameraState;
-import com.dvid.dcam.camera.RecordingMode;
-import com.dvid.dcam.camera.VideoActions;
-import com.dvid.dcam.config.CsonConfigStore;
-import com.dvid.dcam.config.DcamConfig;
+import com.dvid.dcam.config.CsonConfigurationSource;
+import com.dvid.dcam.data.repository.DefaultCaptureRepository;
+import com.dvid.dcam.data.repository.DefaultConfigurationRepository;
+import com.dvid.dcam.data.repository.DefaultDeviceRepository;
+import com.dvid.dcam.data.repository.DefaultMediaRepository;
+import com.dvid.dcam.databinding.ActivityMainBinding;
+import com.dvid.dcam.databinding.ItemMediaEntryBinding;
+import com.dvid.dcam.databinding.ScreenCameraBinding;
+import com.dvid.dcam.databinding.ScreenFileExplorerBinding;
+import com.dvid.dcam.databinding.ScreenMenuBinding;
+import com.dvid.dcam.databinding.ScreenSettingsDetailBinding;
 import com.dvid.dcam.device.AndroidDeviceInfoProvider;
-import com.dvid.dcam.device.DeviceInfo;
-import com.dvid.dcam.device.DeviceInfoProvider;
-import com.dvid.dcam.input.HardwareButtonHandler;
+import com.dvid.dcam.domain.model.CapabilityStatus;
+import com.dvid.dcam.domain.model.DcamConfig;
+import com.dvid.dcam.domain.model.DeviceInfo;
+import com.dvid.dcam.domain.model.DeviceStatus;
+import com.dvid.dcam.domain.model.MediaEntry;
+import com.dvid.dcam.domain.model.RecordingMode;
+import com.dvid.dcam.domain.repository.CaptureRepository;
+import com.dvid.dcam.domain.repository.ConfigurationRepository;
+import com.dvid.dcam.domain.repository.DeviceRepository;
+import com.dvid.dcam.domain.repository.MediaRepository;
+import com.dvid.dcam.domain.service.DeviceService;
+import com.dvid.dcam.domain.service.LogService;
+import com.dvid.dcam.input.HardwareButtonRouter;
+import com.dvid.dcam.logging.DcamLogService;
 import com.dvid.dcam.logging.DcamLogger;
 import com.dvid.dcam.permissions.DcamPermissions;
-import com.dvid.dcam.storage.DcamFileName;
-import com.dvid.dcam.storage.DcamFileType;
+import com.dvid.dcam.presentation.MainScreen;
+import com.dvid.dcam.presentation.MainUiState;
+import com.dvid.dcam.presentation.MainViewModel;
+import com.dvid.dcam.presentation.MainViewModelFactory;
 import com.dvid.dcam.storage.DcamMediaOutput;
 import com.dvid.dcam.storage.DcamMediaOutputFactory;
 import com.dvid.dcam.storage.DcamStorage;
+import com.dvid.dcam.storage.LocalMediaBrowserService;
+import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
+/** Android composition root and thin ViewBinding presentation shell. */
 public final class MainActivity extends ComponentActivity {
-    private static final int PERMISSIONS_REQUEST = 100;
     private final DateTimeFormatter clock = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private FrameLayout root;
-    private DcamStorage storage;
-    private DcamMediaOutput mediaOutput;
     private AudioRecorder audioRecorder;
-    private AppState state;
     private CameraPreview cameraPreview;
-    private TextView recordingBadge;
-    private TextView fileName;
+    private CaptureRepository captureRepository;
+    private MainViewModel viewModel;
+    private HardwareButtonRouter hardwareButtons;
+    private ActivityResultLauncher<String[]> permissionLauncher;
+    private MainUiState latestState;
+    private MainScreen renderedScreen;
+    private ScreenCameraBinding cameraScreen;
+    private ScreenFileExplorerBinding fileExplorerScreen;
+    private ScreenMenuBinding menuScreen;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        DeviceInfoProvider deviceInfoProvider = new AndroidDeviceInfoProvider(this);
-        DeviceInfo deviceInfo = deviceInfoProvider.read();
+        DeviceService deviceService = new AndroidDeviceInfoProvider(this);
+        DeviceRepository deviceRepository = new DefaultDeviceRepository(deviceService);
+        DeviceInfo deviceInfo = deviceRepository.readInfo();
+        DeviceStatus deviceStatus = deviceRepository.readStatus();
         DcamLogger.init(this, deviceInfo);
+        LogService logService = new DcamLogService();
+
         getWindow().setStatusBarColor(Color.BLACK);
         getWindow().setNavigationBarColor(Color.BLACK);
-        requestPermissions(DcamPermissions.runtime(), PERMISSIONS_REQUEST);
-        storage = DcamStorage.from(this);
-        mediaOutput = new DcamMediaOutputFactory(storage);
-        String hardwareId = deviceInfo.getHardwareId();
-        DcamConfig config;
-        try { config = new CsonConfigStore(storage.configsFile(), hardwareId).load(); }
-        catch (Exception error) { DcamLogger.w("Using default config", error); config = DcamConfig.defaults(hardwareId); }
+        ActivityMainBinding binding = ActivityMainBinding.inflate(getLayoutInflater());
+        root = binding.contentRoot;
+        setContentView(binding.getRoot());
+
+        permissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestMultiplePermissions(),
+                result -> {
+                    if (cameraPreview != null) cameraPreview.bindIfPermitted();
+                });
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override public void handleOnBackPressed() { navigateBack(); }
+        });
+
+        permissionLauncher.launch(DcamPermissions.runtime());
+        DcamStorage storage = DcamStorage.from(this);
+        ConfigurationRepository configurationRepository = new DefaultConfigurationRepository(
+                new CsonConfigurationSource(storage), logService);
+        DcamConfig loadedConfig = configurationRepository.load(deviceInfo.getHardwareId());
+        MediaRepository mediaRepository = new DefaultMediaRepository(
+                new LocalMediaBrowserService(storage));
+
+        viewModel = new ViewModelProvider(
+                this, new MainViewModelFactory(
+                        loadedConfig, deviceStatus, deviceRepository, mediaRepository))
+                .get(MainViewModel.class);
+        DcamConfig config = viewModel.getConfig();
         DcamLogger.setCamId(config.getAccountUserId());
-        CameraState camera = new CameraState(RecordingMode.IDLE, null, null);
-        state = new AppState(config, camera);
-        audioRecorder = new AudioRecorder(this, mediaOutput);
-        cameraPreview = new CameraPreview(this, this, config, mediaOutput);
-        root = new FrameLayout(this);
-        root.setBackgroundColor(Color.BLACK);
-        setContentView(root);
-        connectActions();
-        showCamera();
+
+        DcamMediaOutput mediaOutput = new DcamMediaOutputFactory(storage);
+        audioRecorder = new AudioRecorder(this, mediaOutput, logService);
+        cameraPreview = new CameraPreview(this, this, config, mediaOutput, logService);
+        captureRepository = new DefaultCaptureRepository(cameraPreview, audioRecorder, config);
+        viewModel.attach(captureRepository);
+        hardwareButtons = new HardwareButtonRouter(viewModel);
+        viewModel.state().observe(this, this::render);
     }
 
-    private void connectActions() {
-        DcamActions.takePhoto = () -> CameraActions.takePhoto.run();
-        DcamActions.toggleVideo = () -> VideoActions.toggleVideo.run();
-        DcamActions.startVideo = () -> VideoActions.startVideo.run();
-        DcamActions.stopVideo = () -> VideoActions.stopVideo.run();
-        DcamActions.toggleAudio = () -> audioRecorder.toggle(state.getConfig());
-        DcamActions.startSos = () -> {
-            VideoActions.startSos.run();
-            LocalDateTime at = LocalDateTime.now();
-            DcamConfig config = state.getConfig();
-            state.setCamera(new CameraState(RecordingMode.SOS,
-                    DcamFileName.build(DcamFileType.SOS, config.getAccountUserId(), config.getPoliceUserId(), at,
-                            config.isVideoEncrypted()), System.currentTimeMillis()));
-            updateStatus();
-        };
-        DcamActions.toggleSos = () -> {
-            if (state.getCamera().getMode() == RecordingMode.SOS) {
-                DcamActions.stopVideo.run();
-                state.setCamera(new CameraState(RecordingMode.IDLE, null, null));
-                updateStatus();
-            } else DcamActions.startSos.run();
-        };
+    @Override protected void onResume() {
+        super.onResume();
+        if (viewModel != null) viewModel.refreshDeviceStatus();
     }
 
-    private void showCamera() {
-        state.setScreen(Screen.CAMERA);
+    private void render(MainUiState state) {
+        latestState = state;
+        if (renderedScreen != state.getScreen()) {
+            renderedScreen = state.getScreen();
+            if (state.getScreen() == MainScreen.CAMERA) renderCamera();
+            else if (state.getScreen() == MainScreen.MENU) renderMenu();
+            else if (state.getScreen() == MainScreen.FILES) renderFileExplorer();
+            else renderSettingsDetail(state.getScreen());
+        }
+        updateStatus(state);
+    }
+
+    private void renderCamera() {
+        clearScreenBindings();
         root.removeAllViews();
-        LinearLayout page = column();
-        page.setPadding(dp(16), dp(12), dp(16), dp(12));
-        page.addView(statusHeader());
-        LinearLayout.LayoutParams previewParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f);
-        previewParams.setMargins(0, dp(16), 0, dp(16));
-        if (cameraPreview.getParent() instanceof ViewGroup) ((ViewGroup) cameraPreview.getParent()).removeView(cameraPreview);
-        page.addView(cameraPreview, previewParams);
-        page.addView(statusFooter());
-        root.addView(page, match());
+        cameraScreen = ScreenCameraBinding.inflate(getLayoutInflater(), root, false);
+        DcamConfig config = viewModel.getConfig();
+        cameraScreen.accountId.setText("CAM " + config.getAccountUserId());
+        cameraScreen.operatorId.setText("USER " + config.getPoliceUserId());
+        cameraScreen.captureAction.setOnClickListener(view -> viewModel.takePhoto());
+        if (cameraPreview.getParent() instanceof ViewGroup) {
+            ((ViewGroup) cameraPreview.getParent()).removeView(cameraPreview);
+        }
+        cameraScreen.previewContainer.addView(cameraPreview, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        root.addView(cameraScreen.getRoot());
     }
 
-    private View statusHeader() {
-        LinearLayout header = column();
-        LinearLayout ids = row();
-        ids.addView(label("CAM " + state.getConfig().getAccountUserId(), true), weighted());
-        TextView user = label("USER " + state.getConfig().getPoliceUserId(), true); user.setGravity(Gravity.END);
-        ids.addView(user, weighted()); header.addView(ids);
-        LinearLayout status = row();
-        recordingBadge = label("READY", true); status.addView(recordingBadge, weighted());
-        TextView battery = label("BAT 83%   GPS ●", false); battery.setGravity(Gravity.END); status.addView(battery, weighted());
-        header.addView(status);
-        fileName = label("", false); fileName.setTextColor(Color.LTGRAY); header.addView(fileName);
-        updateStatus();
-        return header;
+    private void renderMenu() {
+        clearScreenBindings();
+        root.removeAllViews();
+        menuScreen = ScreenMenuBinding.inflate(getLayoutInflater(), root, false);
+        menuScreen.files.setOnClickListener(view -> viewModel.show(MainScreen.FILES));
+        menuScreen.recordSettings.setOnClickListener(view -> viewModel.show(MainScreen.RECORD_SETTINGS));
+        menuScreen.cameraSettings.setOnClickListener(view -> viewModel.show(MainScreen.CAMERA_SETTINGS));
+        menuScreen.videoStreamSettings.setOnClickListener(
+                view -> viewModel.show(MainScreen.VIDEO_STREAM_SETTINGS));
+        menuScreen.audioSettings.setOnClickListener(view -> viewModel.show(MainScreen.AUDIO_SETTINGS));
+        menuScreen.storageSettings.setOnClickListener(view -> viewModel.show(MainScreen.STORAGE_SETTINGS));
+        menuScreen.gpsSettings.setOnClickListener(view -> viewModel.show(MainScreen.GPS_SETTINGS));
+        menuScreen.deviceSettings.setOnClickListener(view -> viewModel.show(MainScreen.DEVICE_SETTINGS));
+        menuScreen.userSettings.setOnClickListener(view -> viewModel.show(MainScreen.USER_SETTINGS));
+        menuScreen.serverSettings.setOnClickListener(view -> viewModel.show(MainScreen.SERVER_SETTINGS));
+        menuScreen.transferSettings.setOnClickListener(view -> viewModel.show(MainScreen.TRANSFER_SETTINGS));
+        menuScreen.about.setOnClickListener(view -> viewModel.show(MainScreen.ABOUT));
+        root.addView(menuScreen.getRoot());
     }
 
-    private View statusFooter() {
-        LinearLayout footer = row();
-        footer.addView(label("FREE 42GB", false), weighted());
-        TextView capture = label("CAPTURE", true); capture.setGravity(Gravity.CENTER); capture.setOnClickListener(v -> DcamActions.takePhoto.run());
-        footer.addView(capture, weighted());
-        TextView date = label(clock.format(LocalDateTime.now()), false); date.setGravity(Gravity.END); footer.addView(date, weighted());
-        return footer;
+    private void renderFileExplorer() {
+        clearScreenBindings();
+        root.removeAllViews();
+        fileExplorerScreen = ScreenFileExplorerBinding.inflate(getLayoutInflater(), root, false);
+        fileExplorerScreen.upAction.setOnClickListener(view -> viewModel.navigateMediaUp());
+        root.addView(fileExplorerScreen.getRoot());
     }
 
-    private void updateStatus() {
-        if (recordingBadge == null || fileName == null) return;
-        RecordingMode mode = state.getCamera().getMode();
-        String text = mode == RecordingMode.IDLE ? "READY" : mode == RecordingMode.SOS ? "SOS ●" : mode.name() + " ●";
-        recordingBadge.setText(text); recordingBadge.setTextColor(mode == RecordingMode.IDLE ? Color.WHITE : Color.RED);
-        fileName.setText(state.getCamera().getCurrentFileName() == null ? "" : state.getCamera().getCurrentFileName());
+    private void renderSettingsDetail(MainScreen screen) {
+        clearScreenBindings();
+        root.removeAllViews();
+        ScreenSettingsDetailBinding detail = ScreenSettingsDetailBinding.inflate(
+                getLayoutInflater(), root, false);
+        detail.title.setText(settingsTitle(screen));
+        for (String item : getResources().getStringArray(settingsItems(screen))) {
+            TextView row = (TextView) getLayoutInflater().inflate(
+                    R.layout.item_setting_row, detail.settingsList, false);
+            row.setText("\u2022 " + item);
+            detail.settingsList.addView(row);
+        }
+        root.addView(detail.getRoot());
     }
 
-    private void showMenu() {
-        state.setScreen(Screen.MENU); root.removeAllViews();
-        LinearLayout page = column(); page.setPadding(dp(16), dp(12), dp(16), dp(12));
-        LinearLayout bar = row(); bar.addView(label(state.getCamera().getMode() == RecordingMode.IDLE ? "READY" : "REC ●", true), weighted());
-        TextView battery = label("BAT 83%", false); battery.setGravity(Gravity.END); bar.addView(battery, weighted()); page.addView(bar);
-        GridLayout grid = new GridLayout(this); grid.setColumnCount(3); grid.setUseDefaultMargins(false);
-        addTile(grid, "Files", Screen.FILES); addTile(grid, "Record\nSettings", Screen.RECORD_SETTINGS);
-        addTile(grid, "User\nSettings", Screen.USER_SETTINGS); addTile(grid, "Server\nSettings", Screen.SERVER_SETTINGS);
-        addTile(grid, "Storage\nSettings", Screen.STORAGE_SETTINGS); addTile(grid, "Device\nSettings", Screen.DEVICE_SETTINGS);
-        addTile(grid, "Audio\nSettings", Screen.AUDIO_SETTINGS); addTile(grid, "Camera\nSettings", Screen.CAMERA_SETTINGS);
-        addTile(grid, "About", Screen.ABOUT);
-        ScrollView scroll = new ScrollView(this); scroll.addView(grid, new ScrollView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        page.addView(scroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
-        root.addView(page, match());
+    private static int settingsTitle(MainScreen screen) {
+        switch (screen) {
+            case RECORD_SETTINGS: return R.string.record_settings;
+            case CAMERA_SETTINGS: return R.string.camera_settings_short;
+            case VIDEO_STREAM_SETTINGS: return R.string.video_stream_settings;
+            case AUDIO_SETTINGS: return R.string.audio_settings;
+            case STORAGE_SETTINGS: return R.string.storage_settings;
+            case GPS_SETTINGS: return R.string.gps_settings;
+            case DEVICE_SETTINGS: return R.string.device_settings_short;
+            case USER_SETTINGS: return R.string.security_settings;
+            case SERVER_SETTINGS: return R.string.network_settings;
+            case TRANSFER_SETTINGS: return R.string.transfer_settings;
+            case ABOUT: return R.string.about;
+            default: throw new IllegalArgumentException("No settings title for " + screen);
+        }
     }
 
-    private void addTile(GridLayout grid, String title, Screen screen) {
-        TextView tile = label(title, false); tile.setGravity(Gravity.CENTER); tile.setTextSize(16); tile.setBackgroundColor(Color.rgb(30, 30, 30));
-        tile.setOnClickListener(v -> showPlaceholder(screen));
-        GridLayout.LayoutParams params = new GridLayout.LayoutParams(); params.width = (getResources().getDisplayMetrics().widthPixels - dp(56)) / 3; params.height = dp(116);
-        params.setMargins(dp(4), dp(4), dp(4), dp(4));
-        grid.addView(tile, params);
+    private static int settingsItems(MainScreen screen) {
+        switch (screen) {
+            case RECORD_SETTINGS: return R.array.record_settings_items;
+            case CAMERA_SETTINGS: return R.array.camera_settings_items;
+            case VIDEO_STREAM_SETTINGS: return R.array.video_stream_settings_items;
+            case AUDIO_SETTINGS: return R.array.audio_settings_items;
+            case STORAGE_SETTINGS: return R.array.storage_settings_items;
+            case GPS_SETTINGS: return R.array.gps_settings_items;
+            case DEVICE_SETTINGS: return R.array.device_settings_items;
+            case USER_SETTINGS: return R.array.security_settings_items;
+            case SERVER_SETTINGS: return R.array.network_settings_items;
+            case TRANSFER_SETTINGS: return R.array.transfer_settings_items;
+            case ABOUT: return R.array.about_settings_items;
+            default: throw new IllegalArgumentException("No settings list for " + screen);
+        }
     }
 
-    private void showPlaceholder(Screen screen) {
-        state.setScreen(screen); root.removeAllViews();
-        TextView placeholder = label(screen.name().replace('_', ' ') + "\nTap or Back to return", false);
-        placeholder.setGravity(Gravity.CENTER); placeholder.setTextSize(18); placeholder.setOnClickListener(v -> showMenu());
-        root.addView(placeholder, match());
+    private void updateStatus(MainUiState state) {
+        String recording = recordingText(state.getCapture().getMode());
+        String device = deviceText(state.getDeviceStatus());
+        if (cameraScreen != null) {
+            boolean idle = state.getCapture().getMode() == RecordingMode.IDLE;
+            cameraScreen.recordingBadge.setText(recording);
+            cameraScreen.recordingBadge.setTextColor(idle ? Color.WHITE : Color.RED);
+            String currentFile = state.getCapture().getCurrentFileName();
+            cameraScreen.fileName.setText(currentFile == null ? "" : currentFile);
+            cameraScreen.statusMessage.setText(state.getMessage() == null ? "" : state.getMessage());
+            cameraScreen.deviceStatus.setText(device);
+            cameraScreen.storageStatus.setText(storageText(state.getDeviceStatus()));
+            cameraScreen.currentTime.setText(clock.format(LocalDateTime.now()));
+        }
+        if (fileExplorerScreen != null) updateFileExplorer(state);
     }
 
-    @Override public void onBackPressed() {
-        if (state.getScreen() == Screen.CAMERA) showMenu();
-        else if (state.getScreen() == Screen.MENU) showCamera();
-        else showMenu();
+    private void updateFileExplorer(MainUiState state) {
+        fileExplorerScreen.entries.removeAllViews();
+        String path = state.getMediaBrowser().getRelativePath();
+        fileExplorerScreen.path.setText(path.isEmpty()
+                ? getString(R.string.media_root) : getString(R.string.media_root) + " / " + path);
+        fileExplorerScreen.upAction.setVisibility(path.isEmpty() ? View.GONE : View.VISIBLE);
+        if (state.getMediaBrowser().isLoading()) {
+            fileExplorerScreen.status.setText(R.string.media_loading);
+            return;
+        }
+        if (state.getMediaBrowser().getError() != null) {
+            fileExplorerScreen.status.setText(state.getMediaBrowser().getError());
+            return;
+        }
+        if (state.getMediaBrowser().getEntries().isEmpty()) {
+            fileExplorerScreen.status.setText(R.string.media_empty);
+            return;
+        }
+        fileExplorerScreen.status.setText("");
+        for (MediaEntry entry : state.getMediaBrowser().getEntries()) {
+            ItemMediaEntryBinding row = ItemMediaEntryBinding.inflate(
+                    getLayoutInflater(), fileExplorerScreen.entries, false);
+            row.icon.setImageResource(entry.isDirectory()
+                    ? R.drawable.ic_settings_files : R.drawable.ic_media_file);
+            row.name.setText(entry.getName());
+            row.details.setText(entry.isDirectory()
+                    ? getString(R.string.media_folder) : formatFileSize(entry.getSizeBytes()));
+            row.getRoot().setOnClickListener(view -> {
+                if (entry.isDirectory()) viewModel.openMediaFolder(entry.getRelativePath());
+                else openMediaFile(entry);
+            });
+            fileExplorerScreen.entries.addView(row.getRoot());
+        }
+    }
+
+    private void openMediaFile(MediaEntry entry) {
+        try {
+            Uri uri = FileProvider.getUriForFile(
+                    this, getPackageName() + ".files", new File(entry.getAbsolutePath()));
+            Intent intent = new Intent(Intent.ACTION_VIEW)
+                    .setDataAndType(uri, entry.getMimeType())
+                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivity(intent);
+        } catch (ActivityNotFoundException | IllegalArgumentException error) {
+            Toast.makeText(this, R.string.media_open_failed, Toast.LENGTH_SHORT).show();
+            DcamLogger.w("Could not open media " + entry.getRelativePath(), error);
+        }
+    }
+
+    private static String formatFileSize(long bytes) {
+        if (bytes < 1024L) return bytes + " B";
+        if (bytes < 1024L * 1024L) return String.format(Locale.ROOT, "%.1f KB", bytes / 1024d);
+        if (bytes < 1024L * 1024L * 1024L) {
+            return String.format(Locale.ROOT, "%.1f MB", bytes / (1024d * 1024d));
+        }
+        return String.format(Locale.ROOT, "%.1f GB", bytes / (1024d * 1024d * 1024d));
+    }
+
+    private static String recordingText(RecordingMode mode) {
+        if (mode == RecordingMode.IDLE) return "READY";
+        return mode.name() + " ●";
+    }
+
+    private static String deviceText(DeviceStatus status) {
+        String battery = status.getBatteryPercent() < 0 ? "BAT ?" : "BAT " + status.getBatteryPercent() + "%";
+        return battery + " · GPS " + gpsText(status.getGpsStatus());
+    }
+
+    private static String gpsText(CapabilityStatus status) {
+        switch (status) {
+            case AVAILABLE: return "ON";
+            case DISABLED: return "OFF";
+            case UNAVAILABLE: return "N/A";
+            default: return "?";
+        }
+    }
+
+    private static String storageText(DeviceStatus status) {
+        long bytes = status.getAvailableStorageBytes();
+        if (bytes < 0) return "FREE ?";
+        double gib = bytes / (1024d * 1024d * 1024d);
+        return String.format(Locale.ROOT, "FREE %.1f GB", gib);
+    }
+
+    private void navigateBack() {
+        MainScreen screen = latestState == null ? MainScreen.CAMERA : latestState.getScreen();
+        if (screen == MainScreen.CAMERA) viewModel.show(MainScreen.MENU);
+        else if (screen == MainScreen.MENU) viewModel.show(MainScreen.CAMERA);
+        else if (screen == MainScreen.FILES && viewModel.navigateMediaUp()) return;
+        else viewModel.show(MainScreen.MENU);
     }
 
     @Override public boolean onKeyDown(int keyCode, KeyEvent event) {
-        return HardwareButtonHandler.onKeyDown(keyCode, event.getRepeatCount(), event.getEventTime()) || super.onKeyDown(keyCode, event);
+        return hardwareButtons.onKeyDown(keyCode, event.getRepeatCount(), event.getEventTime())
+                || super.onKeyDown(keyCode, event);
     }
 
     @Override public boolean onKeyUp(int keyCode, KeyEvent event) {
-        return HardwareButtonHandler.onKeyUp(keyCode) || super.onKeyUp(keyCode, event);
-    }
-
-    @Override public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == PERMISSIONS_REQUEST) cameraPreview.bindIfPermitted();
+        return hardwareButtons.onKeyUp(keyCode) || super.onKeyUp(keyCode, event);
     }
 
     @Override protected void onDestroy() {
         DcamLogger.i("MainActivity destroyed");
-        cameraPreview.release(); audioRecorder.release();
-        DcamActions.takePhoto = () -> {}; DcamActions.toggleVideo = () -> {}; DcamActions.startVideo = () -> {}; DcamActions.stopVideo = () -> {}; DcamActions.toggleAudio = () -> {}; DcamActions.startSos = () -> {}; DcamActions.toggleSos = () -> {};
+        if (cameraPreview != null) cameraPreview.release();
+        if (audioRecorder != null) audioRecorder.release();
+        if (viewModel != null) viewModel.onCapturePlatformReleased();
+        if (viewModel != null && captureRepository != null) viewModel.detach(captureRepository);
         super.onDestroy();
     }
 
-    private LinearLayout column() { LinearLayout view = new LinearLayout(this); view.setOrientation(LinearLayout.VERTICAL); return view; }
-    private LinearLayout row() { LinearLayout view = new LinearLayout(this); view.setOrientation(LinearLayout.HORIZONTAL); view.setGravity(Gravity.CENTER_VERTICAL); return view; }
-    private TextView label(String text, boolean bold) { TextView view = new TextView(this); view.setText(text); view.setTextColor(Color.WHITE); view.setTextSize(14); if (bold) view.setTypeface(null, android.graphics.Typeface.BOLD); view.setPadding(dp(4), dp(6), dp(4), dp(6)); return view; }
-    private LinearLayout.LayoutParams weighted() { return new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f); }
-    private FrameLayout.LayoutParams match() { return new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT); }
-    private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
+    private void clearScreenBindings() {
+        cameraScreen = null;
+        fileExplorerScreen = null;
+        menuScreen = null;
+    }
 }

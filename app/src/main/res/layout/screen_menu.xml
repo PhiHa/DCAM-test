@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:padding="8dp">
+
+    <GridLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:columnCount="3"
+        android:useDefaultMargins="false">
+
+        <LinearLayout android:id="@+id/files" style="@style/DcamAppTile">
+            <ImageView style="@style/DcamAppTileIcon" android:contentDescription="@null" android:src="@drawable/ic_settings_files" />
+            <TextView style="@style/DcamAppTileLabel" android:text="@string/files" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/record_settings" style="@style/DcamAppTile">
+            <ImageView style="@style/DcamAppTileIcon" android:contentDescription="@null" android:src="@drawable/ic_settings_recording" />
+            <TextView style="@style/DcamAppTileLabel" android:text="@string/record_settings" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/camera_settings" style="@style/DcamAppTile">
+            <ImageView style="@style/DcamAppTileIcon" android:contentDescription="@null" android:src="@drawable/ic_settings_camera" />
+            <TextView style="@style/DcamAppTileLabel" android:text="@string/camera_settings_short" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/video_stream_settings" style="@style/DcamAppTile">
+            <ImageView style="@style/DcamAppTileIcon" android:contentDescription="@null" android:src="@drawable/ic_settings_stream" />
+            <TextView style="@style/DcamAppTileLabel" android:text="@string/video_stream_settings" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/audio_settings" style="@style/DcamAppTile">
+            <ImageView style="@style/DcamAppTileIcon" android:contentDescription="@null" android:src="@drawable/ic_settings_audio" />
+            <TextView style="@style/DcamAppTileLabel" android:text="@string/audio_settings" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/storage_settings" style="@style/DcamAppTile">
+            <ImageView style="@style/DcamAppTileIcon" android:contentDescription="@null" android:src="@drawable/ic_settings_storage" />
+            <TextView style="@style/DcamAppTileLabel" android:text="@string/storage_settings" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/gps_settings" style="@style/DcamAppTile">
+            <ImageView style="@style/DcamAppTileIcon" android:contentDescription="@null" android:src="@drawable/ic_settings_gps" />
+            <TextView style="@style/DcamAppTileLabel" android:text="@string/gps_settings" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/device_settings" style="@style/DcamAppTile">
+            <ImageView style="@style/DcamAppTileIcon" android:contentDescription="@null" android:src="@drawable/ic_settings_device" />
+            <TextView style="@style/DcamAppTileLabel" android:text="@string/device_settings_short" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/user_settings" style="@style/DcamAppTile">
+            <ImageView style="@style/DcamAppTileIcon" android:contentDescription="@null" android:src="@drawable/ic_settings_security" />
+            <TextView style="@style/DcamAppTileLabel" android:text="@string/security_settings" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/server_settings" style="@style/DcamAppTile">
+            <ImageView style="@style/DcamAppTileIcon" android:contentDescription="@null" android:src="@drawable/ic_settings_network" />
+            <TextView style="@style/DcamAppTileLabel" android:text="@string/network_settings" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/transfer_settings" style="@style/DcamAppTile">
+            <ImageView style="@style/DcamAppTileIcon" android:contentDescription="@null" android:src="@drawable/ic_settings_transfer" />
+            <TextView style="@style/DcamAppTileLabel" android:text="@string/transfer_settings" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/about" style="@style/DcamAppTile">
+            <ImageView style="@style/DcamAppTileIcon" android:contentDescription="@null" android:src="@drawable/ic_settings_about" />
+            <TextView style="@style/DcamAppTileLabel" android:text="@string/about" />
+        </LinearLayout>
+    </GridLayout>
+</ScrollView>
