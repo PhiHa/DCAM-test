@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="record_settings_items">
+        <item>Record video</item>
+        <item>Video segment length</item>
+        <item>Pre-record time</item>
+        <item>Recording delay</item>
+        <item>Start recording at boot</item>
+        <item>Loop recording</item>
+        <item>Low-battery warning</item>
+    </string-array>
+
+    <string-array name="camera_settings_items">
+        <item>Rear camera preview size</item>
+        <item>Rear camera photo size</item>
+        <item>Front camera preview size</item>
+        <item>Front camera photo size</item>
+        <item>Camera rotation</item>
+        <item>Automatic infrared</item>
+        <item>Flashlight</item>
+    </string-array>
+
+    <string-array name="video_stream_settings_items">
+        <item>Default video stream</item>
+        <item>Main stream codec</item>
+        <item>Main stream resolution</item>
+        <item>Main stream frame rate</item>
+        <item>Main stream quality</item>
+        <item>Sub stream codec</item>
+        <item>Sub stream resolution</item>
+        <item>Sub stream frame rate</item>
+        <item>Sub stream quality</item>
+    </string-array>
+
+    <string-array name="audio_settings_items">
+        <item>Audio file format</item>
+        <item>Record sound</item>
+        <item>Audio sample rate</item>
+        <item>Audio bit rate</item>
+        <item>Audio channel count</item>
+        <item>Speaker and alert volume</item>
+    </string-array>
+
+    <string-array name="storage_settings_items">
+        <item>Storage location</item>
+        <item>Low-storage warning</item>
+        <item>Recycle old recordings</item>
+        <item>Stop recording when storage is unavailable</item>
+        <item>Delete media after upload</item>
+    </string-array>
+
+    <string-array name="gps_settings_items">
+        <item>Use GPS</item>
+        <item>GPS or GPS + AGPS</item>
+        <item>Location update frequency</item>
+        <item>Location upload frequency</item>
+    </string-array>
+
+    <string-array name="device_settings_items">
+        <item>Device ID</item>
+        <item>Police / operator ID</item>
+        <item>Full-screen display</item>
+        <item>Double-click recording control</item>
+        <item>Continuous playback</item>
+        <item>Fall detection</item>
+        <item>Status lights</item>
+        <item>Device language</item>
+    </string-array>
+
+    <string-array name="security_settings_items">
+        <item>Protect the settings menu</item>
+        <item>Settings-menu password</item>
+        <item>Protect USB access</item>
+        <item>USB password</item>
+        <item>Encrypt network transmission</item>
+        <item>Transmission code</item>
+    </string-array>
+
+    <string-array name="network_settings_items">
+        <item>Server address</item>
+        <item>Server port</item>
+        <item>Use APN</item>
+        <item>APN name</item>
+        <item>APN authentication</item>
+        <item>APN username</item>
+        <item>APN password</item>
+    </string-array>
+
+    <string-array name="transfer_settings_items">
+        <item>RTSP video stream</item>
+        <item>RTSP address</item>
+        <item>RTSP transport</item>
+        <item>RTSP sign-in</item>
+        <item>Upload by FTP over Wi-Fi</item>
+        <item>FTP server</item>
+        <item>FTP sign-in</item>
+        <item>Delete after successful upload</item>
+    </string-array>
+
+    <string-array name="about_settings_items">
+        <item>Application version</item>
+        <item>Device information</item>
+        <item>Firmware information</item>
+        <item>Available hardware features</item>
+        <item>Diagnostics and logs</item>
+    </string-array>
+</resources>

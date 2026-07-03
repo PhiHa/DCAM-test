@@ -1,0 +1,18 @@
+package com.dvid.dcam.presentation;
+
+public enum MainScreen {
+    CAMERA,
+    MENU,
+    FILES,
+    RECORD_SETTINGS,
+    VIDEO_STREAM_SETTINGS,
+    GPS_SETTINGS,
+    TRANSFER_SETTINGS,
+    USER_SETTINGS,
+    SERVER_SETTINGS,
+    STORAGE_SETTINGS,
+    DEVICE_SETTINGS,
+    AUDIO_SETTINGS,
+    CAMERA_SETTINGS,
+    ABOUT
+}

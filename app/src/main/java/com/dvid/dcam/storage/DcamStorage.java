@@ -29,6 +29,7 @@ public final class DcamStorage {
 
     public DcamStorageMode getMode() { return mode; }
     public boolean isPublicDcim() { return mode == DcamStorageMode.PUBLIC_DCIM; }
+    public File rootDirectory() { return root; }
 
     public void ensureFolders(LocalDateTime at) {
         for (DcamFileType type : DcamFileType.values())

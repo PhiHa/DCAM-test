@@ -12,9 +12,12 @@ public final class DcamPermissions {
         permissions.add(Manifest.permission.CAMERA);
         permissions.add(Manifest.permission.RECORD_AUDIO);
         if (Build.VERSION.SDK_INT >= 33) {
-            permissions.add(Manifest.permission.READ_MEDIA_IMAGES);
-            permissions.add(Manifest.permission.READ_MEDIA_VIDEO);
-        } else permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE);
+            permissions.add(Manifest.permission.POST_NOTIFICATIONS);
+        }
+        if (Build.VERSION.SDK_INT <= 28) {
+            permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE);
+            permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        }
         return permissions.toArray(new String[0]);
     }
 }
