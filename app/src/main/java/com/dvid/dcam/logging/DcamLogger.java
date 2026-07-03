@@ -3,28 +3,32 @@ package com.dvid.dcam.logging;
 import android.content.Context;
 import android.util.Log;
 import com.dvid.dcam.BuildConfig;
+import com.dvid.dcam.device.AndroidDeviceInfoProvider;
+import com.dvid.dcam.device.DeviceInfo;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
-import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.time.format.DateTimeParseException;
 
 public final class DcamLogger {
     private static final String TAG = "DCAM";
     private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
-    private static final ExecutorService LOGGLY_SENDER = Executors.newSingleThreadExecutor(r -> {
-        Thread thread = new Thread(r, "loggly-sender");
-        thread.setDaemon(true);
-        return thread;
-    });
+    private static final DateTimeFormatter LOG_DATE = DateTimeFormatter.ISO_LOCAL_DATE;
+    private static final int LOCAL_LOG_RETENTION_DAYS = 14;
+    private static File logDir;
     private static File logFile;
-    private static String logglyUrl;
+    private static LocalDate activeLogDate;
+    private static LogOutbox logOutbox;
     private static String hardwareId = "unknown";
     private static String model = "unknown";
     private static String camId = "unknown";
@@ -32,17 +36,22 @@ public final class DcamLogger {
     private DcamLogger() {}
 
     public static synchronized void init(Context context) {
+        init(context, new AndroidDeviceInfoProvider(context).read());
+    }
+
+    public static synchronized void init(Context context, DeviceInfo deviceInfo) {
         File root = context.getExternalFilesDir(null);
         if (root == null) root = context.getFilesDir();
-        File dir = new File(root, "log");
-        dir.mkdirs();
-        logFile = new File(dir, "app.log");
-        hardwareId = safe(android.provider.Settings.Secure.getString(context.getContentResolver(),
-                android.provider.Settings.Secure.ANDROID_ID));
-        model = safe((android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL).trim());
-        if (!BuildConfig.LOGGLY_TOKEN.isBlank()) {
-            logglyUrl = "https://logs-01.loggly.com/inputs/" + BuildConfig.LOGGLY_TOKEN + "/tag/dcam/";
+        logDir = new File(root, "log");
+        logDir.mkdirs();
+        logFile = new File(logDir, "app.log");
+        if (logOutbox == null) {
+            try { logOutbox = new LogOutbox(context); }
+            catch (Exception error) { writeInternal("Loggly outbox initialization failed: " + error.getMessage()); }
         }
+        prepareLocalLog();
+        hardwareId = safe(deviceInfo.getHardwareId());
+        model = safe(deviceInfo.getModel());
         Thread.UncaughtExceptionHandler previous = Thread.getDefaultUncaughtExceptionHandler();
         Thread.setDefaultUncaughtExceptionHandler((thread, error) -> {
             e("Crash on " + thread.getName(), error);
@@ -65,37 +74,14 @@ public final class DcamLogger {
                 + " thread=\"" + thread + "\" source=" + source + " hardwareId=" + hardwareId
                 + " model=\"" + model + "\" camId=" + camId + " " + message;
         if (logFile != null) {
+            prepareLocalLog();
             try (PrintWriter out = new PrintWriter(new FileWriter(logFile, true))) {
                 out.println(line);
                 if (error != null) error.printStackTrace(out);
             } catch (Exception ignored) {}
         }
-        sendToLoggly(line, error);
-    }
-
-    private static void sendToLoggly(String line, Throwable error) {
-        if (logglyUrl == null) return;
         String payload = json(line, error, Thread.currentThread().getName(), callerClass());
-        LOGGLY_SENDER.execute(() -> {
-            HttpURLConnection connection = null;
-            try {
-                connection = (HttpURLConnection) new URL(logglyUrl).openConnection();
-                connection.setConnectTimeout(5000);
-                connection.setReadTimeout(5000);
-                connection.setRequestMethod("POST");
-                connection.setRequestProperty("Content-Type", "application/json; charset=utf-8");
-                connection.setDoOutput(true);
-                byte[] body = payload.getBytes(StandardCharsets.UTF_8);
-                connection.setFixedLengthStreamingMode(body.length);
-                try (OutputStream out = connection.getOutputStream()) { out.write(body); }
-                int code = connection.getResponseCode();
-                if (code < 200 || code >= 300) writeInternal("Loggly send failed HTTP " + code + " log:" + payload);
-            } catch (Exception sendError) {
-                writeInternal("Loggly send failed: " + sendError.getMessage() + " log:" + payload);
-            } finally {
-                if (connection != null) connection.disconnect();
-            }
-        });
+        if (logOutbox != null) logOutbox.enqueue(level, payload);
     }
 
     private static String json(String line, Throwable error, String thread, String source) {
@@ -128,6 +114,7 @@ public final class DcamLogger {
 
     private static synchronized void writeInternal(String message) {
         if (logFile == null) return;
+        prepareLocalLog();
         try (PrintWriter out = new PrintWriter(new FileWriter(logFile, true))) {
             out.println(TIME.format(LocalDateTime.now()) + " WARN " + message);
         } catch (Exception ignored) {}
@@ -137,5 +124,67 @@ public final class DcamLogger {
         if ("ERROR".equals(level)) return Log.ERROR;
         if ("WARN".equals(level)) return Log.WARN;
         return Log.INFO;
+    }
+
+    private static void prepareLocalLog() {
+        if (logFile == null || logDir == null) return;
+        LocalDate today = LocalDate.now();
+        LocalDate rotatedDate = null;
+        if (activeLogDate == null) activeLogDate = existingLogDate(today);
+        if (!activeLogDate.equals(today) && logFile.exists() && logFile.length() > 0) {
+            File archive = new File(logDir, "app-" + LOG_DATE.format(activeLogDate) + ".log");
+            try {
+                if (archive.exists()) appendFile(logFile, archive);
+                else move(logFile, archive);
+                rotatedDate = activeLogDate;
+            } catch (Exception error) {
+                Log.w(TAG, "Local log rotation failed", error);
+            }
+        }
+        activeLogDate = today;
+        deleteExpiredLocalLogs(today.minusDays(LOCAL_LOG_RETENTION_DAYS));
+        if (rotatedDate != null && logOutbox != null) logOutbox.archiveDeadEvents(rotatedDate);
+    }
+
+    private static LocalDate existingLogDate(LocalDate fallback) {
+        if (!logFile.exists() || logFile.length() == 0) return fallback;
+        try {
+            LocalDate modified = Instant.ofEpochMilli(logFile.lastModified())
+                    .atZone(ZoneId.systemDefault()).toLocalDate();
+            return modified.isAfter(fallback) ? fallback : modified;
+        } catch (Exception ignored) {
+            return fallback;
+        }
+    }
+
+    private static void deleteExpiredLocalLogs(LocalDate cutoff) {
+        File[] files = logDir.listFiles((dir, name) -> name.startsWith("app-") && name.endsWith(".log"));
+        if (files == null) return;
+        for (File file : files) {
+            String dateText = file.getName().substring(4, file.getName().length() - 4);
+            try {
+                if (LocalDate.parse(dateText, LOG_DATE).isBefore(cutoff) && !file.delete()) {
+                    Log.w(TAG, "Could not delete expired local log " + file.getAbsolutePath());
+                }
+            } catch (DateTimeParseException ignored) { }
+        }
+    }
+
+    private static void appendFile(File source, File target) throws Exception {
+        try (FileInputStream input = new FileInputStream(source);
+             FileOutputStream output = new FileOutputStream(target, true)) {
+            byte[] buffer = new byte[8192];
+            int read;
+            while ((read = input.read(buffer)) != -1) output.write(buffer, 0, read);
+        }
+        if (!source.delete()) throw new IllegalStateException("Cannot delete rotated " + source);
+    }
+
+    private static void move(File source, File target) throws Exception {
+        try {
+            Files.move(source.toPath(), target.toPath(), StandardCopyOption.ATOMIC_MOVE);
+        } catch (AtomicMoveNotSupportedException ignored) {
+            Files.move(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        }
     }
 }

@@ -23,11 +23,16 @@ import com.dvid.dcam.camera.RecordingMode;
 import com.dvid.dcam.camera.VideoActions;
 import com.dvid.dcam.config.CsonConfigStore;
 import com.dvid.dcam.config.DcamConfig;
+import com.dvid.dcam.device.AndroidDeviceInfoProvider;
+import com.dvid.dcam.device.DeviceInfo;
+import com.dvid.dcam.device.DeviceInfoProvider;
 import com.dvid.dcam.input.HardwareButtonHandler;
 import com.dvid.dcam.logging.DcamLogger;
 import com.dvid.dcam.permissions.DcamPermissions;
 import com.dvid.dcam.storage.DcamFileName;
 import com.dvid.dcam.storage.DcamFileType;
+import com.dvid.dcam.storage.DcamMediaOutput;
+import com.dvid.dcam.storage.DcamMediaOutputFactory;
 import com.dvid.dcam.storage.DcamStorage;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -37,6 +42,7 @@ public final class MainActivity extends ComponentActivity {
     private final DateTimeFormatter clock = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private FrameLayout root;
     private DcamStorage storage;
+    private DcamMediaOutput mediaOutput;
     private AudioRecorder audioRecorder;
     private AppState state;
     private CameraPreview cameraPreview;
@@ -45,19 +51,23 @@ public final class MainActivity extends ComponentActivity {
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        DcamLogger.init(this);
+        DeviceInfoProvider deviceInfoProvider = new AndroidDeviceInfoProvider(this);
+        DeviceInfo deviceInfo = deviceInfoProvider.read();
+        DcamLogger.init(this, deviceInfo);
         getWindow().setStatusBarColor(Color.BLACK);
         getWindow().setNavigationBarColor(Color.BLACK);
         requestPermissions(DcamPermissions.runtime(), PERMISSIONS_REQUEST);
-        storage = new DcamStorage();
+        storage = DcamStorage.from(this);
+        mediaOutput = new DcamMediaOutputFactory(storage);
+        String hardwareId = deviceInfo.getHardwareId();
         DcamConfig config;
-        try { config = new CsonConfigStore(storage.configsFile()).load(); }
-        catch (Exception error) { DcamLogger.w("Using default config", error); config = new DcamConfig(); }
+        try { config = new CsonConfigStore(storage.configsFile(), hardwareId).load(); }
+        catch (Exception error) { DcamLogger.w("Using default config", error); config = DcamConfig.defaults(hardwareId); }
         DcamLogger.setCamId(config.getAccountUserId());
         CameraState camera = new CameraState(RecordingMode.IDLE, null, null);
         state = new AppState(config, camera);
-        audioRecorder = new AudioRecorder(this, storage);
-        cameraPreview = new CameraPreview(this, this, config);
+        audioRecorder = new AudioRecorder(this, mediaOutput);
+        cameraPreview = new CameraPreview(this, this, config, mediaOutput);
         root = new FrameLayout(this);
         root.setBackgroundColor(Color.BLACK);
         setContentView(root);

@@ -12,6 +12,10 @@ public final class DcamConfig {
         this(DEFAULT_ACCOUNT_USER_ID, DEFAULT_POLICE_USER_ID, true);
     }
 
+    public static DcamConfig defaults(String accountUserId) {
+        return new DcamConfig(accountUserId, DEFAULT_POLICE_USER_ID, true);
+    }
+
     public DcamConfig(String accountUserId, String policeUserId, boolean videoEncrypted) {
         this.accountUserId = accountUserId;
         this.policeUserId = policeUserId;
