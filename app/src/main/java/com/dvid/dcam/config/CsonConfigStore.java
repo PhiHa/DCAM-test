@@ -8,15 +8,20 @@ import java.nio.charset.StandardCharsets;
 
 public final class CsonConfigStore {
     private final File file;
+    private final String defaultAccountUserId;
 
-    public CsonConfigStore(File file) { this.file = file; }
+    public CsonConfigStore(File file) { this(file, DcamConfig.DEFAULT_ACCOUNT_USER_ID); }
+    public CsonConfigStore(File file, String defaultAccountUserId) {
+        this.file = file;
+        this.defaultAccountUserId = defaultAccountUserId;
+    }
 
     public DcamConfig load() throws IOException {
         if (!file.exists()) {
             File parent = file.getParentFile();
             if (parent != null) parent.mkdirs();
             try (FileOutputStream output = new FileOutputStream(file)) {
-                output.write(DefaultConfigs.TEXT.getBytes(StandardCharsets.UTF_8));
+                output.write(DefaultConfigs.text(defaultAccountUserId).getBytes(StandardCharsets.UTF_8));
             }
         }
         String text;
@@ -30,7 +35,15 @@ public final class CsonConfigStore {
             }
             text = new String(bytes, 0, offset, StandardCharsets.UTF_8);
         }
-        String account = valueAfter(text, "account.user_id", DcamConfig.DEFAULT_ACCOUNT_USER_ID);
+        String account = valueAfter(text, "account.user_id", defaultAccountUserId);
+        if (DefaultConfigs.LEGACY_SAMPLE_ACCOUNT_USER_ID.equals(account)) {
+            account = defaultAccountUserId;
+            text = text.replace("account.user_id=\"" + DefaultConfigs.LEGACY_SAMPLE_ACCOUNT_USER_ID + "\"",
+                    "account.user_id=\"" + escape(defaultAccountUserId) + "\"");
+            try (FileOutputStream output = new FileOutputStream(file)) {
+                output.write(text.getBytes(StandardCharsets.UTF_8));
+            }
+        }
         String police = valueAfter(text, "police.user_id", DcamConfig.DEFAULT_POLICE_USER_ID);
         boolean encrypted = "1".equals(valueAfter(text, "file.encryption", "0"));
         return new DcamConfig(account, police, encrypted);
@@ -48,5 +61,9 @@ public final class CsonConfigStore {
             }
         }
         return fallback;
+    }
+
+    private static String escape(String text) {
+        return text == null ? "" : text.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 }

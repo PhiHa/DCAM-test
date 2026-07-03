@@ -1,5 +1,6 @@
 # Build output and caches
 **/build/
+**/hs_err_pid*.log
 /.gradle/
 /.kotlin/
 /.externalNativeBuild/
@@ -8,6 +9,7 @@
 
 # Local Android configuration
 /local.properties
+/application-local.properties
 
 # Tests (kept locally, not versioned)
 /app/src/test/
