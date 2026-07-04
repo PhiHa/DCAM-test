@@ -14,6 +14,7 @@ Snapshot date: **2026-07-03** (Asia/Saigon). All principal Confluence documents 
 6. [DCAM–BDMA and data boundary](02-architecture/data-and-bdma.md) — ownership, ADB integration, metadata, and storage direction.
 7. [Development standard](03-development/android-standard.md) — the implementation rules expected by the architecture documents.
 8. [Current repository state](05-current-repo/current-state.md) — what is actually implemented today and where it differs from the target.
+9. [Source structure and requirement evidence](06-research-reports/source-structure-requirements-evidence.md) — audited traceability from requirements and architecture to source, flows, tests, and gaps.
 
 ## Topic tree
 
@@ -37,6 +38,9 @@ dcam-knowledge/
 │   └── settings-grid-map.md
 ├── 05-current-repo/
 │   └── current-state.md
+├── 06-research-reports/
+│   ├── README.md
+│   └── source-structure-requirements-evidence.md
 └── sources.md
 ```
 
