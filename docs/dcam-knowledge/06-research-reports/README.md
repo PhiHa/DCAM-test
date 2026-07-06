@@ -4,6 +4,6 @@ This folder contains dated, evidence-based comparisons between the DCAM document
 
 | Report | Audit date | Purpose |
 |---|---|---|
-| [Source structure and requirement evidence](source-structure-requirements-evidence.md) | 2026-07-04 | Trace requirements to source and document verified strengths, current limitations, refactor timing, and phased improvement directions. |
+| [Source structure and requirement evidence](source-structure-requirements-evidence.md) | 2026-07-06 | Trace requirements to source and document verified strengths, current limitations, refactor timing, and phased improvement directions. |
 
 These reports are verification aids, not replacements for approved requirements, ADRs, technical designs, the DCAM-BDMA Data Contract, or QA acceptance evidence.

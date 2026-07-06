@@ -1,6 +1,6 @@
 # Current repository state
 
-This page describes the refactored code visible on 2026-07-03. It records implementation reality, not an approved Data Contract or substitute for formal requirements.
+This page describes the refactored code visible on 2026-07-06. It records implementation reality, not an approved Data Contract or substitute for formal requirements.
 
 ## Build and platform
 
@@ -19,34 +19,32 @@ The SDK/database values are implementation choices; Confluence still marks the f
 ```text
 touch UI / hardware keys
     ↓ DcamCommandHandler
-MainViewModel + LiveData<MainUiState>
+app/presentation: MainViewModel + LiveData<MainUiState>
     ↓ individual use cases
-CaptureRepository / ConfigurationRepository
+feature/*: use cases and repository/domain contracts
     ↓ domain service interfaces
-CameraX, MediaRecorder, local config/storage, device, logging adapters
+platform/*: CameraX, MediaRecorder, local config/storage, device, logging adapters
 ```
 
-| Package | Responsibility |
+| Package family | Responsibility |
 |---|---|
-| `presentation` | Immutable UI state, screen state, ViewModel, factory |
-| `application.command` | Commands shared by UI and physical buttons |
-| `application.usecase` | Capture workflow entry points |
-| `domain.model` | Android-independent config/device/capture models |
-| `domain.repository` | Capture and configuration boundaries |
-| `domain.service` | Camera/audio/device/log plus explicit future capability boundaries |
-| `domain.event` | Platform-to-domain capture result callbacks |
-| `data.repository` | Default capture coordination and local config resolution |
-| `camera`, `audio`, `device`, `storage`, `logging` | Current platform/provider adapters |
-| `platform.recording` | Foreground recording service/notification |
-| `data.db` | Room manifest, DAO/entity, migrations, schema exports |
-| `input` | Instance-based physical-key routing; no global mutable actions |
+| `app` | Android entry point, cross-feature navigation/presentation, and `AppComposition` wiring |
+| `feature.capture` | Capture commands, use cases, models, contracts, and repository coordination |
+| `feature.media` | Media browsing workflow, state, model, contracts, and repository coordination |
+| `feature.device` | Device-status workflow, models, contracts, and repository coordination |
+| Other `feature.*.domain` | Explicit future capability names; currently scaffolded only |
+| `platform.camera`, `platform.audio`, `platform.recording` | CameraX, MediaRecorder, and foreground-service adapters |
+| `platform.storage`, `platform.database`, `platform.config` | Filesystem/media output, Room, and local CSON adapters |
+| `platform.device`, `platform.input`, `platform.permission` | Android device APIs, physical-key routing, and runtime permissions |
+| `platform.logging` | Local diagnostics plus Loggly/WorkManager/Room implementations |
+| `core.config`, `core.logging` | Small cross-feature configuration and logging contracts/models |
 
 The source-level map and dependency rules live in `app/src/main/java/com/dvid/dcam/ARCHITECTURE.md`.
 
 ## Current user/application flow
 
-- `MainActivity` is the Android composition root and presentation shell.
-- It inflates dedicated camera/menu/placeholder ViewBinding layouts, creates adapters/repositories, attaches them to `MainViewModel`, and renders LiveData state.
+- `MainActivity` is the Android entry point and ViewBinding presentation shell.
+- `AppComposition` selects concrete adapters/repositories, loads configuration, and creates the lifecycle-bound capture runtime before attaching it to `MainViewModel`.
 - Physical keys route through `HardwareButtonRouter` to the same application commands used by touch UI.
 - Static global `Runnable` action registries were removed.
 - CameraX events are mapped to domain capture events before they update UI state.
@@ -114,7 +112,7 @@ Private workflow instructions for local-property handling belong in `application
 
 After refactoring:
 
-- `testDebugUnitTest`: 17 tests pass, including architecture, immutable UI-state, and media-browser sandbox guards.
+- `testDebugUnitTest`: 18 tests pass, including architecture, immutable UI-state, and media-browser sandbox guards.
 - `assembleDebug`: succeeds.
 - `lintDebug`: succeeds.
 - Generated `BuildConfig`: intentionally contains all application and local-property fields.
