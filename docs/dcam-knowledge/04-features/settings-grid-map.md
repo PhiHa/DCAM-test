@@ -22,7 +22,7 @@ The settings home behaves like an app launcher: a three-column grid containing o
 ## Later implementation rules
 
 - Treat CSON options and OEM-exposed capabilities as device-dependent; do not assume every model supports every field.
-- Load current values through configuration/service interfaces, not directly in Activity or View code.
+- Load current values through application-owned configuration ports, not directly in Activity or View code.
 - Mask sensitive fields and require deliberate reveal/edit flows.
 - Validate values against the device-provided option lists before writing.
 - Keep recording/capture available if optional configuration cannot be read.

@@ -4,17 +4,15 @@ package com.dvid.dcam.feature.media.domain;
 public final class MediaEntry {
     private final String name;
     private final String relativePath;
-    private final String absolutePath;
     private final boolean directory;
     private final long sizeBytes;
     private final long modifiedAtMillis;
     private final String mimeType;
 
-    public MediaEntry(String name, String relativePath, String absolutePath, boolean directory,
+    public MediaEntry(String name, String relativePath, boolean directory,
                       long sizeBytes, long modifiedAtMillis, String mimeType) {
         this.name = name;
         this.relativePath = relativePath;
-        this.absolutePath = absolutePath;
         this.directory = directory;
         this.sizeBytes = sizeBytes;
         this.modifiedAtMillis = modifiedAtMillis;
@@ -23,7 +21,6 @@ public final class MediaEntry {
 
     public String getName() { return name; }
     public String getRelativePath() { return relativePath; }
-    public String getAbsolutePath() { return absolutePath; }
     public boolean isDirectory() { return directory; }
     public long getSizeBytes() { return sizeBytes; }
     public long getModifiedAtMillis() { return modifiedAtMillis; }

@@ -1,14 +1,13 @@
 package com.dvid.dcam.app;
 
-import android.content.ActivityNotFoundException;
-import android.content.Intent;
+import android.content.Context;
 import android.graphics.Color;
-import android.net.Uri;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.ComponentActivity;
@@ -16,13 +15,12 @@ import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.core.content.FileProvider;
 import com.dvid.dcam.R;
 import com.dvid.dcam.app.navigation.MainScreen;
 import com.dvid.dcam.app.presentation.MainUiState;
 import com.dvid.dcam.app.presentation.MainViewModel;
 import com.dvid.dcam.app.presentation.MainViewModelFactory;
-import com.dvid.dcam.core.config.DcamConfig;
+import com.dvid.dcam.core.config.domain.DcamConfig;
 import com.dvid.dcam.databinding.ActivityMainBinding;
 import com.dvid.dcam.databinding.ItemMediaEntryBinding;
 import com.dvid.dcam.databinding.ScreenCameraBinding;
@@ -32,11 +30,14 @@ import com.dvid.dcam.databinding.ScreenSettingsDetailBinding;
 import com.dvid.dcam.feature.capture.domain.RecordingMode;
 import com.dvid.dcam.feature.device.domain.CapabilityStatus;
 import com.dvid.dcam.feature.device.domain.DeviceStatus;
+import com.dvid.dcam.feature.media.application.usecase.OpenMediaUseCase;
 import com.dvid.dcam.feature.media.domain.MediaEntry;
+import com.dvid.dcam.feature.settings.application.usecase.LanguageSettingsUseCase;
+import com.dvid.dcam.feature.settings.domain.AppLanguage;
+import com.dvid.dcam.platform.config.AndroidLanguagePreferenceStoreImpl;
 import com.dvid.dcam.platform.input.HardwareButtonRouter;
 import com.dvid.dcam.platform.logging.DcamLogger;
 import com.dvid.dcam.platform.permission.DcamPermissions;
-import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
@@ -48,6 +49,8 @@ public final class MainActivity extends ComponentActivity {
     private AppComposition.CaptureRuntime captureRuntime;
     private MainViewModel viewModel;
     private HardwareButtonRouter hardwareButtons;
+    private OpenMediaUseCase openMedia;
+    private LanguageSettingsUseCase languageSettings;
     private ActivityResultLauncher<String[]> permissionLauncher;
     private MainUiState latestState;
     private MainScreen renderedScreen;
@@ -55,9 +58,14 @@ public final class MainActivity extends ComponentActivity {
     private ScreenFileExplorerBinding fileExplorerScreen;
     private ScreenMenuBinding menuScreen;
 
+    @Override protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(AndroidLanguagePreferenceStoreImpl.localizedContext(newBase));
+    }
+
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         AppComposition composition = AppComposition.create(this);
+        languageSettings = composition.languageSettingsUseCase();
 
         getWindow().setStatusBarColor(Color.BLACK);
         getWindow().setNavigationBarColor(Color.BLACK);
@@ -75,14 +83,17 @@ public final class MainActivity extends ComponentActivity {
         });
 
         permissionLauncher.launch(DcamPermissions.runtime());
+        captureRuntime = composition.createCaptureRuntime(this);
+        openMedia = composition.createOpenMediaUseCase(this);
         viewModel = new ViewModelProvider(
                 this, new MainViewModelFactory(
                         composition.config(), composition.initialDeviceStatus(),
-                        composition.deviceRepository(), composition.mediaRepository()))
+                        captureRuntime.photoCapture(), captureRuntime.videoRecording(),
+                        captureRuntime.audioRecording(), captureRuntime.captureEvents(),
+                        composition.refreshDeviceStatusUseCase(), composition.browseMediaUseCase()))
                 .get(MainViewModel.class);
-        captureRuntime = composition.createCaptureRuntime(this);
-        viewModel.attach(captureRuntime.repository());
-        hardwareButtons = composition.createHardwareButtonRouter(viewModel);
+        hardwareButtons = composition.createHardwareButtonRouter(
+                captureRuntime.photoCapture(), captureRuntime.videoRecording(), captureRuntime.audioRecording());
         viewModel.state().observe(this, this::render);
     }
 
@@ -154,12 +165,57 @@ public final class MainActivity extends ComponentActivity {
                 getLayoutInflater(), root, false);
         detail.title.setText(settingsTitle(screen));
         for (String item : getResources().getStringArray(settingsItems(screen))) {
-            TextView row = (TextView) getLayoutInflater().inflate(
-                    R.layout.item_setting_row, detail.settingsList, false);
-            row.setText("\u2022 " + item);
-            detail.settingsList.addView(row);
+            addSettingRow(detail.settingsList, "\u2022 " + item, null);
         }
+        if (screen == MainScreen.DEVICE_SETTINGS) renderLanguageSettings(detail.settingsList);
         root.addView(detail.getRoot());
+    }
+
+    private void renderLanguageSettings(LinearLayout settingsList) {
+        if (languageSettings == null) return;
+        AppLanguage current = languageSettings.currentLanguage();
+        addSectionHeading(settingsList, getString(R.string.language_section_title));
+        for (AppLanguage language : languageSettings.supportedLanguages()) {
+            boolean selected = language == current;
+            String label = (selected ? "\u2713 " : "  ") + languageName(language);
+            addSettingRow(settingsList, label, view -> changeLanguage(language));
+        }
+    }
+
+    private void addSettingRow(
+            LinearLayout settingsList, String text, View.OnClickListener clickListener) {
+        TextView row = (TextView) getLayoutInflater().inflate(
+                R.layout.item_setting_row, settingsList, false);
+        row.setText(text);
+        if (clickListener != null) {
+            row.setClickable(true);
+            row.setFocusable(true);
+            row.setOnClickListener(clickListener);
+        }
+        settingsList.addView(row);
+    }
+
+    private void addSectionHeading(LinearLayout settingsList, String text) {
+        TextView heading = (TextView) getLayoutInflater().inflate(
+                R.layout.item_setting_section_heading, settingsList, false);
+        heading.setText(text);
+        settingsList.addView(heading);
+    }
+
+    private void changeLanguage(AppLanguage language) {
+        if (languageSettings == null || language == languageSettings.currentLanguage()) return;
+        languageSettings.changeLanguage(language);
+        Toast.makeText(this, R.string.language_changed, Toast.LENGTH_SHORT).show();
+        recreate();
+    }
+
+    private String languageName(AppLanguage language) {
+        switch (language) {
+            case SYSTEM: return getString(R.string.language_system);
+            case ENGLISH: return getString(R.string.language_english);
+            case VIETNAMESE: return getString(R.string.language_vietnamese);
+            default: throw new IllegalArgumentException("Unsupported language " + language);
+        }
     }
 
     private static int settingsTitle(MainScreen screen) {
@@ -249,16 +305,8 @@ public final class MainActivity extends ComponentActivity {
     }
 
     private void openMediaFile(MediaEntry entry) {
-        try {
-            Uri uri = FileProvider.getUriForFile(
-                    this, getPackageName() + ".files", new File(entry.getAbsolutePath()));
-            Intent intent = new Intent(Intent.ACTION_VIEW)
-                    .setDataAndType(uri, entry.getMimeType())
-                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            startActivity(intent);
-        } catch (ActivityNotFoundException | IllegalArgumentException error) {
+        if (openMedia == null || !openMedia.execute(entry)) {
             Toast.makeText(this, R.string.media_open_failed, Toast.LENGTH_SHORT).show();
-            DcamLogger.w("Could not open media " + entry.getRelativePath(), error);
         }
     }
 
@@ -273,12 +321,12 @@ public final class MainActivity extends ComponentActivity {
 
     private static String recordingText(RecordingMode mode) {
         if (mode == RecordingMode.IDLE) return "READY";
-        return mode.name() + " ●";
+        return mode.name() + " \u25CF";
     }
 
     private static String deviceText(DeviceStatus status) {
         String battery = status.getBatteryPercent() < 0 ? "BAT ?" : "BAT " + status.getBatteryPercent() + "%";
-        return battery + " · GPS " + gpsText(status.getGpsStatus());
+        return battery + " \u00B7 GPS " + gpsText(status.getGpsStatus());
     }
 
     private static String gpsText(CapabilityStatus status) {
@@ -316,9 +364,8 @@ public final class MainActivity extends ComponentActivity {
 
     @Override protected void onDestroy() {
         DcamLogger.i("MainActivity destroyed");
-        if (captureRuntime != null) captureRuntime.release();
         if (viewModel != null) viewModel.onCapturePlatformReleased();
-        if (viewModel != null && captureRuntime != null) viewModel.detach(captureRuntime.repository());
+        if (captureRuntime != null) captureRuntime.release();
         super.onDestroy();
     }
 

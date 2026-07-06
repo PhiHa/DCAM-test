@@ -11,9 +11,7 @@
 /local.properties
 /application-local.properties
 
-# Tests (kept locally, not versioned)
-/app/src/test/
-/app/src/androidTest/
+# Generated local media fixtures
 /app/DCIM/
 
 # IDE and editor metadata

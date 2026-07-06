@@ -6,7 +6,7 @@
 |---|---|
 | Language | Java-first |
 | UI | XML layouts + ViewBinding |
-| Architecture | MVVM |
+| Architecture | Feature-first Clean Architecture + Ports and Adapters; MVVM at the UI boundary |
 | UI state | LiveData |
 | Ordinary background work | ExecutorService |
 | Stateful hardware/vendor SDK calls | HandlerThread or SDK-required serialized thread |
@@ -19,28 +19,34 @@
 ## Non-negotiable dependency rule
 
 ```text
-Activity/Fragment + ViewBinding
-    ↓ observes
-ViewModel + LiveData
-    ↓ calls
-UseCase
-    ↓ depends on
-Repository interface/implementation
-    ↓ depends on
-Service Interface
-    ↓ implemented by
-Platform/Vendor/Cloud Adapter
+Activity/Fragment/controller
+    -> application use case
+    -> application boundary (for example Repository, CameraGateway)
+    <- platform/application implementation
+    -> Android/vendor/cloud framework
 ```
 
-UI, ViewModel, and UseCase code must not call camera, hardware, storage, Retrofit, Firebase, or other provider SDKs directly. Repositories coordinate application services but must depend on service interfaces rather than vendor implementations.
+Dependency direction always points inward. UI, ViewModel, and use-case code must not call camera, hardware, storage, Retrofit, Firebase, or other provider SDKs directly. Application code depends only on domain values and boundaries it owns. Platform implementations translate external behavior into those boundaries.
 
-Service interfaces describe what DCAM needs. Platform adapters translate Android/vendor/provider behavior, threading, errors, and data into domain-facing results.
+`Interface Adapters` is a Clean Architecture layer name; it does not mean a folder for Java `interface` declarations. Public feature/core interfaces live only in `application/usecase` or `application/port`, and must represent a real use-case or capability boundary. The package may be named `port`, but class/file names do not use the `Port` suffix. Use capability names such as `CameraGateway`, `AudioRecorder`, `MediaOpener`, `LanguagePreferenceStore`, `ConfigurationSource`, and `LogSink`; keep `Repository` for repository contracts. Concrete implementations must end with `Impl`.
+
+Canonical feature package shape:
+
+```text
+feature/<feature>/
+    domain/
+    application/
+        usecase/
+        port/
+        repository/
+    presentation/
+```
 
 ## Threading rules
 
 | Work | Expected mechanism |
 |---|---|
-| Camera open/close/start/stop | Dedicated HandlerThread |
+| Camera open/close/start/stop | Dedicated HandlerThread or SDK-required executor |
 | Stateful BodyCamera/vendor command | HandlerThread unless vendor requires another thread |
 | PTT/streaming SDK command | Serialized SDK-required thread |
 | File/metadata/checksum work | ExecutorService |
@@ -53,7 +59,7 @@ Do not put fragile hardware commands into a general thread pool. Do not expose r
 ## State and error rules
 
 - ViewModel exposes clear, UI-oriented states such as idle, preparing, recording, stopping, completed, and error.
-- Map raw SDK exceptions/status codes at the adapter and repository/domain boundaries.
+- Map raw SDK exceptions/status codes at adapter boundaries into application/domain results.
 - Use stable error categories: permission, unsupported capability, SDK, storage, metadata, network/cloud, and unknown/diagnostic.
 - Do not throw raw vendor exceptions through multiple layers.
 - Important failures carry enough safe context for diagnostics.
@@ -61,16 +67,16 @@ Do not put fragile hardware commands into a general thread pool. Do not expose r
 ## Storage, metadata, and cloud rules
 
 - UI/ViewModel never knows physical folder paths or writes business files directly.
-- UseCase should depend on domain models, not filesystem details.
+- Use cases depend on domain models, not filesystem details.
 - Temporary/final data must be distinguishable.
 - The future Storage Design and Data Contract override prototype folder/schema choices.
-- Cloud calls go through provider-neutral interfaces.
+- Cloud calls go through provider-neutral output ports defined from approved use cases.
 - Core recording/capture/storage/metadata and BDMA readiness remain fully local-capable.
 
 ## Pull-request checklist
 
-- No direct SDK access from UI, ViewModel, or UseCase.
-- Repository depends on interfaces; vendor implementation remains in an adapter.
+- No direct SDK access from UI, ViewModel, or use case.
+- Application logic depends on owned boundaries; vendor/provider implementation remains in platform/application implementation classes.
 - Stateful hardware access is serialized.
 - Long work does not block UI.
 - UI state is observable and domain-oriented.
@@ -78,7 +84,7 @@ Do not put fragile hardware commands into a general thread pool. Do not expose r
 - Critical success/error paths are logged without sensitive data.
 - Cloud is abstracted and optional.
 - Storage/metadata details do not leak upward.
-- Tests use fakes at service boundaries where practical.
+- Tests use fakes at application boundaries where practical.
 - Jira issue is linked when applicable.
 
 ## Training context

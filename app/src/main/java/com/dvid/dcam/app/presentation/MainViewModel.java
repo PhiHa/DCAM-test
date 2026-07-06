@@ -4,32 +4,29 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import com.dvid.dcam.app.navigation.MainScreen;
-import com.dvid.dcam.core.config.DcamConfig;
-import com.dvid.dcam.feature.capture.application.DcamCommandHandler;
-import com.dvid.dcam.feature.capture.application.StartSosUseCase;
-import com.dvid.dcam.feature.capture.application.StartVideoUseCase;
-import com.dvid.dcam.feature.capture.application.StopRecordingUseCase;
-import com.dvid.dcam.feature.capture.application.TakePhotoUseCase;
-import com.dvid.dcam.feature.capture.application.ToggleAudioUseCase;
-import com.dvid.dcam.feature.capture.application.ToggleVideoUseCase;
-import com.dvid.dcam.feature.capture.domain.CaptureEventListener;
-import com.dvid.dcam.feature.capture.domain.CaptureRepository;
+import com.dvid.dcam.core.config.domain.DcamConfig;
+import com.dvid.dcam.feature.capture.application.usecase.AudioRecordingUseCase;
+import com.dvid.dcam.feature.capture.application.usecase.CaptureEventUseCase;
+import com.dvid.dcam.feature.capture.application.usecase.PhotoCaptureUseCase;
+import com.dvid.dcam.feature.capture.application.usecase.VideoRecordingUseCase;
+import com.dvid.dcam.feature.capture.domain.CaptureEvent;
 import com.dvid.dcam.feature.capture.domain.CaptureState;
 import com.dvid.dcam.feature.capture.domain.RecordingMode;
-import com.dvid.dcam.feature.device.application.RefreshDeviceStatusUseCase;
-import com.dvid.dcam.feature.device.domain.DeviceRepository;
+import com.dvid.dcam.feature.device.application.usecase.RefreshDeviceStatusUseCase;
 import com.dvid.dcam.feature.device.domain.DeviceStatus;
-import com.dvid.dcam.feature.media.application.BrowseMediaUseCase;
-import com.dvid.dcam.feature.media.domain.MediaRepository;
 import com.dvid.dcam.feature.media.presentation.MediaBrowserState;
+import com.dvid.dcam.feature.media.application.usecase.BrowseMediaUseCase;
 import java.util.Collections;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public final class MainViewModel extends ViewModel implements DcamCommandHandler, CaptureEventListener {
+public final class MainViewModel extends ViewModel {
     private final DcamConfig config;
     private final MutableLiveData<MainUiState> state;
-    private CaptureRepository repository;
+    private final PhotoCaptureUseCase photoCapture;
+    private final VideoRecordingUseCase videoRecording;
+    private final AudioRecordingUseCase audioRecording;
+    private final CaptureEventUseCase captureEvents;
     private final RefreshDeviceStatusUseCase refreshDeviceStatus;
     private final BrowseMediaUseCase browseMedia;
     private final ExecutorService mediaIo = Executors.newSingleThreadExecutor(runnable -> {
@@ -37,18 +34,24 @@ public final class MainViewModel extends ViewModel implements DcamCommandHandler
         thread.setDaemon(true);
         return thread;
     });
-    private TakePhotoUseCase takePhoto;
-    private ToggleVideoUseCase toggleVideo;
-    private StartVideoUseCase startVideo;
-    private StopRecordingUseCase stopRecording;
-    private StartSosUseCase startSos;
-    private ToggleAudioUseCase toggleAudio;
 
-    public MainViewModel(DcamConfig config, DeviceStatus deviceStatus, DeviceRepository deviceRepository,
-                         MediaRepository mediaRepository) {
+    public MainViewModel(
+            DcamConfig config,
+            DeviceStatus deviceStatus,
+            PhotoCaptureUseCase photoCapture,
+            VideoRecordingUseCase videoRecording,
+            AudioRecordingUseCase audioRecording,
+            CaptureEventUseCase captureEvents,
+            RefreshDeviceStatusUseCase refreshDeviceStatus,
+            BrowseMediaUseCase browseMedia) {
         this.config = config;
-        refreshDeviceStatus = new RefreshDeviceStatusUseCase(deviceRepository);
-        browseMedia = new BrowseMediaUseCase(mediaRepository);
+        this.photoCapture = photoCapture;
+        this.videoRecording = videoRecording;
+        this.audioRecording = audioRecording;
+        this.captureEvents = captureEvents;
+        this.refreshDeviceStatus = refreshDeviceStatus;
+        this.browseMedia = browseMedia;
+        this.captureEvents.setListener(this::onCaptureEvent);
         state = new MutableLiveData<>(new MainUiState(
                 MainScreen.CAMERA, new CaptureState(), deviceStatus, MediaBrowserState.root(), null));
     }
@@ -56,33 +59,9 @@ public final class MainViewModel extends ViewModel implements DcamCommandHandler
     public LiveData<MainUiState> state() { return state; }
     public DcamConfig getConfig() { return config; }
 
-    public void attach(CaptureRepository nextRepository) {
-        if (repository != null) repository.setEventListener(CaptureEventListener.NONE);
-        repository = nextRepository;
-        repository.setEventListener(this);
-        takePhoto = new TakePhotoUseCase(repository);
-        toggleVideo = new ToggleVideoUseCase(repository);
-        startVideo = new StartVideoUseCase(repository);
-        stopRecording = new StopRecordingUseCase(repository);
-        startSos = new StartSosUseCase(repository);
-        toggleAudio = new ToggleAudioUseCase(repository);
-    }
-
-    public void detach(CaptureRepository expected) {
-        if (repository != expected) return;
-        repository.setEventListener(CaptureEventListener.NONE);
-        repository = null;
-        takePhoto = null;
-        toggleVideo = null;
-        startVideo = null;
-        stopRecording = null;
-        startSos = null;
-        toggleAudio = null;
-    }
-
     public void onCapturePlatformReleased() {
-        if (current().getCapture().getMode() != RecordingMode.IDLE) {
-            state.setValue(current().withCapture(new CaptureState(), "Recording stopped: camera lifecycle ended"));
+        if (captureEvents.currentMode() != RecordingMode.IDLE) {
+            captureEvents.captureFailed("Recording", "camera lifecycle ended");
         }
     }
 
@@ -119,42 +98,53 @@ public final class MainViewModel extends ViewModel implements DcamCommandHandler
         state.setValue(current().withDeviceStatus(refreshDeviceStatus.execute()));
     }
 
-    @Override public void takePhoto() { if (takePhoto != null) takePhoto.execute(); }
-    @Override public void toggleVideo() { if (toggleVideo != null) toggleVideo.execute(); }
-    @Override public void startVideo() { if (startVideo != null) startVideo.execute(); }
-    @Override public void stopRecording() { if (stopRecording != null) stopRecording.execute(); }
+    public void takePhoto() {
+        photoCapture.takePhoto();
+    }
 
-    @Override public void toggleAudio() {
-        if (toggleAudio == null) return;
-        String output = toggleAudio.execute();
+    public void toggleVideo() {
+        videoRecording.toggleVideo();
+    }
+
+    public void startVideo() {
+        videoRecording.startVideo();
+    }
+
+    public void stopRecording() {
+        videoRecording.stopRecording();
+    }
+
+    public void toggleAudio() {
+        String output = audioRecording.toggleAudio();
         state.setValue(current().withMessage(output == null ? "Audio unavailable" : "Audio " + output));
     }
 
-    @Override public void toggleSos() {
-        RecordingMode mode = current().getCapture().getMode();
-        if (mode == RecordingMode.SOS) {
-            stopRecording();
-        } else if (startSos != null) {
-            startSos.execute();
+    public void toggleSos() {
+        videoRecording.toggleSos();
+    }
+
+    private void onCaptureEvent(CaptureEvent event) {
+        switch (event.getType()) {
+            case RECORDING_STARTED:
+                state.setValue(current().withCapture(
+                        new CaptureState(event.getMode(), event.getFileName(), System.currentTimeMillis()),
+                        "Recording " + event.getFileName()));
+                break;
+            case RECORDING_COMPLETED:
+                state.setValue(current().withCapture(new CaptureState(), "Saved " + event.getFileName()));
+                break;
+            case PHOTO_SAVED:
+                state.setValue(current().withMessage("Saved " + event.getFileName()));
+                break;
+            case ERROR:
+                String detail = event.getMessage() == null || event.getMessage().isBlank()
+                        ? "unknown error" : event.getMessage();
+                state.setValue(current().withCapture(
+                        new CaptureState(), event.getOperation() + " failed: " + detail));
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported capture event " + event.getType());
         }
-    }
-
-    @Override public void onRecordingStarted(RecordingMode mode, String fileName) {
-        CaptureState capture = new CaptureState(mode, fileName, System.currentTimeMillis());
-        state.setValue(current().withCapture(capture, "Recording " + fileName));
-    }
-
-    @Override public void onRecordingCompleted(String fileName) {
-        state.setValue(current().withCapture(new CaptureState(), "Saved " + fileName));
-    }
-
-    @Override public void onPhotoSaved(String fileName) {
-        state.setValue(current().withMessage("Saved " + fileName));
-    }
-
-    @Override public void onCaptureError(String operation, String message) {
-        String detail = message == null || message.isBlank() ? "unknown error" : message;
-        state.setValue(current().withCapture(new CaptureState(), operation + " failed: " + detail));
     }
 
     private MainUiState current() {
@@ -166,6 +156,7 @@ public final class MainViewModel extends ViewModel implements DcamCommandHandler
     }
 
     @Override protected void onCleared() {
+        captureEvents.clearListener();
         mediaIo.shutdownNow();
         super.onCleared();
     }

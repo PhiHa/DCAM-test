@@ -64,7 +64,6 @@
         <item>Continuous playback</item>
         <item>Fall detection</item>
         <item>Status lights</item>
-        <item>Device language</item>
     </string-array>
 
     <string-array name="security_settings_items">

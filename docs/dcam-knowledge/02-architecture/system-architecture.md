@@ -9,15 +9,15 @@ The current high-level context is:
 ```text
 Hardware / Android platform
     Camera, microphone, GPS, storage, battery, network, USB
-        ↓ through platform adapters
+        -> through platform adapters
 DCAM application
-    UI → ViewModel → UseCase → Repository → service interfaces
-        ↓
+    UI/controller -> use case -> application boundary <- platform implementation
+        ->
 Local media / metadata / DB / logs
-        ↓ ADB read initiated by desktop
+        -> ADB read initiated by desktop
 BDMA Desktop
 
-Optional cloud/config/diagnostics providers sit behind interfaces and may be absent.
+Optional cloud/config/diagnostics providers sit behind application-owned output ports and may be absent.
 ```
 
 ## Mandatory architectural principles
@@ -33,45 +33,35 @@ Optional cloud/config/diagnostics providers sit behind interfaces and may be abs
 - **Backward compatibility:** metadata and Data Contract evolution should be versioned.
 - **Security awareness:** least permission, secret hygiene, controlled logs, protected update/config/data.
 
-## Target layers and dependency direction
+## Standard layers and dependency direction
 
 | Layer | Responsibility | Forbidden dependency/behavior |
 |---|---|---|
-| UI | Render state and handle input | Business logic, direct SDK/file/network calls |
-| ViewModel | Hold UI state, invoke use cases, expose LiveData | Hardware/cloud/vendor APIs, heavy work |
-| UseCase | Implement application workflow and preconditions | Activity/Fragment/View and provider SDKs |
-| Repository | Coordinate service interfaces and map domain data | Vendor SDKs and UI behavior |
-| Service Interface | Describe the capability the app needs | Leaking vendor-specific models upward |
-| Platform Adapter/Data Source | Implement interface through Android/vendor/cloud APIs | Complex product policy |
+| Domain | Entities, immutable values, enums, and pure business rules | Android, UI, database, filesystem, vendor, or provider APIs |
+| Application | Use cases plus application-owned capability/repository boundaries | Android/framework APIs and concrete implementations |
+| Interface Adapter | Translate UI/storage/provider input/output and implement application boundaries | Core product policy and direct dependency from application/domain |
+| Frameworks & Drivers | Android, CameraX, MediaRecorder, Room, filesystem, network, vendor SDK | Product policy that belongs in domain/application |
 
-The architecture page calls MVVM + UseCase + Repository “proposed / ADR needed”; the Android Development Standard treats MVVM and the service/adapter rules as the project implementation standard. Until an ADR resolves this wording, follow the stricter standard for new production code.
+The source uses feature-first Clean Architecture with Ports and Adapters. MVVM is the presentation pattern at the UI boundary; it does not replace or conflict with the four dependency layers. A Java `interface` is placed by ownership: use-case interfaces live in `application/usecase`; repository/hardware/provider boundaries live in `application/port`; concrete implementations live in `platform` or an application repository package. The folder keeps the architecture term `port`, but class/file names use capability names such as `CameraGateway`, not a `Port` suffix.
 
-## Proposed modules
+## Current source organization
 
-| Module | Responsibility |
+| Package family | Responsibility |
 |---|---|
-| `ui` | Screens and presentation state |
-| `camera` | Camera capability/adapters |
-| `recording` | Recording flow and state |
-| `capture` | Image-capture flow |
-| `metadata` | Metadata generation and validation |
-| `storage` | Local folders, files, records, and exposure |
-| `gps` | Location abstraction |
-| `device` | Device info, health, and capability detection |
-| `user` | User/operator/role foundation (Phase 2) |
-| `logging` | Local logs and diagnostics adapters |
-| `config` | Runtime/remote/local/default configuration |
-| `cloud` | Provider-neutral cloud capability |
-| `update` | Play/self/manual/auto update adapters |
-| `common` | Small shared domain primitives/interfaces |
+| `app` | Android entry point, navigation, cross-feature presentation, and composition root |
+| `feature/<name>/domain` | Feature-owned entities and pure rules |
+| `feature/<name>/application` | Use cases and application-owned capability/repository boundaries |
+| `feature/<name>/presentation` | Feature-owned UI state/ViewModel when a feature needs its own presentation |
+| `platform` | Android, hardware, storage, database, and provider adapters |
+| `core` | Deliberately shared capabilities using the same domain/application vocabulary |
 
-Final package and Gradle-module boundaries are TBD.
+The project currently remains one Gradle `:app` module. Package boundaries are enforced by source-level architecture tests; a future Gradle split requires a separate measured justification.
 
-## Platform service catalog
+## Boundary and capability rule
 
-Expected interfaces include `CameraService`, `CaptureService`, `AudioService`, `LocationService`, `StorageService`, `MetadataService`, `DatabaseService`, `DeviceService`, `CloudService`, `RemoteConfigProvider`, `UpdateService`, `LogService`, `SecurityService`, `PTTService`, `StreamingService`, and `FileIntegrityService`.
+Current approved boundaries include use cases such as `PhotoCaptureUseCase`, `VideoRecordingUseCase`, `AudioRecordingUseCase`, `CaptureEventUseCase`, `BrowseMediaUseCase`, `OpenMediaUseCase`, and capability/repository boundaries such as `CameraGateway`, `AudioRecorder`, `DeviceRepository`, `MediaRepository`, `MediaOpener`, `ConfigurationSource`, `ConfigurationRepository`, `LanguagePreferenceStore`, and `LogSink`. Names describe the application capability, never the current library or vendor. Concrete implementations end with `Impl`, for example `CameraXCameraGatewayImpl` and `DcamLogSinkImpl`.
 
-Each BodyCamera or provider-specific implementation belongs behind an adapter. A vendor SDK change should primarily change its adapter, not UI, ViewModel, use cases, or repositories.
+Do not reserve future architecture with empty `*Service` interfaces. Location, metadata, integrity, cloud, update, streaming, PTT, and other future capabilities enter source only after an approved use case defines domain inputs/results/errors and demonstrates the need for a replaceable boundary. Each BodyCamera or provider-specific implementation belongs behind a platform implementation. A vendor SDK change should primarily change that implementation, not UI, ViewModel, use cases, or domain.
 
 ## Threading model
 
@@ -93,6 +83,6 @@ Each BodyCamera or provider-specific implementation belongs behind an adapter. A
 
 ## Architecture decision status
 
-Decided direction: Java-first, offline-first, capability-based operation, service interfaces/platform adapters, serialized hardware access where needed, cloud abstraction, BDMA compatibility, ADB boundary, and DCAM-producer/BDMA-consumer ownership.
+Decided direction: Java-first, offline-first, capability-based operation, feature-first Clean Architecture, application-owned ports/platform adapters, serialized hardware access where needed, cloud abstraction, BDMA compatibility, ADB boundary, and DCAM-producer/BDMA-consumer ownership.
 
-Still pending: final camera API, metadata/schema, folder structure, database strategy, package/module structure, error/state model, streaming/PTT protocols, encryption/key management, and detailed update mechanism.
+Still pending: final camera API, metadata/schema, folder structure, database strategy, future Gradle-module split, error/state model, streaming/PTT protocols, encryption/key management, and detailed update mechanism.
