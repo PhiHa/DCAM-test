@@ -25,4 +25,10 @@
     <string name="camera_settings">Camera settings</string>
     <string name="camera_settings_short">Cameras</string>
     <string name="about">About</string>
+    <string name="language_section_title">Language</string>
+    <string name="language_system">System default</string>
+    <string name="language_english">English</string>
+    <string name="language_vietnamese">Tiếng Việt</string>
+    <string name="language_changed">Language changed</string>
 </resources>
+

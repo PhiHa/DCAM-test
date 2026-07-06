@@ -4,7 +4,6 @@ import android.content.Context;
 import android.util.Log;
 import com.dvid.dcam.BuildConfig;
 import com.dvid.dcam.feature.device.domain.DeviceInfo;
-import com.dvid.dcam.platform.device.AndroidDeviceInfoProvider;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -34,10 +33,6 @@ public final class DcamLogger {
     private static String camId = "unknown";
 
     private DcamLogger() {}
-
-    public static synchronized void init(Context context) {
-        init(context, new AndroidDeviceInfoProvider(context).read());
-    }
 
     public static synchronized void init(Context context, DeviceInfo deviceInfo) {
         File root = context.getExternalFilesDir(null);

@@ -1,6 +1,6 @@
 package com.dvid.dcam.platform.config;
 
-import com.dvid.dcam.core.config.DcamConfig;
+import com.dvid.dcam.core.config.domain.DcamConfig;
 public final class DefaultConfigs {
     public static final String LEGACY_SAMPLE_ACCOUNT_USER_ID = "36NCC009910";
 

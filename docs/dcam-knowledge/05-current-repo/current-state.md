@@ -18,26 +18,27 @@ The SDK/database values are implementation choices; Confluence still marks the f
 
 ```text
 touch UI / hardware keys
-    ↓ DcamCommandHandler
+    ↓ capture use cases
 app/presentation: MainViewModel + LiveData<MainUiState>
-    ↓ individual use cases
-feature/*: use cases and repository/domain contracts
-    ↓ domain service interfaces
-platform/*: CameraX, MediaRecorder, local config/storage, device, logging adapters
+    ↓ application-owned boundaries
+feature/*/application: use cases, repositories, and capability boundaries
+    ↓
+platform/*: Android, CameraX, MediaRecorder, storage, device, provider implementations
 ```
 
 | Package family | Responsibility |
 |---|---|
 | `app` | Android entry point, cross-feature navigation/presentation, and `AppComposition` wiring |
-| `feature.capture` | Capture commands, use cases, models, contracts, and repository coordination |
-| `feature.media` | Media browsing workflow, state, model, contracts, and repository coordination |
-| `feature.device` | Device-status workflow, models, contracts, and repository coordination |
-| Other `feature.*.domain` | Explicit future capability names; currently scaffolded only |
+| `feature.*.domain` | Entities, immutable values, enums, and domain rules only |
+| `feature.*.application.usecase` | Application workflows/interactors |
+| `feature.*.application.port` | Explicit Java interfaces owned by the application layer |
+| `feature.*.application.repository` | Pure application/core repository implementations when needed |
+| `feature.*.presentation` | Feature-owned presentation state/ViewModel when needed |
 | `platform.camera`, `platform.audio`, `platform.recording` | CameraX, MediaRecorder, and foreground-service adapters |
 | `platform.storage`, `platform.database`, `platform.config` | Filesystem/media output, Room, and local CSON adapters |
 | `platform.device`, `platform.input`, `platform.permission` | Android device APIs, physical-key routing, and runtime permissions |
 | `platform.logging` | Local diagnostics plus Loggly/WorkManager/Room implementations |
-| `core.config`, `core.logging` | Small cross-feature configuration and logging contracts/models |
+| `core.config`, `core.logging` | Shared capabilities using the same domain/application vocabulary |
 
 The source-level map and dependency rules live in `app/src/main/java/com/dvid/dcam/ARCHITECTURE.md`.
 
@@ -45,7 +46,7 @@ The source-level map and dependency rules live in `app/src/main/java/com/dvid/dc
 
 - `MainActivity` is the Android entry point and ViewBinding presentation shell.
 - `AppComposition` selects concrete adapters/repositories, loads configuration, and creates the lifecycle-bound capture runtime before attaching it to `MainViewModel`.
-- Physical keys route through `HardwareButtonRouter` to the same application commands used by touch UI.
+- Physical keys route through `HardwareButtonRouter` to the same capture use cases used by touch UI.
 - Static global `Runnable` action registries were removed.
 - CameraX events are mapped to domain capture events before they update UI state.
 - SOS handoff serializes stop/finalize/start rather than overlapping CameraX recordings.
@@ -53,7 +54,7 @@ The source-level map and dependency rules live in `app/src/main/java/com/dvid/dc
 - Menu feature bodies remain placeholders, but their shared shells now use XML/ViewBinding rather than programmatic view construction.
 - The settings home presents a three-column launcher with 12 clear categories. Opening a settings item shows a short non-editable OEM/CSON setting-name list; sensitive values are not shown.
 - Files is a read-only explorer limited to DCAM `video`, `SOS`, `image`, and `audio` roots. It supports folder navigation and opens media through a temporary FileProvider grant.
-- Battery percentage, available app-storage bytes, and GPS capability/enabled state flow through DeviceService, DeviceRepository, a refresh use case, and ViewModel state.
+- Battery percentage, available app-storage bytes, and GPS capability/enabled state flow through `DeviceRepository`, a refresh use case, and ViewModel state.
 
 ## Current storage behavior
 
@@ -81,14 +82,12 @@ There is still no general media metadata schema, schema version, file lifecycle 
 - Local Logcat plus rotating `app.log`, with 14-day local retention.
 - Context includes version, thread, source, hardware ID, model, and camera/account ID.
 - Room-backed pending Loggly outbox with WorkManager upload/retry.
-- `LogService` now isolates capture/audio application-facing diagnostics from `DcamLogger`.
+- `LogSink` isolates capture/audio application-facing diagnostics from `DcamLogger`.
 - Loggly remains a concrete provider inside the logging adapter package; a full provider-neutral diagnostics design is still future work.
 
-## Future capability scaffolds
+## Future capabilities
 
-The service catalog now reserves boundaries for Location, Metadata, Storage Contract, File Integrity, Security, Cloud, Remote Config, Update, Streaming, and PTT.
-
-These interfaces are intentionally method-free. Their Confluence contracts are TBD, so adding speculative methods would silently invent metadata, encryption, cloud, update, streaming, or PTT decisions.
+Location, Metadata, Storage Contract, File Integrity, Security, Cloud, Remote Config, Update, Streaming, and PTT remain roadmap/documentation capabilities only. Empty speculative Java interfaces were removed; a capability enters source only when an approved requirement/use case defines its domain values and application boundaries.
 
 ## Local property behavior
 
@@ -112,7 +111,7 @@ Private workflow instructions for local-property handling belong in `application
 
 After refactoring:
 
-- `testDebugUnitTest`: 18 tests pass, including architecture, immutable UI-state, and media-browser sandbox guards.
+- `testDebugUnitTest`: 19 tests pass, including architecture, immutable UI-state, and media-browser sandbox guards.
 - `assembleDebug`: succeeds.
 - `lintDebug`: succeeds.
 - Generated `BuildConfig`: intentionally contains all application and local-property fields.

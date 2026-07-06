@@ -1,6 +1,6 @@
 package com.dvid.dcam.platform.config;
 
-import com.dvid.dcam.core.config.DcamConfig;
+import com.dvid.dcam.core.config.domain.DcamConfig;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;

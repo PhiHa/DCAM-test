@@ -2,57 +2,75 @@ package com.dvid.dcam.app;
 
 import android.content.Context;
 import androidx.activity.ComponentActivity;
-import com.dvid.dcam.core.config.ConfigurationRepository;
-import com.dvid.dcam.core.config.DcamConfig;
-import com.dvid.dcam.core.config.DefaultConfigurationRepository;
-import com.dvid.dcam.core.logging.LogService;
-import com.dvid.dcam.feature.capture.application.DcamCommandHandler;
-import com.dvid.dcam.feature.capture.data.DefaultCaptureRepository;
-import com.dvid.dcam.feature.capture.domain.CaptureRepository;
-import com.dvid.dcam.feature.device.data.DefaultDeviceRepository;
+import com.dvid.dcam.core.config.application.port.ConfigurationRepository;
+import com.dvid.dcam.core.config.application.repository.ConfigurationRepositoryImpl;
+import com.dvid.dcam.core.config.domain.DcamConfig;
+import com.dvid.dcam.core.logging.application.port.LogSink;
+import com.dvid.dcam.feature.capture.application.port.AudioRecorder;
+import com.dvid.dcam.feature.capture.application.usecase.AudioRecordingUseCase;
+import com.dvid.dcam.feature.capture.application.usecase.AudioRecordingUseCaseImpl;
+import com.dvid.dcam.feature.capture.application.usecase.CaptureEventUseCase;
+import com.dvid.dcam.feature.capture.application.usecase.CaptureEventUseCaseImpl;
+import com.dvid.dcam.feature.capture.application.usecase.PhotoCaptureUseCase;
+import com.dvid.dcam.feature.capture.application.usecase.PhotoCaptureUseCaseImpl;
+import com.dvid.dcam.feature.capture.application.usecase.VideoRecordingUseCase;
+import com.dvid.dcam.feature.capture.application.usecase.VideoRecordingUseCaseImpl;
+import com.dvid.dcam.feature.device.application.port.DeviceRepository;
+import com.dvid.dcam.feature.device.application.usecase.RefreshDeviceStatusUseCase;
+import com.dvid.dcam.feature.device.application.usecase.RefreshDeviceStatusUseCaseImpl;
 import com.dvid.dcam.feature.device.domain.DeviceInfo;
-import com.dvid.dcam.feature.device.domain.DeviceRepository;
-import com.dvid.dcam.feature.device.domain.DeviceService;
 import com.dvid.dcam.feature.device.domain.DeviceStatus;
-import com.dvid.dcam.feature.media.data.DefaultMediaRepository;
-import com.dvid.dcam.feature.media.domain.MediaRepository;
-import com.dvid.dcam.platform.audio.AudioRecorder;
-import com.dvid.dcam.platform.camera.CameraPreview;
-import com.dvid.dcam.platform.config.CsonConfigurationSource;
-import com.dvid.dcam.platform.device.AndroidDeviceInfoProvider;
+import com.dvid.dcam.feature.media.application.port.MediaRepository;
+import com.dvid.dcam.feature.media.application.usecase.BrowseMediaUseCase;
+import com.dvid.dcam.feature.media.application.usecase.BrowseMediaUseCaseImpl;
+import com.dvid.dcam.feature.media.application.usecase.OpenMediaUseCase;
+import com.dvid.dcam.feature.media.application.usecase.OpenMediaUseCaseImpl;
+import com.dvid.dcam.feature.settings.application.usecase.LanguageSettingsUseCase;
+import com.dvid.dcam.feature.settings.application.usecase.LanguageSettingsUseCaseImpl;
+import com.dvid.dcam.platform.audio.AndroidAudioRecorderImpl;
+import com.dvid.dcam.platform.camera.CameraXCameraGatewayImpl;
+import com.dvid.dcam.platform.config.AndroidLanguagePreferenceStoreImpl;
+import com.dvid.dcam.platform.config.CsonConfigurationSourceImpl;
+import com.dvid.dcam.platform.device.AndroidDeviceRepositoryImpl;
 import com.dvid.dcam.platform.input.HardwareButtonRouter;
+import com.dvid.dcam.platform.logging.DcamLogSinkImpl;
 import com.dvid.dcam.platform.logging.DcamLogger;
-import com.dvid.dcam.platform.logging.DcamLogService;
+import com.dvid.dcam.platform.storage.AndroidMediaOpenerImpl;
 import com.dvid.dcam.platform.storage.DcamMediaOutput;
-import com.dvid.dcam.platform.storage.DcamMediaOutputFactory;
+import com.dvid.dcam.platform.storage.DcamMediaOutputImpl;
 import com.dvid.dcam.platform.storage.DcamStorage;
-import com.dvid.dcam.platform.storage.LocalMediaBrowserService;
+import com.dvid.dcam.platform.storage.LocalMediaRepositoryImpl;
 
 /** Application composition root. This is the only place that selects concrete adapters. */
 public final class AppComposition {
     private final DcamConfig config;
     private final DeviceStatus initialDeviceStatus;
-    private final DeviceRepository deviceRepository;
-    private final MediaRepository mediaRepository;
+    private final DcamStorage storage;
     private final DcamMediaOutput mediaOutput;
-    private final LogService logService;
+    private final LogSink logSink;
+    private final RefreshDeviceStatusUseCase refreshDeviceStatus;
+    private final BrowseMediaUseCase browseMedia;
+    private final LanguageSettingsUseCase languageSettings;
 
     private AppComposition(Context context) {
-        DeviceService deviceService = new AndroidDeviceInfoProvider(context);
-        deviceRepository = new DefaultDeviceRepository(deviceService);
+        storage = DcamStorage.from(context);
+
+        DeviceRepository deviceRepository = new AndroidDeviceRepositoryImpl(context);
         DeviceInfo deviceInfo = deviceRepository.readInfo();
         initialDeviceStatus = deviceRepository.readStatus();
         DcamLogger.init(context, deviceInfo);
-        logService = new DcamLogService();
+        logSink = new DcamLogSinkImpl();
 
-        DcamStorage storage = DcamStorage.from(context);
-        ConfigurationRepository configurationRepository = new DefaultConfigurationRepository(
-                new CsonConfigurationSource(storage), logService);
+        ConfigurationRepository configurationRepository = new ConfigurationRepositoryImpl(
+                new CsonConfigurationSourceImpl(storage), logSink);
         config = configurationRepository.load(deviceInfo.getHardwareId());
         DcamLogger.setCamId(config.getAccountUserId());
 
-        mediaRepository = new DefaultMediaRepository(new LocalMediaBrowserService(storage));
-        mediaOutput = new DcamMediaOutputFactory(storage);
+        refreshDeviceStatus = new RefreshDeviceStatusUseCaseImpl(deviceRepository);
+        MediaRepository mediaRepository = new LocalMediaRepositoryImpl(storage);
+        browseMedia = new BrowseMediaUseCaseImpl(mediaRepository);
+        languageSettings = new LanguageSettingsUseCaseImpl(new AndroidLanguagePreferenceStoreImpl(context));
+        mediaOutput = new DcamMediaOutputImpl(storage);
     }
 
     public static AppComposition create(Context context) {
@@ -61,39 +79,63 @@ public final class AppComposition {
 
     public DcamConfig config() { return config; }
     public DeviceStatus initialDeviceStatus() { return initialDeviceStatus; }
-    public DeviceRepository deviceRepository() { return deviceRepository; }
-    public MediaRepository mediaRepository() { return mediaRepository; }
+    public RefreshDeviceStatusUseCase refreshDeviceStatusUseCase() { return refreshDeviceStatus; }
+    public BrowseMediaUseCase browseMediaUseCase() { return browseMedia; }
+    public LanguageSettingsUseCase languageSettingsUseCase() { return languageSettings; }
 
-    public HardwareButtonRouter createHardwareButtonRouter(DcamCommandHandler commands) {
-        return new HardwareButtonRouter(commands);
+    public OpenMediaUseCase createOpenMediaUseCase(ComponentActivity owner) {
+        return new OpenMediaUseCaseImpl(new AndroidMediaOpenerImpl(owner, storage, logSink));
+    }
+
+    public HardwareButtonRouter createHardwareButtonRouter(
+            PhotoCaptureUseCase photos, VideoRecordingUseCase videos, AudioRecordingUseCase audio) {
+        return new HardwareButtonRouter(photos, videos, audio);
     }
 
     public CaptureRuntime createCaptureRuntime(ComponentActivity owner) {
-        AudioRecorder audio = new AudioRecorder(owner, mediaOutput, logService);
-        CameraPreview camera = new CameraPreview(owner, owner, config, mediaOutput, logService);
-        CaptureRepository repository = new DefaultCaptureRepository(camera, audio, config);
-        return new CaptureRuntime(camera, audio, repository);
+        CaptureEventUseCase captureEvents = new CaptureEventUseCaseImpl();
+        AudioRecorder audioRecorder = new AndroidAudioRecorderImpl(owner, mediaOutput, logSink);
+        CameraXCameraGatewayImpl camera = new CameraXCameraGatewayImpl(
+                owner, owner, config, mediaOutput, logSink, captureEvents);
+        PhotoCaptureUseCase photos = new PhotoCaptureUseCaseImpl(camera);
+        VideoRecordingUseCase videos = new VideoRecordingUseCaseImpl(camera, captureEvents);
+        AudioRecordingUseCase audio = new AudioRecordingUseCaseImpl(audioRecorder, config);
+        return new CaptureRuntime(camera, audioRecorder, photos, videos, audio, captureEvents);
     }
 
     /** Lifecycle-bound Android capture adapters created for one Activity instance. */
     public static final class CaptureRuntime {
-        private final CameraPreview camera;
-        private final AudioRecorder audio;
-        private final CaptureRepository repository;
+        private final CameraXCameraGatewayImpl camera;
+        private final AudioRecorder audioRecorder;
+        private final PhotoCaptureUseCase photos;
+        private final VideoRecordingUseCase videos;
+        private final AudioRecordingUseCase audio;
+        private final CaptureEventUseCase captureEvents;
 
         private CaptureRuntime(
-                CameraPreview camera, AudioRecorder audio, CaptureRepository repository) {
+                CameraXCameraGatewayImpl camera,
+                AudioRecorder audioRecorder,
+                PhotoCaptureUseCase photos,
+                VideoRecordingUseCase videos,
+                AudioRecordingUseCase audio,
+                CaptureEventUseCase captureEvents) {
             this.camera = camera;
+            this.audioRecorder = audioRecorder;
+            this.photos = photos;
+            this.videos = videos;
             this.audio = audio;
-            this.repository = repository;
+            this.captureEvents = captureEvents;
         }
 
-        public CameraPreview camera() { return camera; }
-        public CaptureRepository repository() { return repository; }
+        public CameraXCameraGatewayImpl camera() { return camera; }
+        public PhotoCaptureUseCase photoCapture() { return photos; }
+        public VideoRecordingUseCase videoRecording() { return videos; }
+        public AudioRecordingUseCase audioRecording() { return audio; }
+        public CaptureEventUseCase captureEvents() { return captureEvents; }
 
         public void release() {
             camera.release();
-            audio.release();
+            audioRecorder.release();
         }
     }
 }
