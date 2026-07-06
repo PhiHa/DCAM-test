@@ -24,7 +24,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.DCAMtest">
         <activity
-            android:name=".MainActivity"
+            android:name=".app.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.DCAMtest"
             android:windowSoftInputMode="adjustResize">

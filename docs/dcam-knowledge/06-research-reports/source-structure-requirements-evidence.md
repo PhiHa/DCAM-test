@@ -1,14 +1,14 @@
 # Source structure and requirement evidence report
 
-Audit date: **2026-07-04** (Asia/Saigon)  
-Repository baseline: commit `ab76538` (`Refactor, add prototype, sumary project docs`)  
+Audit date: **2026-07-06** (Asia/Saigon)
+Repository baseline: refactored working tree based on commit `9857cea` (`add documents`)
 Documentation baseline: local Confluence digest snapshot dated **2026-07-03**
 
 ## Executive conclusion
 
 The current project **substantially satisfies the documented architecture direction**, but it **only partially satisfies the MVP functional baseline** and does **not yet prove MVP acceptance or production readiness**.
 
-The strongest evidence is real separation between presentation, application workflows, domain contracts, repository coordination, and Android/provider adapters. A source-level architecture test enforces that the domain, application, and repository layers do not import Android, CameraX, Room, WorkManager, or concrete adapter packages. Capture is local-first, physical and touch controls share application commands, configuration falls back to safe local defaults, and online log upload is asynchronous and optional.
+The strongest evidence is a feature-first package structure with explicit `app`, `feature`, `platform`, and `core` ownership. Product workflows retain the required ViewModel -> UseCase -> Repository -> Service Interface -> Platform Adapter direction. A source-level architecture test enforces dependency direction and rejects production classes outside those four package families. Capture is local-first, physical and touch controls share application commands, configuration falls back to safe local defaults, and online log upload is asynchronous and optional.
 
 The largest gaps are product-critical: no approved DCAM-BDMA Data Contract, per-media metadata/schema version, persisted media lifecycle, integrity/checksum, low-storage policy, GPS capture, process-death recovery, BDMA import proof, or real BodyCamera compatibility matrix. Empty future service interfaces are useful extension points, but are not implemented features.
 
@@ -17,8 +17,8 @@ The largest gaps are product-critical: no approved DCAM-BDMA Data Contract, per-
 | Question | Finding |
 |---|---|
 | Is the code modular? | **Yes at package/layer level; partially at build level.** There is one Gradle `:app` module, so isolation is source/test-enforced rather than compiler-enforced between Gradle modules. |
-| Is it expandable? | **Yes structurally.** Use cases, repository/service contracts, manual composition, and adapter packages give clear extension seams. Future interfaces without methods demonstrate intent, not completed capability. |
-| Is core logic tied to one hardware implementation? | **Mostly no, but portability is not yet proven.** Domain/application code is Android- and vendor-independent; the current runtime adapter is CameraX and composition is hard-wired in `MainActivity`. Real devices and vendor fallbacks remain untested. |
+| Is it expandable? | **Yes structurally.** Feature slices, use cases, repository/service contracts, explicit composition, and platform adapters give clear extension seams. Future interfaces without methods demonstrate intent, not completed capability. |
+| Is core logic tied to one hardware implementation? | **Mostly no, but portability is not yet proven.** Feature application/domain code is Android- and vendor-independent; `AppComposition` selects the current CameraX adapter. Real devices and vendor fallbacks remain untested. |
 | Is core operation tied to online services? | **No for current capture/storage.** The capture flow contains no cloud dependency. Loggly upload is token-gated, network-constrained, queued, and asynchronous. Diagnostics are nevertheless still concretely Loggly-oriented. |
 | Does the project satisfy the full requirement baseline? | **No.** Architecture alignment is strong; functional MVP coverage is partial; acceptance targets need missing implementation plus device/BDMA/QA evidence. |
 
@@ -47,36 +47,32 @@ Status meanings:
 
 ## Actual source structure
 
-The repository contains one Android application module, 76 production Java files, 12 local unit-test files, and 17 `@Test` methods at the audited baseline.
+The repository contains one Android application module, 77 production Java files, 12 local unit-test files, and 18 `@Test` methods at the audited baseline.
 
 ```text
 :app
 └── com.dvid.dcam
-    ├── presentation/                 UI state and ViewModel
-    ├── application/command,usecase/ Shared commands and workflows
-    ├── domain/model,repository,
-    │   service,event/                Platform-independent contracts
-    ├── data/repository/              Repository coordination
-    ├── camera/, audio/, device/      Android capability adapters
-    ├── storage/, config/, logging/   Local/provider adapters
-    ├── platform/recording/           Foreground-service support
-    ├── data/db/                      Room schema and migrations
-    ├── input/                        Physical-key adapter
-    └── MainActivity                  Composition root and UI shell
+    ├── app/                          Entry point, composition, navigation, shared presentation
+    ├── feature/
+    │   ├── capture/                  Capture application/domain/data vertical slice
+    │   ├── media/                    Media application/domain/data/presentation slice
+    │   ├── device/                   Device application/domain/data vertical slice
+    │   └── */domain/                 Future capability scaffolds
+    ├── platform/                     Android/hardware/filesystem/provider implementations
+    └── core/                         Cross-feature config and logging contracts/models
 ```
 
 | Boundary | Direct evidence | Assessment |
 |---|---|---|
 | Build/module | [`settings.gradle`](../../../settings.gradle) includes only `:app`; [`app/build.gradle`](../../../app/build.gradle) enables Java, ViewBinding, CameraX, Room, WorkManager, LiveData, and ViewModel. | Package-modular monolith, not multi-module. Appropriate for the current size, but Gradle cannot enforce every internal boundary. |
-| Presentation | [`MainViewModel`](../../../app/src/main/java/com/dvid/dcam/presentation/MainViewModel.java) exposes `LiveData<MainUiState>` and invokes use cases; [`MainUiState`](../../../app/src/main/java/com/dvid/dcam/presentation/MainUiState.java) is immutable. | Matches MVVM direction. ViewModel still attaches and constructs its use cases, which is acceptable manual composition but could be cleaner as features grow. |
-| Application | Small classes such as [`StartVideoUseCase`](../../../app/src/main/java/com/dvid/dcam/application/usecase/StartVideoUseCase.java) depend only on repository contracts. | Workflow entry points exist and are platform-independent. Current use cases are thin delegation rather than rich policy. |
-| Domain | [`CaptureRepository`](../../../app/src/main/java/com/dvid/dcam/domain/repository/CaptureRepository.java), [`CameraService`](../../../app/src/main/java/com/dvid/dcam/domain/service/CameraService.java), models, and domain events expose no CameraX/vendor types. | Strong dependency-inversion seam. |
-| Repository | [`DefaultCaptureRepository`](../../../app/src/main/java/com/dvid/dcam/data/repository/DefaultCaptureRepository.java) coordinates `CameraService` and `AudioService`, not concrete camera/audio classes. | Conforms to the documented dependency rule. |
-| Platform/provider adapters | [`CameraPreview`](../../../app/src/main/java/com/dvid/dcam/camera/CameraPreview.java), [`AudioRecorder`](../../../app/src/main/java/com/dvid/dcam/audio/AudioRecorder.java), [`AndroidDeviceInfoProvider`](../../../app/src/main/java/com/dvid/dcam/device/AndroidDeviceInfoProvider.java), and [`DcamLogService`](../../../app/src/main/java/com/dvid/dcam/logging/DcamLogService.java) implement domain-facing services. | Android/provider code is concentrated outside domain/application. |
-| Composition | [`MainActivity`](../../../app/src/main/java/com/dvid/dcam/MainActivity.java) creates adapters, repositories, ViewModel, and command router. | Dependencies are visible and replaceable, but changing runtime implementations currently requires editing the Activity. |
-| Boundary enforcement | [`LayerDependencyTest`](../../../app/src/test/java/com/dvid/dcam/architecture/LayerDependencyTest.java) scans imports in domain, application, and repositories and rejects platform/concrete dependencies. | Valuable regression guard; package rules are executable rather than only documented. |
+| App shell | [`MainActivity`](../../../app/src/main/java/com/dvid/dcam/app/MainActivity.java) renders ViewBinding screens; [`MainViewModel`](../../../app/src/main/java/com/dvid/dcam/app/presentation/MainViewModel.java) exposes immutable cross-feature UI state. | Matches MVVM direction while keeping app lifecycle/navigation outside feature logic. |
+| Feature application/domain | Small classes such as [`StartVideoUseCase`](../../../app/src/main/java/com/dvid/dcam/feature/capture/application/StartVideoUseCase.java) depend on [`CaptureRepository`](../../../app/src/main/java/com/dvid/dcam/feature/capture/domain/CaptureRepository.java); `CameraService` and models expose no CameraX/vendor types. | Workflow and contract ownership is cohesive and platform-independent. Current use cases remain thin delegation rather than rich policy. |
+| Feature repository/data | [`DefaultCaptureRepository`](../../../app/src/main/java/com/dvid/dcam/feature/capture/data/DefaultCaptureRepository.java) coordinates `CameraService` and `AudioService`, not concrete camera/audio classes. | Conforms to the documented repository dependency rule. |
+| Platform adapters | [`CameraPreview`](../../../app/src/main/java/com/dvid/dcam/platform/camera/CameraPreview.java), [`AudioRecorder`](../../../app/src/main/java/com/dvid/dcam/platform/audio/AudioRecorder.java), [`AndroidDeviceInfoProvider`](../../../app/src/main/java/com/dvid/dcam/platform/device/AndroidDeviceInfoProvider.java), and [`DcamLogService`](../../../app/src/main/java/com/dvid/dcam/platform/logging/DcamLogService.java) implement feature/core contracts. | Android/provider code is visibly concentrated under `platform`. |
+| Composition | [`AppComposition`](../../../app/src/main/java/com/dvid/dcam/app/AppComposition.java) selects adapters and repositories and creates the lifecycle-bound capture runtime. | Concrete selection is explicit and no longer mixed into Activity rendering. Alternate adapter selection and composition tests remain future work. |
+| Boundary enforcement | [`LayerDependencyTest`](../../../app/src/test/java/com/dvid/dcam/architecture/LayerDependencyTest.java) checks core, feature logic, app presentation, platform direction, and top-level package families. | Package rules are executable rather than only documented. |
 
-One transitional leak is correctly confined to the adapter layer: [`DcamMediaOutput`](../../../app/src/main/java/com/dvid/dcam/storage/DcamMediaOutput.java) exposes CameraX output types to camera/storage adapters. Those types do not enter domain, application, repository, or presentation contracts.
+One transitional leak is correctly confined to platform code: [`DcamMediaOutput`](../../../app/src/main/java/com/dvid/dcam/platform/storage/DcamMediaOutput.java) exposes CameraX output types to camera/storage adapters. Those types do not enter feature application/domain/data or app-presentation contracts.
 
 ## Verified runtime flows
 
@@ -96,11 +92,11 @@ physical key ──┘       -> use case
 
 Evidence:
 
-1. [`HardwareButtonRouter`](../../../app/src/main/java/com/dvid/dcam/input/HardwareButtonRouter.java) maps BodyCamera keys to `DcamCommandHandler`, the same interface implemented by `MainViewModel`; the router has focused unit tests.
-2. [`MainViewModel`](../../../app/src/main/java/com/dvid/dcam/presentation/MainViewModel.java) delegates photo/video/SOS/audio actions to individual use cases and maps domain events to UI state.
-3. [`DefaultCaptureRepository`](../../../app/src/main/java/com/dvid/dcam/data/repository/DefaultCaptureRepository.java) coordinates domain service interfaces.
-4. [`CameraPreview`](../../../app/src/main/java/com/dvid/dcam/camera/CameraPreview.java) maps CameraX start/finalize/photo/error callbacks to `CaptureEventListener`, serializes the SOS handoff by finalizing the active recording first, and starts/stops [`RecordingForegroundService`](../../../app/src/main/java/com/dvid/dcam/platform/recording/RecordingForegroundService.java).
-5. [`DcamMediaOutputFactory`](../../../app/src/main/java/com/dvid/dcam/storage/DcamMediaOutputFactory.java) translates logical media descriptors into app files or Android MediaStore operations.
+1. [`HardwareButtonRouter`](../../../app/src/main/java/com/dvid/dcam/platform/input/HardwareButtonRouter.java) maps BodyCamera keys to `DcamCommandHandler`, the same interface implemented by `MainViewModel`; the router has focused unit tests.
+2. [`MainViewModel`](../../../app/src/main/java/com/dvid/dcam/app/presentation/MainViewModel.java) delegates photo/video/SOS/audio actions to feature use cases and maps domain events to UI state.
+3. [`DefaultCaptureRepository`](../../../app/src/main/java/com/dvid/dcam/feature/capture/data/DefaultCaptureRepository.java) coordinates feature-domain service interfaces.
+4. [`CameraPreview`](../../../app/src/main/java/com/dvid/dcam/platform/camera/CameraPreview.java) maps CameraX start/finalize/photo/error callbacks to `CaptureEventListener`, serializes the SOS handoff by finalizing the active recording first, and starts/stops [`RecordingForegroundService`](../../../app/src/main/java/com/dvid/dcam/platform/recording/RecordingForegroundService.java).
+5. [`DcamMediaOutputFactory`](../../../app/src/main/java/com/dvid/dcam/platform/storage/DcamMediaOutputFactory.java) translates logical media descriptors into app files or Android MediaStore operations.
 
 This proves an implemented application flow. It does not prove the documented 99% success target, interruption recovery, or operation on every target BodyCamera.
 
@@ -114,7 +110,7 @@ application/default property
     -> parsed DcamConfig OR safe defaults on error
 ```
 
-[`CsonConfigurationSource`](../../../app/src/main/java/com/dvid/dcam/config/CsonConfigurationSource.java) hides the local file store behind `ConfigurationSource`. [`DefaultConfigurationRepository`](../../../app/src/main/java/com/dvid/dcam/data/repository/DefaultConfigurationRepository.java) logs parsing/loading failures and returns `DcamConfig.defaults(...)`, so optional configuration failure does not prevent startup. Remote/runtime precedence is not implemented.
+[`CsonConfigurationSource`](../../../app/src/main/java/com/dvid/dcam/platform/config/CsonConfigurationSource.java) hides the local file store behind the core `ConfigurationSource` contract. [`DefaultConfigurationRepository`](../../../app/src/main/java/com/dvid/dcam/core/config/DefaultConfigurationRepository.java) logs parsing/loading failures and returns `DcamConfig.defaults(...)`, so optional configuration failure does not prevent startup. Remote/runtime precedence is not implemented.
 
 ### Device status
 
@@ -123,7 +119,7 @@ AndroidDeviceInfoProvider -> DeviceRepository
     -> RefreshDeviceStatusUseCase -> MainViewModel -> MainUiState
 ```
 
-[`AndroidDeviceInfoProvider`](../../../app/src/main/java/com/dvid/dcam/device/AndroidDeviceInfoProvider.java) currently reads battery percentage, available app-storage bytes, and GPS capability/enabled status. It handles missing services/runtime failures with explicit unknown/unavailable states. It does not acquire GPS coordinates or cover network, GMS, USB, firmware, camera, or microphone capability in the status model.
+[`AndroidDeviceInfoProvider`](../../../app/src/main/java/com/dvid/dcam/platform/device/AndroidDeviceInfoProvider.java) currently reads battery percentage, available app-storage bytes, and GPS capability/enabled status. It handles missing services/runtime failures with explicit unknown/unavailable states. It does not acquire GPS coordinates or cover network, GMS, USB, firmware, camera, or microphone capability in the status model.
 
 ### Local-first and optional online diagnostics
 
@@ -135,11 +131,11 @@ capture/audio adapter -> LogService -> DcamLogger
                                             -> Loggly only when token is configured
 ```
 
-[`DcamLogger`](../../../app/src/main/java/com/dvid/dcam/logging/DcamLogger.java) writes locally before queuing remote diagnostics. [`LogOutbox`](../../../app/src/main/java/com/dvid/dcam/logging/LogOutbox.java) persists events, and [`LogUploadScheduler`](../../../app/src/main/java/com/dvid/dcam/logging/LogUploadScheduler.java) requires a connected network. [`LogglyUploadWorker`](../../../app/src/main/java/com/dvid/dcam/logging/LogglyUploadWorker.java) exits successfully when no token is configured. Therefore Internet/Loggly is not on the capture success path. However, the diagnostics implementation and naming are provider-specific, so general provider neutrality is incomplete.
+[`DcamLogger`](../../../app/src/main/java/com/dvid/dcam/platform/logging/DcamLogger.java) writes locally before queuing remote diagnostics. [`LogOutbox`](../../../app/src/main/java/com/dvid/dcam/platform/logging/LogOutbox.java) persists events, and [`LogUploadScheduler`](../../../app/src/main/java/com/dvid/dcam/platform/logging/LogUploadScheduler.java) requires a connected network. [`LogglyUploadWorker`](../../../app/src/main/java/com/dvid/dcam/platform/logging/LogglyUploadWorker.java) exits successfully when no token is configured. Therefore Internet/Loggly is not on the capture success path. However, the diagnostics implementation and naming are provider-specific, so general provider neutrality is incomplete.
 
 ### BDMA boundary
 
-DCAM currently produces deterministic local media paths and a read-only in-app browser. [`DcamStorage`](../../../app/src/main/java/com/dvid/dcam/storage/DcamStorage.java) creates type/date folders, [`DcamFileName`](../../../app/src/main/java/com/dvid/dcam/storage/DcamFileName.java) creates deterministic prototype names, and [`LocalMediaBrowserService`](../../../app/src/main/java/com/dvid/dcam/storage/LocalMediaBrowserService.java) restricts browsing to the four DCAM media roots and blocks path traversal.
+DCAM currently produces deterministic local media paths and a read-only in-app browser. [`DcamStorage`](../../../app/src/main/java/com/dvid/dcam/platform/storage/DcamStorage.java) creates type/date folders, [`DcamFileName`](../../../app/src/main/java/com/dvid/dcam/platform/storage/DcamFileName.java) creates deterministic prototype names, and [`LocalMediaBrowserService`](../../../app/src/main/java/com/dvid/dcam/platform/storage/LocalMediaBrowserService.java) restricts browsing to the four DCAM media roots and blocks path traversal.
 
 There is no BDMA-side code in this repository, no approved discovery contract, and no per-media metadata record for BDMA to validate. Consequently, the intended passive-producer boundary is structurally compatible with ADB, but end-to-end DCAM-BDMA compatibility is not demonstrated.
 
@@ -151,8 +147,8 @@ There is no BDMA-side code in this repository, no approved discovery contract, a
 |---|---|---|---|---|
 | ARCH-01 | Java-first Android, XML/ViewBinding, MVVM, LiveData, Gradle | [`app/build.gradle`](../../../app/build.gradle), XML layouts under [`res/layout`](../../../app/src/main/res/layout), `MainViewModel`, `MainUiState` | **Verified** | Current stack matches the development standard. |
 | ARCH-02 | UI -> ViewModel -> UseCase -> Repository -> service adapter | `MainActivity`, `MainViewModel`, use cases, `DefaultCaptureRepository`, `CameraService`; enforced by `LayerDependencyTest` | **Verified** | The main capture/device/media flows follow the target direction. |
-| ARCH-03 | Core business logic independent of Android/vendor/provider APIs | No Android/AndroidX/Google imports in domain, application, or `data/repository`; architecture test checks this | **Verified** | Core contracts and workflow entry points can be tested/reused without CameraX or a vendor SDK. |
-| ARCH-04 | Modular and maintainable structure | 14 responsibility-focused top-level packages; domain has explicit models/repositories/services/events | **Partial** | Strong source modularity; only one Gradle module and a large Activity composition/UI shell. |
+| ARCH-03 | Core business logic independent of Android/vendor/provider APIs | No Android/AndroidX/Google imports in `core` or feature application/domain/data; architecture test checks this | **Verified** | Core and feature workflows/contracts can be tested without CameraX or a vendor SDK. |
+| ARCH-04 | Modular and maintainable structure | Four enforced top-level package families with vertical `capture`, `media`, and `device` slices | **Partial** | Source ownership and dependency direction are clear; compiler isolation remains limited by the single Gradle module, and cross-feature presentation still sits in one ViewModel/Activity shell. |
 | ARCH-05 | Hardware capability behind replaceable adapters | `CameraService`, `AudioService`, `DeviceService`; CameraX/MediaRecorder/Android implementations outside core | **Partial** | Replacing adapters leaves core mostly unchanged. Runtime selection, vendor fallback, and device matrix are missing; manifest requires a camera. |
 | ARCH-06 | Offline-first core; cloud must not block capture | No cloud call in use cases/repositories/camera output; local storage/logging; token-gated WorkManager upload | **Verified** for current capture path | Video, photo, audio, storage, config, and UI do not require an online service. Metadata/BDMA readiness is still absent, so the entire offline MVP is not complete. |
 | ARCH-07 | Provider-neutral cloud/config/update integration | Empty `CloudService`, `RemoteConfigService`, and `UpdateService`; concrete Loggly worker is isolated in logging package | **Scaffolded** | Extension seams exist, but there is no provider-neutral implementation contract and diagnostics remain Loggly-specific. |
@@ -187,12 +183,12 @@ The architecture is a good foundation, but it should not be interpreted as a com
 
 | Area | Current limitation | Why it matters | Classification |
 |---|---|---|---|
-| Composition root | `MainActivity` creates storage, config, logging, device, media, camera, audio, repositories, ViewModel, and input routing while also rendering screens. | Every new adapter or environment choice increases Activity coupling and makes alternate compositions harder to test. | **Focused refactor** |
+| Composition root | `AppComposition` now selects storage, config, logging, device, media, camera, audio, and repository implementations; `MainActivity` retains lifecycle, rendering, and input routing. | Activity coupling is reduced, but adapter selection is still static and `AppComposition` lacks focused composition tests or capability-based selection. | **Improved; incremental follow-up** |
 | Camera boundary | `CameraPreview` is both a `FrameLayout` visual component and the `CameraService` implementation. It owns CameraX binding, recording, capture callbacks, messages, and foreground-service signaling. | UI lifecycle, capture lifecycle, and device implementation cannot evolve independently; headless recovery and vendor SDK substitution become harder. | **Focused refactor before recovery/vendor work** |
 | Recording ownership | `RecordingForegroundService` supplies notification/foreground visibility, but `CameraPreview`, which is Activity lifecycle-owned, owns the active CameraX `Recording`. | Foreground status alone does not preserve recording across Activity recreation or process death. | **Reliability design and implementation** |
 | ViewModel construction | `MainViewModel.attach(...)` creates capture use cases and holds a mutable attached repository. | It works for one screen, but feature growth can produce lifecycle-sensitive attachment state and make dependency tests more complicated. | **Incremental refactor** |
 | Use-case depth | Most capture use cases are one-line repository delegation. | There is currently no application-level location for storage preflight, lifecycle transition rules, metadata finalization, or retry policy. Thin use cases are acceptable now, but policy must not drift into the Activity or adapters. | **Future implementation discipline** |
-| Build modularity | All packages compile inside one `:app` module. `LayerDependencyTest` checks selected import rules, but Gradle does not enforce module visibility. | Accidental coupling remains possible outside the tested packages as the team and feature count grow. | **Accept now; reconsider later** |
+| Build modularity | All packages compile inside one `:app` module. `LayerDependencyTest` checks all production classes for allowed top-level ownership and targeted dependency rules, but Gradle does not enforce module visibility. | Import-level regression risk is reduced; reflection, same-package access mistakes, and untested dependency forms still lack compiler-module enforcement. | **Accept now; reconsider later** |
 | Future service catalog | Cloud, remote config, update, metadata, integrity, security, storage-contract, streaming, and PTT interfaces are empty. | They reserve names but do not yet define testable capability contracts or prove extensibility in operation. | **Scaffold only** |
 | Threading model | Media browsing, Room, and upload work are offloaded, while CameraX uses its main-executor callback contract. No vendor command queue or measured priority policy exists. | A vendor SDK or long-running stateful operation may require serialization; callback execution and UI work need profiling on real hardware. | **Partial implementation** |
 
@@ -216,7 +212,7 @@ The architecture is a good foundation, but it should not be interpreted as a com
 
 ### Verification limitations
 
-- The 17 local unit tests cover useful boundaries but not the complete capture repository/use-case flow, CameraX behavior, lifecycle recovery, low storage, GPS, permissions, database migration execution, or BDMA integration.
+- The 18 local unit tests cover useful boundaries, including two architecture rules, but not the complete capture repository/use-case flow, CameraX behavior, lifecycle recovery, low storage, GPS, permissions, database migration execution, or BDMA integration.
 - The instrumentation test is still a generated placeholder; there is no automated real-device UI/camera suite.
 - A successful debug build and lint run prove build health, not recording reliability, corruption resistance, battery behavior, performance, or security.
 - No audited evidence demonstrates the `>=99%` recording/image target, `100%` BDMA import target, zero critical corruption, or zero critical main-flow crashes.
@@ -248,7 +244,7 @@ The exit condition is not merely “files are created”; it is “each artifact
 
 ### Direction 3: make runtime composition and hardware substitution clearer
 
-1. Extract dependency creation from `MainActivity` into a small application composition/factory layer. Keep the Activity responsible for Android lifecycle and rendering.
+1. **Completed structurally:** `AppComposition` now owns concrete dependency creation while `MainActivity` retains Android lifecycle and rendering. Add fake/capability-driven composition tests before claiming runtime substitutability.
 2. Separate the preview widget from the camera/capture driver so recording ownership is not inherently tied to a View.
 3. Decide whether the foreground service or another lifecycle owner should own long-running recording and recovery, then implement that design explicitly.
 4. Provide adapter selection by capability/configuration for CameraX, vendor SDK, and unsupported/fake implementations.
@@ -271,7 +267,7 @@ This is targeted refactoring around composition and lifecycle—not a rewrite of
 - Keep physical keys and touch actions converging on application commands rather than separate hardware-only business flows.
 - Add Device/User foundations before streaming and PTT so identity and authorization do not get embedded in provider SDK callbacks.
 - Do not add speculative methods to empty interfaces; define them from an approved use case and expected domain result/error model.
-- Keep the existing single Gradle module until measured coupling, build performance, parallel ownership, or enforcement needs justify extraction. Likely future boundaries are domain/application, data, Android platform adapters, and app UI.
+- Keep the existing single Gradle module until measured coupling, build performance, parallel ownership, or enforcement needs justify extraction. The feature-first package boundaries can become future Gradle boundaries without another conceptual reorganization.
 
 ### Direction 6: turn quality targets into repeatable evidence
 
@@ -288,7 +284,7 @@ This is targeted refactoring around composition and lifecycle—not a rewrite of
 
 | Timing | Recommended action |
 |---|---|
-| **Now / before major feature work** | Extract composition from `MainActivity`; define approved data/lifecycle contracts; add fake-based workflow tests; keep new policy out of UI and adapters. |
+| **Now / before major feature work** | Define approved data/lifecycle contracts; add fake-based workflow and composition tests; keep new policy out of UI and adapters. (`AppComposition` extraction is complete.) |
 | **Before vendor camera or recovery work** | Separate preview UI from capture ownership and decide the long-running recording lifecycle owner. |
 | **Before adding another diagnostics provider** | Introduce a neutral uploader/local-only boundary around Loggly-specific code. |
 | **When metadata/storage contracts are approved** | Implement persistent media records, state transitions, integrity, GPS association, and BDMA fixtures through the existing repository/service direction. |
@@ -304,19 +300,19 @@ This is targeted refactoring around composition and lifecycle—not a rewrite of
 | P0 | Implement storage safety | Configured threshold/policy, preflight checks, safe finalize/stop behavior, and near-full/exhausted-device tests. |
 | P0 | Validate target hardware | Device/firmware/Android capability matrix with record, photo, audio, key, storage, lifecycle, and permission results. |
 | P1 | Implement valid GPS-to-metadata flow | Fake-location unit tests and unavailable/stale/valid real-device scenarios. |
-| P1 | Make adapter selection explicit | Composition factory or DI boundary with CameraX/vendor/local implementations and contract tests. |
+| P1 | Make adapter selection capability-driven | `AppComposition` exists; add CameraX/vendor/unsupported selections plus adapter contract tests. |
 | P1 | Generalize diagnostics provider boundary | Provider-neutral upload contract, local-only implementation, Loggly adapter, and offline/failure tests. |
 | P1 | Expand automated coverage | Fake service tests for use cases/repositories, CameraX instrumentation, Room migration tests, and UI/permission/lifecycle tests. |
-| P2 | Consider multiple Gradle modules | ADR based on measured build/team coupling; suggested boundaries are domain/application, platform, data, and app UI. |
+| P2 | Consider multiple Gradle modules | ADR based on measured build/team coupling; preserve the established app/core/feature/platform dependency direction if extraction becomes justified. |
 
 ## Verification record
 
 Static verification performed during this audit:
 
-- Confirmed a single `:app` Gradle module and enumerated 76 production Java files, 12 local unit-test files, and 17 test methods.
-- Confirmed no `android.*`, `androidx.*`, or `com.google.*` imports under `domain`, `application`, or `data/repository`.
+- Confirmed a single `:app` Gradle module and enumerated 77 production Java files, 12 local unit-test files, and 18 test methods.
+- Confirmed `core` and feature application/domain/data do not import Android, AndroidX, Google/provider APIs, `app`, or `platform`; confirmed platform does not import the app shell.
 - Reviewed composition, capture, storage, config, device-status, logging/outbox, Room migration, physical-key, and media-browser paths.
-- Confirmed the repository was clean before report creation.
+- Recorded the evidence against the refactored working tree based on commit `9857cea`; the structural changes are intentionally uncommitted during this audit.
 
 Build verification command:
 
@@ -324,7 +320,7 @@ Build verification command:
 .\gradlew.bat testDebugUnitTest assembleDebug
 ```
 
-Result: **PASS** on 2026-07-04; all 17 local unit tests passed and the debug APK assembled successfully. Automated unit/build success is necessary engineering evidence, but it does not substitute for BodyCamera, BDMA, performance, reliability, security, or QA acceptance evidence.
+Result: **PASS** on 2026-07-06; all 18 local unit tests passed and the debug APK assembled successfully. Automated unit/build success is necessary engineering evidence, but it does not substitute for BodyCamera, BDMA, performance, reliability, security, or QA acceptance evidence.
 
 Android lint verification:
 
@@ -332,7 +328,7 @@ Android lint verification:
 .\gradlew.bat lintDebug
 ```
 
-Result: **PASS** on 2026-07-04 with no lint errors. Lint reported 23 non-blocking warnings (primarily compound-drawable and hardcoded-text suggestions); these are quality backlog items rather than proof of MVP acceptance.
+Result: **PASS** on 2026-07-06 with no lint errors. Lint reported 23 non-blocking warnings (primarily compound-drawable and hardcoded-text suggestions); these are quality backlog items rather than proof of MVP acceptance.
 
 ## Final assessment
 
