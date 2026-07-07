@@ -5,10 +5,8 @@ import android.os.Environment;
 import com.dvid.dcam.BuildConfig;
 import java.io.File;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 public final class DcamStorage {
-    private static final DateTimeFormatter FOLDER_DATE = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private final DcamStorageMode mode;
     private final File root;
 
@@ -29,11 +27,12 @@ public final class DcamStorage {
 
     public DcamStorageMode getMode() { return mode; }
     public boolean isPublicDcim() { return mode == DcamStorageMode.PUBLIC_DCIM; }
-    public File rootDirectory() { return root; }
+    public File rootDirectory() { return new File(root, "Media"); }
 
-    public void ensureFolders(LocalDateTime at) {
+    public void ensureFolders() {
         for (DcamFileType type : DcamFileType.values())
-            new File(root, type.getFolder() + "/" + FOLDER_DATE.format(at)).mkdirs();
+            new File(rootDirectory(), type.getFolder()).mkdirs();
+        new File(root, "Temp").mkdirs();
     }
 
     public File outputFile(DcamFileType type, String accountUserId, String policeUserId,
@@ -43,7 +42,7 @@ public final class DcamStorage {
 
     public DcamMediaFile mediaFile(DcamFileType type, String accountUserId, String policeUserId,
                                    LocalDateTime at, boolean encrypted) {
-        File dir = new File(root, type.getFolder() + "/" + FOLDER_DATE.format(at));
+        File dir = new File(rootDirectory(), type.getFolder());
         String fileName = DcamFileName.build(type, accountUserId, policeUserId, at, encrypted);
         return new DcamMediaFile(type, fileName, new File(dir, fileName), at);
     }

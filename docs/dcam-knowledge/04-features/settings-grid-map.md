@@ -6,7 +6,7 @@ The settings home behaves like an app launcher: a three-column grid containing o
 
 | Grid item | Detail-list contents | OEM/CSON source areas for later implementation |
 |---|---|---|
-| Files | Browse `video`, `SOS`, `image`, and `audio`; open media in an Android viewer | DCAM-managed media folders only |
+| Files | Browse `Video`, `IMP`, `Image`, and `Audio`; open media in an Android viewer | Contract `Media` folders only |
 | Recording | Recording, segment length, pre-record, delay, boot/loop and battery warning | OEM `recording`; CSON `[video] file.*` |
 | Cameras | Rear/front preview and photo sizes, rotation, IR and flashlight | OEM rear/front camera; CSON `[camera]` |
 | Video streams | Default stream plus main/sub codec, resolution, FPS and quality | OEM main/sub stream; CSON `[video] main.*`, `sub.*` |
@@ -27,4 +27,4 @@ The settings home behaves like an app launcher: a three-column grid containing o
 - Validate values against the device-provided option lists before writing.
 - Keep recording/capture available if optional configuration cannot be read.
 - Log important setting changes without logging passwords, passcodes, tokens, or secret material.
-- Do not finalize BDMA metadata/storage settings until the Data Contract is approved.
+- Data Contract 1.2 is approved: settings must honor Internal/External/Auto media selection, MP4-only MD5, AES-256 enablement, and cleanup rules. Store operational settings in `dcam.db`, not device-only `dcam_config.cson`; detailed UI/schema design remains pending.

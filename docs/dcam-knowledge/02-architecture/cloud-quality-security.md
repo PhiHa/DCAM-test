@@ -65,7 +65,7 @@ Rules:
 - Validate application updates before installation.
 - Keep local logs free of sensitive content.
 
-Encryption is intentionally unresolved: Phase 2 may introduce basic encryption and Phase 3 extends it, but algorithm, keys, rotation, media/metadata scope, integrity, and BDMA decryption compatibility require a dedicated design.
+Data Contract 1.2 now decides that enabled media encryption is AES-256 and uses `_enc` or `_IMP_enc` filename suffixes. Cipher/mode details, keys, rotation, exact media/metadata scope, integrity interaction, and BDMA decryption behavior still require the dedicated Security & Encryption Design.
 
 ## Local build-property boundary
 

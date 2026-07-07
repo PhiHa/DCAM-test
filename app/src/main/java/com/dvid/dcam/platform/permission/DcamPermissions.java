@@ -1,12 +1,15 @@
 package com.dvid.dcam.platform.permission;
 
 import android.Manifest;
+import android.content.Context;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import java.util.ArrayList;
 import java.util.List;
 
 public final class DcamPermissions {
     private DcamPermissions() {}
+
     public static String[] runtime() {
         List<String> permissions = new ArrayList<>();
         permissions.add(Manifest.permission.CAMERA);
@@ -19,5 +22,12 @@ public final class DcamPermissions {
             permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
         }
         return permissions.toArray(new String[0]);
+    }
+
+    public static boolean allRuntimeGranted(Context context) {
+        for (String permission : runtime()) {
+            if (context.checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) return false;
+        }
+        return true;
     }
 }

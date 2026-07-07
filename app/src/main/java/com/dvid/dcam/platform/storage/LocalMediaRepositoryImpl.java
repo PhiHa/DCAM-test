@@ -84,7 +84,7 @@ public final class LocalMediaRepositoryImpl implements MediaRepository {
         String lower = name.toLowerCase(Locale.ROOT);
         if (lower.endsWith(".mp4")) return "video/mp4";
         if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
-        if (lower.endsWith(".m4a")) return "audio/mp4";
+        if (lower.endsWith(".aac")) return "audio/aac";
         if (lower.endsWith(".mp3")) return "audio/mpeg";
         if (lower.endsWith(".wav")) return "audio/wav";
         return "application/octet-stream";

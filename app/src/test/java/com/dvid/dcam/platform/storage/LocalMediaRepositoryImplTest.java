@@ -11,14 +11,14 @@ import org.junit.jupiter.api.Test;
 final class LocalMediaRepositoryImplTest {
     @Test void listsOnlyDcamRootsAndMediaInsideThem() throws Exception {
         Path root = Files.createTempDirectory("dcam-media");
-        Path day = Files.createDirectories(root.resolve("video/2026-07-03"));
-        Files.write(day.resolve("clip.mp4"), new byte[] {1, 2, 3});
+        Path video = Files.createDirectories(root.resolve("Media/Video"));
+        Files.write(video.resolve("clip.mp4"), new byte[] {1, 2, 3});
         LocalMediaRepositoryImpl browser = new LocalMediaRepositoryImpl(new DcamStorage(root.toFile()));
 
         List<MediaEntry> roots = browser.list("");
-        List<MediaEntry> files = browser.list("video/2026-07-03");
+        List<MediaEntry> files = browser.list("Video");
 
-        assertEquals(List.of("video", "SOS", "image", "audio"),
+        assertEquals(List.of("Video", "IMP", "Image", "Audio"),
                 roots.stream().map(MediaEntry::getName).toList());
         assertEquals("clip.mp4", files.get(0).getName());
         assertEquals("video/mp4", files.get(0).getMimeType());
@@ -28,6 +28,6 @@ final class LocalMediaRepositoryImplTest {
         Path root = Files.createTempDirectory("dcam-media");
         LocalMediaRepositoryImpl browser = new LocalMediaRepositoryImpl(new DcamStorage(root.toFile()));
         assertThrows(SecurityException.class, () -> browser.list("../private"));
-        assertThrows(SecurityException.class, () -> browser.list("log"));
+        assertThrows(SecurityException.class, () -> browser.list("Logs"));
     }
 }

@@ -1,20 +1,22 @@
 # Confluence source inventory
 
-Authenticated Confluence API snapshot read on **2026-07-03**. Credentials came from the gitignored local application properties and are not stored here.
+Authenticated Confluence API snapshot initially read on **2026-07-03**, refreshed for the prior four notified pages, and extended with Android Device Operation Requirements on **2026-07-07**. Credentials came from the gitignored local application properties and are not stored here.
 
 ## Pages read
 
 | Area | Page | Version | Last API update (UTC) |
 |---|---|---:|---|
 | Root | [DCAM](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/36536321/DCAM) | 4 | 2026-06-30 02:08 |
-| Root | [DCAM Project Home](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/41648280/DCAM+Project+Home) | 14 | 2026-07-03 06:53 |
+| Root | [DCAM Project Home](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/41648280/DCAM+Project+Home) | 22 | 2026-07-06 03:39 |
 | Product | [DCAM Project Charter](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/41156610) | 10 | 2026-06-29 09:20 |
 | Product | [DCAM Product Vision](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/41648238) | 5 | 2026-07-03 02:13 |
 | Product | [DCAM Roadmap](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/41615474) | 8 | 2026-07-03 01:28 |
 | Product | [DCAM MVP Scope](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/42532866) | 5 | 2026-07-03 02:13 |
 | Sprint operations | [DCAM Phase 2 Documentation Plan](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/41189378) | 8 | 2026-07-03 06:54 |
 | Sprint operations | [DCAM 9-Month Development Plan](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/46759955) | 2 | 2026-07-03 02:14 |
-| Architecture | [DCAM Architecture Home](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47185929) | 7 | 2026-07-03 07:10 |
+| Requirements | [DCAM-BDMA Data Contract](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47743153) | 3 | 2026-07-06 02:11 |
+| Requirements | [10 - Android Device Operation Requirements](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/48496661) | 1 | 2026-07-07 02:23 |
+| Architecture | [DCAM Architecture Home](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47185929) | 15 | 2026-07-06 03:17 |
 | Architecture | [01 - Architecture Overview](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47120395) | 3 | 2026-07-03 05:50 |
 | Architecture | [02 - Architecture Principles](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47120416) | 3 | 2026-07-03 05:51 |
 | Architecture | [03 - Android Platform & Compatibility Strategy](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47120437) | 4 | 2026-07-03 05:48 |
@@ -24,11 +26,12 @@ Authenticated Confluence API snapshot read on **2026-07-03**. Credentials came f
 | Architecture | [07 - Logging, Diagnostics, Performance & Security](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47185971) | 3 | 2026-07-03 05:52 |
 | Architecture | [08 - DCAM-BDMA Integration Boundary](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47153235) | 2 | 2026-07-03 04:57 |
 | Android development | [DCAM Android Training & Architecture Onboarding](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/46825510) | 4 | 2026-07-03 05:35 |
-| Android development | [DCAM Android Development Standard](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47120580) | 2 | 2026-07-03 06:58 |
+| Android development | [DCAM Android Development Standard](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47120580) | 5 | 2026-07-04 14:34 |
 
-## Empty folders at snapshot time
+## Documentation structure update
 
-- [03 - Requirements](https://ducviet.atlassian.net/wiki/spaces/DVID/folder/36470786)
+- `03 - Requirements` is no longer empty. It contains the approved Data Contract, a Requirements Home, the first nine functional groups reported by Project Home v22, and the newly approved `10 - Android Device Operation Requirements` covering dedicated Android operation.
+- Non-functional Requirements are still Not Started.
 - [4.2 - Technical Design](https://ducviet.atlassian.net/wiki/spaces/DVID/folder/47120392)
 - [4.4 - Architecture Decision Records](https://ducviet.atlassian.net/wiki/spaces/DVID/folder/41189399)
 - [05 - Release Management](https://ducviet.atlassian.net/wiki/spaces/DVID/folder/36438024)

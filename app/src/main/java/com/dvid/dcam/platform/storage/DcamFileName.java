@@ -12,7 +12,7 @@ public final class DcamFileName {
                                LocalDateTime at, boolean encrypted) {
         String marker = type.getMarker().isEmpty() ? "" : "_" + type.getMarker();
         String enc = encrypted ? "_enc" : "";
-        return "DSJ_" + accountUserId + "_" + policeUserId + "_" + DATE.format(at) + "_" +
+        return "DCAM_" + accountUserId + "_" + policeUserId + "_" + DATE.format(at) + "_" +
                 TIME.format(at) + marker + enc + "." + type.getExtension();
     }
 }

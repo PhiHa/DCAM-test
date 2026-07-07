@@ -37,9 +37,9 @@ public final class DcamLogger {
     public static synchronized void init(Context context, DeviceInfo deviceInfo) {
         File root = context.getExternalFilesDir(null);
         if (root == null) root = context.getFilesDir();
-        logDir = new File(root, "log");
+        logDir = new File(root, "Logs");
         logDir.mkdirs();
-        logFile = new File(logDir, "app.log");
+        logFile = new File(logDir, "logs.txt");
         if (logOutbox == null) {
             try { logOutbox = new LogOutbox(context); }
             catch (Exception error) { writeInternal("Loggly outbox initialization failed: " + error.getMessage()); }
@@ -127,7 +127,7 @@ public final class DcamLogger {
         LocalDate rotatedDate = null;
         if (activeLogDate == null) activeLogDate = existingLogDate(today);
         if (!activeLogDate.equals(today) && logFile.exists() && logFile.length() > 0) {
-            File archive = new File(logDir, "app-" + LOG_DATE.format(activeLogDate) + ".log");
+            File archive = new File(logDir, "logs-" + LOG_DATE.format(activeLogDate) + ".txt");
             try {
                 if (archive.exists()) appendFile(logFile, archive);
                 else move(logFile, archive);
@@ -153,10 +153,10 @@ public final class DcamLogger {
     }
 
     private static void deleteExpiredLocalLogs(LocalDate cutoff) {
-        File[] files = logDir.listFiles((dir, name) -> name.startsWith("app-") && name.endsWith(".log"));
+        File[] files = logDir.listFiles((dir, name) -> name.startsWith("logs-") && name.endsWith(".txt"));
         if (files == null) return;
         for (File file : files) {
-            String dateText = file.getName().substring(4, file.getName().length() - 4);
+            String dateText = file.getName().substring(5, file.getName().length() - 4);
             try {
                 if (LocalDate.parse(dateText, LOG_DATE).isBefore(cutoff) && !file.delete()) {
                     Log.w(TAG, "Could not delete expired local log " + file.getAbsolutePath());

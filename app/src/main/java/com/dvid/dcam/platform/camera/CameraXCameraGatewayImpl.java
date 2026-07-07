@@ -1,14 +1,8 @@
 package com.dvid.dcam.platform.camera;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
-import android.view.Gravity;
-import android.view.ViewGroup;
-import android.widget.FrameLayout;
-import android.widget.TextView;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
@@ -21,7 +15,6 @@ import androidx.camera.video.Recorder;
 import androidx.camera.video.Recording;
 import androidx.camera.video.VideoCapture;
 import androidx.camera.video.VideoRecordEvent;
-import androidx.camera.view.PreviewView;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.LifecycleOwner;
 import com.dvid.dcam.core.config.domain.DcamConfig;
@@ -36,16 +29,15 @@ import com.dvid.dcam.platform.storage.DcamMediaOutput;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.time.LocalDateTime;
 
-/** CameraX view/adapter. CameraX types do not escape through CameraGateway. */
-@SuppressLint("ViewConstructor")
-public final class CameraXCameraGatewayImpl extends FrameLayout implements CameraGateway {
+/** CameraX camera adapter. CameraX types do not escape through CameraGateway. */
+public final class CameraXCameraGatewayImpl implements CameraGateway {
+    private final Context context;
     private final DcamConfig config;
     private final DcamMediaOutput mediaOutput;
     private final LifecycleOwner lifecycleOwner;
-    private final PreviewView previewView;
+    private final CameraXPreviewView previewView;
     private final LogSink log;
     private final CaptureEventUseCase captureEvents;
-    private final TextView message;
     private final ImageCapture imageCapture = new ImageCapture.Builder().build();
     private final VideoCapture<Recorder> videoCapture;
     private ListenableFuture<ProcessCameraProvider> providerFuture;
@@ -54,48 +46,42 @@ public final class CameraXCameraGatewayImpl extends FrameLayout implements Camer
 
     public CameraXCameraGatewayImpl(Context context, LifecycleOwner lifecycleOwner, DcamConfig config,
                                     DcamMediaOutput mediaOutput, LogSink log,
-                                    CaptureEventUseCase captureEvents) {
-        super(context);
+                                    CaptureEventUseCase captureEvents,
+                                    CameraXPreviewView previewView) {
+        this.context = context;
         this.lifecycleOwner = lifecycleOwner; this.config = config; this.mediaOutput = mediaOutput; this.log = log;
         this.captureEvents = captureEvents;
-        setBackgroundColor(Color.rgb(17, 17, 17));
-        previewView = new PreviewView(context);
-        previewView.setScaleType(PreviewView.ScaleType.FILL_CENTER);
-        addView(previewView, new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        message = new TextView(context);
-        message.setTextColor(Color.WHITE); message.setGravity(Gravity.CENTER); message.setPadding(12, 12, 12, 12);
-        LayoutParams messageParams = new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM);
-        addView(message, messageParams);
+        this.previewView = previewView;
         Recorder recorder = new Recorder.Builder().setQualitySelector(QualitySelector.from(Quality.FHD)).build();
         videoCapture = VideoCapture.withOutput(recorder);
         bindIfPermitted();
     }
 
     public void bindIfPermitted() {
-        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            message.setText(com.dvid.dcam.R.string.camera_permission_required); return;
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            previewView.showPermissionRequired(); return;
         }
-        message.setText("");
-        providerFuture = ProcessCameraProvider.getInstance(getContext());
+        previewView.clearMessage();
+        providerFuture = ProcessCameraProvider.getInstance(context);
         providerFuture.addListener(() -> {
             try {
                 ProcessCameraProvider provider = providerFuture.get();
                 Preview preview = new Preview.Builder().build();
-                preview.setSurfaceProvider(previewView.getSurfaceProvider());
+                preview.setSurfaceProvider(previewView.surfaceProvider());
                 provider.unbindAll();
                 provider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview, imageCapture, videoCapture);
             } catch (Exception error) { showError(error.getMessage()); }
-        }, ContextCompat.getMainExecutor(getContext()));
+        }, ContextCompat.getMainExecutor(context));
     }
 
     @Override public void takePhoto() {
         LocalDateTime at = LocalDateTime.now();
         DcamMediaFile mediaFile = mediaOutput.mediaFile(DcamFileType.IMAGE, config, at, false);
-        ImageCapture.OutputFileOptions options = mediaOutput.imageOptions(getContext(), mediaFile);
-        imageCapture.takePicture(options, ContextCompat.getMainExecutor(getContext()), new ImageCapture.OnImageSavedCallback() {
+        ImageCapture.OutputFileOptions options = mediaOutput.imageOptions(context, mediaFile);
+        imageCapture.takePicture(options, ContextCompat.getMainExecutor(context), new ImageCapture.OnImageSavedCallback() {
             @Override public void onImageSaved(ImageCapture.OutputFileResults result) {
-                mediaOutput.publishSaved(getContext(), mediaFile);
-                message.setText(getContext().getString(com.dvid.dcam.R.string.media_saved, mediaFile.getFileName()));
+                mediaOutput.publishSaved(context, mediaFile);
+                previewView.showSaved(mediaFile.getFileName());
                 log.info("Photo saved: " + mediaFile.getFileName());
                 captureEvents.photoSaved(mediaFile.getFileName());
             }
@@ -132,14 +118,14 @@ public final class CameraXCameraGatewayImpl extends FrameLayout implements Camer
         }
         LocalDateTime at = LocalDateTime.now();
         DcamMediaFile mediaFile = mediaOutput.mediaFile(type, config, at, config.isVideoEncrypted());
-        PendingRecording pending = mediaOutput.prepareVideoRecording(getContext(), videoCapture, mediaFile);
-        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED)
+        PendingRecording pending = mediaOutput.prepareVideoRecording(context, videoCapture, mediaFile);
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED)
             pending = pending.withAudioEnabled();
-        activeRecording = pending.start(ContextCompat.getMainExecutor(getContext()), event -> {
+        activeRecording = pending.start(ContextCompat.getMainExecutor(context), event -> {
             if (event instanceof VideoRecordEvent.Start) {
-                message.setText(getContext().getString(com.dvid.dcam.R.string.recording_file, mediaFile.getFileName()));
+                previewView.showRecording(mediaFile.getFileName());
                 log.info("Recording started: " + mediaFile.getFileName());
-                if (!RecordingForegroundService.start(getContext(), mediaFile.getFileName())) {
+                if (!RecordingForegroundService.start(context, mediaFile.getFileName())) {
                     log.warn("Could not start recording foreground service", null);
                 }
                 RecordingMode mode = type == DcamFileType.SOS ? RecordingMode.SOS : RecordingMode.VIDEO;
@@ -147,18 +133,19 @@ public final class CameraXCameraGatewayImpl extends FrameLayout implements Camer
             }
             else if (event instanceof VideoRecordEvent.Finalize) {
                 VideoRecordEvent.Finalize done = (VideoRecordEvent.Finalize) event;
-                message.setText(done.hasError() ? "VIDEO ERROR " + done.getError() : "SAVED " + mediaFile.getFileName());
+                previewView.showFinalized(done.hasError()
+                        ? "VIDEO ERROR " + done.getError() : "SAVED " + mediaFile.getFileName());
                 if (done.hasError()) {
                     log.error("Recording failed: " + mediaFile.getFileName() + " error=" + done.getError(), null);
                     captureEvents.captureFailed("Recording", "CameraX error " + done.getError());
                 }
                 else {
-                    mediaOutput.publishSaved(getContext(), mediaFile);
+                    mediaOutput.publishSaved(context, mediaFile);
                     log.info("Recording saved: " + mediaFile.getFileName());
                     captureEvents.recordingCompleted(mediaFile.getFileName());
                 }
                 activeRecording = null;
-                RecordingForegroundService.stop(getContext());
+                RecordingForegroundService.stop(context);
                 if (pendingRecordingType != null) {
                     DcamFileType nextType = pendingRecordingType;
                     pendingRecordingType = null;
@@ -171,14 +158,13 @@ public final class CameraXCameraGatewayImpl extends FrameLayout implements Camer
     private void showError(String text) {
         log.error("Camera error: " + text, null);
         captureEvents.captureFailed("Camera", text);
-        message.setTextColor(Color.RED);
-        message.setText(text == null ? "Camera failed" : text);
+        previewView.showError(text);
     }
 
     public void release() {
         pendingRecordingType = null;
         if (activeRecording != null) activeRecording.stop();
-        RecordingForegroundService.stop(getContext());
+        RecordingForegroundService.stop(context);
         if (providerFuture != null && providerFuture.isDone()) {
             try { providerFuture.get().unbindAll(); } catch (Exception ignored) {}
         }

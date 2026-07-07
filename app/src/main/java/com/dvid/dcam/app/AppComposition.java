@@ -1,6 +1,7 @@
 package com.dvid.dcam.app;
 
 import android.content.Context;
+import android.view.View;
 import androidx.activity.ComponentActivity;
 import com.dvid.dcam.core.config.application.port.ConfigurationRepository;
 import com.dvid.dcam.core.config.application.repository.ConfigurationRepositoryImpl;
@@ -29,6 +30,7 @@ import com.dvid.dcam.feature.settings.application.usecase.LanguageSettingsUseCas
 import com.dvid.dcam.feature.settings.application.usecase.LanguageSettingsUseCaseImpl;
 import com.dvid.dcam.platform.audio.AndroidAudioRecorderImpl;
 import com.dvid.dcam.platform.camera.CameraXCameraGatewayImpl;
+import com.dvid.dcam.platform.camera.CameraXPreviewView;
 import com.dvid.dcam.platform.config.AndroidLanguagePreferenceStoreImpl;
 import com.dvid.dcam.platform.config.CsonConfigurationSourceImpl;
 import com.dvid.dcam.platform.device.AndroidDeviceRepositoryImpl;
@@ -95,17 +97,19 @@ public final class AppComposition {
     public CaptureRuntime createCaptureRuntime(ComponentActivity owner) {
         CaptureEventUseCase captureEvents = new CaptureEventUseCaseImpl();
         AudioRecorder audioRecorder = new AndroidAudioRecorderImpl(owner, mediaOutput, logSink);
+        CameraXPreviewView cameraPreview = new CameraXPreviewView(owner);
         CameraXCameraGatewayImpl camera = new CameraXCameraGatewayImpl(
-                owner, owner, config, mediaOutput, logSink, captureEvents);
+                owner, owner, config, mediaOutput, logSink, captureEvents, cameraPreview);
         PhotoCaptureUseCase photos = new PhotoCaptureUseCaseImpl(camera);
         VideoRecordingUseCase videos = new VideoRecordingUseCaseImpl(camera, captureEvents);
         AudioRecordingUseCase audio = new AudioRecordingUseCaseImpl(audioRecorder, config);
-        return new CaptureRuntime(camera, audioRecorder, photos, videos, audio, captureEvents);
+        return new CaptureRuntime(camera, cameraPreview, audioRecorder, photos, videos, audio, captureEvents);
     }
 
     /** Lifecycle-bound Android capture adapters created for one Activity instance. */
     public static final class CaptureRuntime {
         private final CameraXCameraGatewayImpl camera;
+        private final CameraXPreviewView cameraPreview;
         private final AudioRecorder audioRecorder;
         private final PhotoCaptureUseCase photos;
         private final VideoRecordingUseCase videos;
@@ -114,12 +118,14 @@ public final class AppComposition {
 
         private CaptureRuntime(
                 CameraXCameraGatewayImpl camera,
+                CameraXPreviewView cameraPreview,
                 AudioRecorder audioRecorder,
                 PhotoCaptureUseCase photos,
                 VideoRecordingUseCase videos,
                 AudioRecordingUseCase audio,
                 CaptureEventUseCase captureEvents) {
             this.camera = camera;
+            this.cameraPreview = cameraPreview;
             this.audioRecorder = audioRecorder;
             this.photos = photos;
             this.videos = videos;
@@ -127,11 +133,12 @@ public final class AppComposition {
             this.captureEvents = captureEvents;
         }
 
-        public CameraXCameraGatewayImpl camera() { return camera; }
+        public View cameraPreview() { return cameraPreview; }
         public PhotoCaptureUseCase photoCapture() { return photos; }
         public VideoRecordingUseCase videoRecording() { return videos; }
         public AudioRecordingUseCase audioRecording() { return audio; }
         public CaptureEventUseCase captureEvents() { return captureEvents; }
+        public void bindCameraIfPermitted() { camera.bindIfPermitted(); }
 
         public void release() {
             camera.release();

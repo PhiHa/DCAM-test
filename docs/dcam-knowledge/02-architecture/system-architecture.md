@@ -2,6 +2,8 @@
 
 ## Architecture intent
 
+The Architecture Home is **Approved 1.11** (Confluence page version 15, updated 2026-07-06). It identifies the approved Data Contract as the official baseline for storage/data/integration details. The Requirements set now also includes Approved Android Device Operation Requirements 1.0.
+
 DCAM is an offline-first, modular, hardware-aware Android application. Core business logic should remain independent of Android APIs, BodyCamera vendor SDKs, camera SDKs, and cloud providers.
 
 The current high-level context is:
@@ -61,7 +63,7 @@ The project currently remains one Gradle `:app` module. Package boundaries are e
 
 Current approved boundaries include use cases such as `PhotoCaptureUseCase`, `VideoRecordingUseCase`, `AudioRecordingUseCase`, `CaptureEventUseCase`, `BrowseMediaUseCase`, `OpenMediaUseCase`, and capability/repository boundaries such as `CameraGateway`, `AudioRecorder`, `DeviceRepository`, `MediaRepository`, `MediaOpener`, `ConfigurationSource`, `ConfigurationRepository`, `LanguagePreferenceStore`, and `LogSink`. Names describe the application capability, never the current library or vendor. Concrete implementations end with `Impl`, for example `CameraXCameraGatewayImpl` and `DcamLogSinkImpl`.
 
-Do not reserve future architecture with empty `*Service` interfaces. Location, metadata, integrity, cloud, update, streaming, PTT, and other future capabilities enter source only after an approved use case defines domain inputs/results/errors and demonstrates the need for a replaceable boundary. Each BodyCamera or provider-specific implementation belongs behind a platform implementation. A vendor SDK change should primarily change that implementation, not UI, ViewModel, use cases, or domain.
+Do not reserve future architecture with empty `*Service` interfaces. Location, metadata, integrity, cloud, update, streaming, PTT, and other future capabilities enter source only after an approved use case defines domain inputs/results/errors and demonstrates the need for a replaceable boundary. Do not add a generic event bus, domain-event publisher, or cross-feature application-event dispatcher until a concrete metadata/media lifecycle/cloud workflow needs decoupled side effects. Each BodyCamera or provider-specific implementation belongs behind a platform implementation. A vendor SDK change should primarily change that implementation, not UI, ViewModel, use cases, or domain.
 
 ## Threading model
 
@@ -85,4 +87,6 @@ Do not reserve future architecture with empty `*Service` interfaces. Location, m
 
 Decided direction: Java-first, offline-first, capability-based operation, feature-first Clean Architecture, application-owned ports/platform adapters, serialized hardware access where needed, cloud abstraction, BDMA compatibility, ADB boundary, and DCAM-producer/BDMA-consumer ownership.
 
-Still pending: final camera API, metadata/schema, folder structure, database strategy, future Gradle-module split, error/state model, streaming/PTT protocols, encryption/key management, and detailed update mechanism.
+Decided by Data Contract 1.2: logical storage layout, Internal/External/Auto selection, media formats and naming, `_IMP`/`_enc` suffixes, MP4-only MD5 behavior, config/database/log permissions, BDMA import results, and post-import cleanup.
+
+Still pending: physical device paths, exact embedded metadata and SQLite schemas, DB concurrency/write protocol, final camera API, future Gradle-module split, source lifecycle/error model, duplicate/retry recovery behavior, streaming/PTT protocols, encryption/key management/decryption detail, and detailed update mechanism.

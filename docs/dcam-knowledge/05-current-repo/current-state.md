@@ -1,6 +1,6 @@
 # Current repository state
 
-This page describes the refactored code visible on 2026-07-06. It records implementation reality, not an approved Data Contract or substitute for formal requirements.
+This page describes the refactored code visible on 2026-07-06. It records implementation reality and compares it with approved Data Contract 1.2; it is not a substitute for the contract or formal requirements.
 
 ## Build and platform
 
@@ -12,7 +12,7 @@ This page describes the refactored code visible on 2026-07-06. It records implem
 - JUnit Jupiter 6.1.0 is used for local tests.
 - No Retrofit, dependency-injection framework, or Kotlin dependency is present.
 
-The SDK/database values are implementation choices; Confluence still marks the final device matrix, SDK policy, and long-term database/Data Contract strategy TBD.
+The SDK values remain implementation choices. Data Contract 1.2 now fixes the logical database location, purpose, access rights, and need for schema versioning, while the exact SQLite schema/design and final device/SDK policy remain TBD.
 
 ## Refactored architecture
 
@@ -45,49 +45,51 @@ The source-level map and dependency rules live in `app/src/main/java/com/dvid/dc
 ## Current user/application flow
 
 - `MainActivity` is the Android entry point and ViewBinding presentation shell.
+- Main operation keeps Android status and navigation bars visible so operators can still see battery, network/Wi-Fi, GPS/location, notifications, and navigation controls. Dedicated-screen/kiosk behavior remains a Technical Design/device-policy decision.
 - `AppComposition` selects concrete adapters/repositories, loads configuration, and creates the lifecycle-bound capture runtime before attaching it to `MainViewModel`.
 - Physical keys route through `HardwareButtonRouter` to the same capture use cases used by touch UI.
 - Static global `Runnable` action registries were removed.
+- Camera preview UI is separated from the CameraX capture gateway: `CameraXPreviewView` owns the visible surface/status text, while `CameraXCameraGatewayImpl` owns CameraX binding and recording commands.
 - CameraX events are mapped to domain capture events before they update UI state.
 - SOS handoff serializes stop/finalize/start rather than overlapping CameraX recordings.
 - Active video/SOS recording starts an Android foreground service and persistent notification.
 - Menu feature bodies remain placeholders, but their shared shells now use XML/ViewBinding rather than programmatic view construction.
 - The settings home presents a three-column launcher with 12 clear categories. Opening a settings item shows a short non-editable OEM/CSON setting-name list; sensitive values are not shown.
-- Files is a read-only explorer limited to DCAM `video`, `SOS`, `image`, and `audio` roots. It supports folder navigation and opens media through a temporary FileProvider grant.
+- Files is a read-only explorer limited to contract media roots `Video`, `IMP`, `Image`, and `Audio`. It supports folder navigation and opens media through a temporary FileProvider grant.
 - Battery percentage, available app-storage bytes, and GPS capability/enabled state flow through `DeviceRepository`, a refresh use case, and ViewModel state.
 
 ## Current storage behavior
 
-`storage.mode` selects app data (default) or public DCIM. Current prototype folders are:
+`storage.mode` still accepts the prototype values `APP_DATA` (default) and `PUBLIC_DCIM`. The approved Internal/External/Auto behavior and Auto fallback are not implemented because physical root mapping and operational-settings persistence still require design.
 
 | Type | Folder | Extension |
 |---|---|---|
-| Video | `video/<yyyy-MM-dd>/` | `.mp4` |
-| SOS | `SOS/<yyyy-MM-dd>/` | `.mp4` |
-| Image | `image/<yyyy-MM-dd>/` | `.jpg` |
-| Audio | `audio/<yyyy-MM-dd>/` | `.m4a` |
+| Video | `Media/Video` | `.mp4` |
+| SOS/important | `Media/IMP` | `.mp4` |
+| Image | `Media/Image` | `.jpg` |
+| Audio | `Media/Audio` | `.aac` using AAC/ADTS |
 
 Current filename shape:
 
 ```text
-DSJ_<accountUserId>_<policeUserId>_<yyyyMMdd>_<HHmmss>[_SOS][_enc].<ext>
+DCAM_<CameraID>_<UserID>_<yyyyMMdd>_<HHmmss>[_IMP][_enc].<ext>
 ```
 
-The current local config is `configs.cson`. These folders, names, flags, and config fields remain prototype choices until Storage Design and the DCAM-BDMA Data Contract approve them.
+The listed media layout, naming, and AAC output align with the corresponding Data Contract 1.2 rules. SOS remains an application action/state name, but its persisted artifact is contract-important media in `IMP` with `_IMP`. Configuration is still the legacy `configs.cson` with existing `account.user_id`, `police.user_id`, and operational keys; the approved device-only `Config/dcam_config.cson` plus DB-backed operational settings are not implemented. Encryption configuration still exists without an AES-256 implementation, so encryption behavior remains a critical gap.
 
-There is still no general media metadata schema, schema version, file lifecycle persistence, checksum/integrity record, or BDMA discovery/import implementation.
+MP4 MD5 generation is not implemented. The contract fixes its scope and sidecar naming, but the sidecar content representation, enablement persistence, generation/finalization workflow, and BDMA fixture still need agreement. There is also no contract-aligned embedded media metadata implementation, media/database schema version, persisted file lifecycle, cross-root BDMA scanner/importer, or verified cleanup/write-back flow.
 
 ## Logging and database
 
-- Local Logcat plus rotating `app.log`, with 14-day local retention.
+- Local Logcat plus `Logs/logs.txt` under the existing app-storage root, with dated `logs-YYYY-MM-DD.txt` rotation and 14-day retention. The filename now matches the contract, but final internal-root mapping, ADB exposure, and BDMA read-only enforcement remain unverified.
 - Context includes version, thread, source, hardware ID, model, and camera/account ID.
-- Room-backed pending Loggly outbox with WorkManager upload/retry.
+- Room-backed `dcam.db` currently stores only the pending Loggly outbox. Its filename matches the contract, but its schema does not yet cover contracted user, device-tracking, and operational data/configuration or BDMA-safe write-back.
 - `LogSink` isolates capture/audio application-facing diagnostics from `DcamLogger`.
 - Loggly remains a concrete provider inside the logging adapter package; a full provider-neutral diagnostics design is still future work.
 
 ## Future capabilities
 
-Location, Metadata, Storage Contract, File Integrity, Security, Cloud, Remote Config, Update, Streaming, and PTT remain roadmap/documentation capabilities only. Empty speculative Java interfaces were removed; a capability enters source only when an approved requirement/use case defines its domain values and application boundaries.
+Location, Metadata, durable media lifecycle, MP4 checksum, AES-256 encryption, contract configuration/database migration, Cloud, Remote Config, Update, Streaming, and PTT remain roadmap/documentation capabilities only. Contract media folder/naming rules have concrete platform implementation; broader capabilities enter source only when approved behavior defines their domain values and application boundaries.
 
 ## Local property behavior
 
@@ -103,7 +105,8 @@ Private workflow instructions for local-property handling belong in `application
 - No GPS/location implementation or metadata integration yet.
 - Device status currently covers battery, available app storage, and GPS capability/enabled state; richer network/firmware/USB status remains future work.
 - No persistent media status/recovery state machine.
-- No approved metadata, storage, checksum, encryption, or BDMA contract.
+- Data Contract media folders/naming, important-media mapping, AAC output, and active log filename are implemented locally. Storage modes/physical roots, device-only CSON, DB-backed settings, MP4 MD5, embedded metadata, AES-256/key handling, BDMA permissions, import results, cleanup, and E2E proof remain open.
+- Android Device Operation: existing permission/foreground-notification behavior is present, and system bars are intentionally visible. Boot receiver, Home/Launcher role, managed kiosk/exit control, exact dedicated-screen behavior, screen/power policy, durable service ownership, and crash/reboot recovery remain pending Technical Design/device policy.
 - No streaming, PTT, cloud, remote config, update, or Device/User implementation beyond boundaries/placeholders.
 - Real BodyCamera POC and hardware matrix validation remain mandatory.
 
@@ -111,7 +114,7 @@ Private workflow instructions for local-property handling belong in `application
 
 After refactoring:
 
-- `testDebugUnitTest`: 19 tests pass, including architecture, immutable UI-state, and media-browser sandbox guards.
+- `testDebugUnitTest`: 22 tests pass, including architecture, immutable UI-state, capture rebinding, contract media paths/naming, legacy config, and media-browser sandbox guards.
 - `assembleDebug`: succeeds.
-- `lintDebug`: succeeds.
+- `lintDebug`: last verified as succeeding on 2026-07-06; the final 2026-07-07 re-run was blocked when the sandboxed Gradle wrapper attempted a network download.
 - Generated `BuildConfig`: intentionally contains all application and local-property fields.

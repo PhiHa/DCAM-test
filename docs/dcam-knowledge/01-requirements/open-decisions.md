@@ -4,8 +4,8 @@
 
 | Priority | Document | Why it blocks or reduces rework |
 |---|---|---|
-| P1 | DCAM–BDMA Data Contract | Locks exposure, schema, statuses, versions, and ingest behavior for two products |
-| P1 | Functional Requirements | Turns product direction into Jira epics/stories/tasks and testable behavior |
+| P1 | Expand initial Functional Requirements | Add workflows, exceptions, and acceptance criteria, especially for capture and BDMA integration |
+| P1 | Jira backlog from Requirements + MVP + Data Contract | Turns approved direction into traceable epics/stories/tasks and tests |
 | P2 | Non-functional Requirements | Sets measurable stability, performance, battery, storage, GPS, offline, and security constraints |
 | P2 | Storage Design | Defines root/folders, filenames, temporary/final handling, DB/files, and ADB visibility |
 | P2 | Metadata Design | Defines fields, validation, state model, schema versioning, and BDMA mapping |
@@ -14,19 +14,21 @@
 | P3 | Release Plan | Defines build/version/release/pilot process |
 | P3 | ADRs | Records stable choices and their trade-offs |
 
+The DCAM-BDMA Data Contract is no longer missing: version 1.2 is Approved. The following are the remaining design/requirement gaps around that baseline.
+
 ## Data and BDMA decisions
 
 - Exact Android storage root exposed through ADB.
-- Final folder structure and deterministic filename convention.
-- Whether BDMA reads the local `.db`, exported metadata files, or both.
-- Metadata file format and complete required/optional field schema.
+- Exact mapping from logical roots to physical paths on each supported BodyCamera/storage API.
+- Complete embedded metadata fields, encoding, validation, and media-format support; standalone media JSON is excluded by contract 1.2.
+- Exact `dcam.db` schema and schema-version negotiation.
 - Stable device ID source and user/operator mapping.
 - Source-state vocabulary; `recording`, `pending`, `completed`, `corrupted`, and `recovered` are only proposed directions.
 - Schema evolution and backward-compatibility rules.
-- Checksum/hash generation and validation.
-- Discovery, validation, duplicate import, partial import, retry/resume, and error rules.
-- Whether BDMA may write a sync/import marker.
-- Post-import retention, cleanup, and deletion policy.
+- MP4 MD5 enablement/default, generation timing, file content format, and performance; its import and cleanup outcomes are already contracted.
+- Duplicate import, partial import, retry/resume, and interruption rules beyond the contracted result categories.
+- Where import/sync state lives in `dcam.db` and how DCAM/BDMA coordinate concurrent access.
+- Retention policy beyond the contracted post-success cleanup permissions.
 - Import-error UX and ownership across DCAM and BDMA.
 
 ## Android and application decisions
@@ -44,6 +46,10 @@
 - Gson versus Jackson.
 - Service interface signatures and adapter selection per hardware model.
 - Foreground Service lifecycle, process death, restart, and recording recovery.
+- Device-policy mechanism for optional Home/Launcher role and boot startup.
+- Managed-device provisioning plus Lock Task/Kiosk/exit-control policy.
+- Screen on/off, dim/keep-awake, WakeLock, battery-optimization, and background-limit policy.
+- Restart behavior after crash, service kill, reboot, abnormal shutdown, and device reconnect.
 
 ## Cloud, config, and update decisions
 
@@ -51,18 +57,18 @@
 - Firebase SDK features that work on target devices and their GMS dependency.
 - REST/API fallback and BDMA-desktop cloud responsibilities.
 - Remote-config schema, keys, validation, and safe rollout behavior.
-- Local config format/ownership and runtime override controls.
+- Runtime override controls and config precedence. Device identity uses internal `dcam_config.cson`; operational settings belong in `dcam.db`.
 - Self-update server/mechanism, signature validation, rollback, forced/silent update policy.
 - Mandatory performance metrics and their local/cloud format.
 
 ## Security decisions
 
-- Encryption algorithms and exact media/metadata scope.
+- AES-256 implementation details and exact media/metadata scope; `_enc` and `_IMP_enc` naming are already decided.
 - Key creation, secure storage, distribution, rotation, recovery, and BDMA decryption.
 - API/provider authentication and authorization.
 - Update signature verification.
 - Sensitive metadata classification, log redaction, export, retention, and access control.
-- Integrity/checksum policy.
+- Integrity behavior outside the contracted optional MP4 MD5 flow.
 
 ## Advanced-feature decisions
 
