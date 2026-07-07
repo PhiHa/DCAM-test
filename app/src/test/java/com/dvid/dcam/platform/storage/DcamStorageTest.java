@@ -7,9 +7,9 @@ import org.junit.jupiter.api.Test;
 
 public class DcamStorageTest {
     @Test public void buildsSosPath() {
-        File file = new DcamStorage(new File("DCIM")).outputFile(DcamFileType.SOS, "36NCC009910", "000000",
+        File file = new DcamStorage(new File("DCIM")).outputFile(DcamFileType.SOS, "CAM001", "000000",
                 LocalDateTime.of(2026, 6, 19, 10, 3, 24), true);
-        assertEquals("DCIM/SOS/2026-06-19/DSJ_36NCC009910_000000_20260619_100324_SOS_enc.mp4",
+        assertEquals("DCIM/Media/IMP/DCAM_CAM001_000000_20260619_100324_IMP_enc.mp4",
                 file.getPath().replace('\\', '/'));
     }
 }

@@ -2,9 +2,9 @@
 
 ## Status of requirements
 
-The Confluence `03 - Requirements` folder is empty as of 2026-07-03. There is no formal Functional Requirements document, Non-functional Requirements document, use-case set, user-story set, or DCAM–BDMA Data Contract yet.
+As of the 2026-07-07 refresh, `03 - Requirements` contains an **Approved 1.2 DCAM-BDMA Data Contract**, a Requirements Home, and ten functional-requirement pages. The first nine were reported as an initial/draft structure; `10 - Android Device Operation Requirements` is Approved 1.0. Non-functional Requirements remain Not Started.
 
-The requirements below are therefore a consolidated baseline from Product Vision, Charter, MVP Scope, Roadmap, Development Plan, and the architecture pages. They are useful for orientation, but they do not replace the planned requirement documents or an approved Jira backlog.
+The requirements below remain a consolidated orientation baseline from Product Vision, Charter, MVP Scope, Roadmap, Development Plan, Architecture, and the Data Contract. They do not replace detailed acceptance criteria, an approved Jira backlog, or the source Confluence pages.
 
 ## Functional baseline
 
@@ -29,25 +29,22 @@ The requirements below are therefore a consolidated baseline from Product Vision
 - Storage availability and free space are checked.
 - The app warns, prevents, or stops unsafe recording when capacity is insufficient; the threshold/policy is TBD.
 - In-progress/temporary data must be distinguishable from finalized/completed data.
-- Exact root, folder names, filenames, cleanup, and retention are not yet contracted.
+- Data Contract 1.2 fixes the logical roots, folder names, filename family, import cleanup, and BDMA permissions. Exact physical Android paths, low-space thresholds, retention, and recovery behavior remain for detailed design.
 
 ### Metadata
 
-The architecture expects at least:
+Product/architecture sources still expect per-media identity, device/user/time, optional valid GPS, source state, and compatibility information. Data Contract 1.2 adds these binding constraints:
 
-| Field | Direction |
+| Concern | Current authority/direction |
 |---|---|
-| `file_id` | Required unique media identifier; format TBD |
-| `file_type` | Required: video/image/audio as applicable |
-| `device_id` | Required stable device identifier; source TBD |
-| `timestamp` | Required capture/recording time |
-| GPS | Optional; present only when valid/available |
-| user/operator | Phase 2 foundation; model TBD |
-| status | Required source-side state; final vocabulary TBD |
-| `schema_version` | Required for compatibility |
-| checksum/hash | Valuable for integrity, but still TBD |
+| File association | Filename contains CameraID, fixed-six-character UserID, date, and time; exact collision/unique-ID policy remains TBD |
+| Media metadata | Embedded in the media file when supported; standalone per-media JSON is not part of contract 1.2 |
+| Important/encrypted state | Filename suffixes `_IMP`, `_enc`, or `_IMP_enc` |
+| GPS and source lifecycle | Still require exact embedded fields, validation, and persistence design |
+| Database version | `dcam.db` needs an agreed schema-version mechanism |
+| Integrity | Optional same-basename `.md5` applies only to `.mp4`; image/audio have no MD5 sidecar |
 
-The format may be a local database, standalone JSON/CSON/XML-like file, or both. The Data Contract must decide it.
+The exact embedded metadata fields/encoding and SQLite schema remain open. Implementations must not introduce a standalone media JSON contract without updating Data Contract 1.2.
 
 ### Device status and capability
 
@@ -68,8 +65,10 @@ The format may be a local database, standalone JSON/CSON/XML-like file, or both.
 - DCAM creates and finalizes source data locally.
 - BDMA detects the connected device and initiates ADB discovery/read/sync.
 - BDMA imports, validates, maps, indexes, stores, and displays the data.
-- BDMA should treat source files as read-only unless a future policy and ADR explicitly permit writes/deletes.
-- BDMA must not silently guess or regenerate missing metadata unless the Data Contract explicitly permits it.
+- BDMA must not modify source media, embedded metadata, MD5 content, `Temp`, or `logs.txt`.
+- BDMA may update `dcam_config.cson` for device information and may read/write/update all of `dcam.db`, subject to schema, corruption, locking, and concurrent-write safeguards.
+- BDMA may delete successfully imported source media under the contract cleanup matrix. Missing-MD5 MP4 deletion requires confirmation for each file.
+- BDMA must not silently guess or regenerate missing metadata unless a later contract explicitly permits it.
 - Contract/schema mismatch is a shared DCAM–BDMA concern and requires version handling.
 
 ## Non-functional baseline
@@ -78,7 +77,7 @@ The format may be a local database, standalone JSON/CSON/XML-like file, or both.
 |---|---|
 | Availability | Core recording, capture, storage, metadata, logging, and BDMA-readiness work without Internet |
 | Reliability | ≥99% record/capture success; no critical corruption or main-flow crash |
-| Integrity | Completed/pending/corrupt states are visible; checksum and recovery strategy still TBD |
+| Integrity | MP4-only optional MD5/import outcomes are decided; DCAM finalize validation, persisted lifecycle, and recovery remain TBD |
 | Performance | No camera, file, database, or network work blocks the UI thread; recording has priority over diagnostics/cloud |
 | Compatibility | Capability-based operation across BodyCamera hardware/firmware and GMS/non-GMS environments |
 | Testability | Business flows depend on interfaces, allowing fake platform services |

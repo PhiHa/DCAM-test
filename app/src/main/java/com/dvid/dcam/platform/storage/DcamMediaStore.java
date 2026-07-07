@@ -4,14 +4,12 @@ import android.content.ContentValues;
 import android.net.Uri;
 import android.provider.MediaStore;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 public final class DcamMediaStore {
-    private static final DateTimeFormatter FOLDER_DATE = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private DcamMediaStore() {}
 
     public static String relativePath(DcamFileType type, LocalDateTime at) {
-        return "DCIM/" + type.getFolder() + "/" + FOLDER_DATE.format(at);
+        return "DCIM/Media/" + type.getFolder();
     }
     public static ContentValues values(DcamMediaFile mediaFile) {
         ContentValues values = new ContentValues();

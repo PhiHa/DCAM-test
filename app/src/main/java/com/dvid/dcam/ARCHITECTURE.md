@@ -178,6 +178,7 @@ flow riêng cho nút cứng.
 
 ```text
 CameraGateway        -> CameraXCameraGatewayImpl
+Camera preview UI    -> CameraXPreviewView
 AudioRecorder        -> AndroidAudioRecorderImpl
 MediaRepository      -> LocalMediaRepositoryImpl
 LanguagePreferenceStore -> AndroidLanguagePreferenceStoreImpl
@@ -208,6 +209,7 @@ Các khái niệm này không xung đột.
 - domain/application không import Android, Google SDK, app hoặc platform;
 - public interface trong feature/core chỉ nằm ở `application/usecase` hoặc
   `application/port`;
+- public interface phải có callable behavior hiện tại, không tạo marker/placeholder rỗng;
 - implementation của interface project phải kết thúc bằng `Impl`;
 - không dùng package `adapter` trong feature/core source hiện tại.
 
@@ -215,9 +217,9 @@ Các khái niệm này không xung đột.
 
 - `MainViewModel` vẫn là app-level ViewModel phối hợp nhiều feature. Khi một
   feature có màn hình/lifecycle riêng, tạo presentation riêng trong feature đó.
-- `CameraXCameraGatewayImpl` hiện vừa là `FrameLayout` preview vừa là camera
-  gateway. Trước vendor SDK hoặc recovery/process-death work, nên tách preview
-  UI khỏi recording owner.
+- `CameraXPreviewView` giữ preview UI/CameraX surface; `CameraXCameraGatewayImpl`
+  giữ recording/capture ownership phía platform. Nếu chuyển sang vendor SDK hoặc
+  recovery/process-death owner, giữ UI preview tách khỏi recording owner.
 - `DcamMediaOutput` là SPI nội bộ platform, không truyền vào feature/domain.
 - Dự án vẫn là một Gradle module; hiện tại boundary được enforce bằng test chứ
   chưa bằng module compiler.

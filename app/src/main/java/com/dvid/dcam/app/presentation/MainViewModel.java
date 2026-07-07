@@ -5,10 +5,7 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import com.dvid.dcam.app.navigation.MainScreen;
 import com.dvid.dcam.core.config.domain.DcamConfig;
-import com.dvid.dcam.feature.capture.application.usecase.AudioRecordingUseCase;
 import com.dvid.dcam.feature.capture.application.usecase.CaptureEventUseCase;
-import com.dvid.dcam.feature.capture.application.usecase.PhotoCaptureUseCase;
-import com.dvid.dcam.feature.capture.application.usecase.VideoRecordingUseCase;
 import com.dvid.dcam.feature.capture.domain.CaptureEvent;
 import com.dvid.dcam.feature.capture.domain.CaptureState;
 import com.dvid.dcam.feature.capture.domain.RecordingMode;
@@ -23,10 +20,7 @@ import java.util.concurrent.Executors;
 public final class MainViewModel extends ViewModel {
     private final DcamConfig config;
     private final MutableLiveData<MainUiState> state;
-    private final PhotoCaptureUseCase photoCapture;
-    private final VideoRecordingUseCase videoRecording;
-    private final AudioRecordingUseCase audioRecording;
-    private final CaptureEventUseCase captureEvents;
+    private CaptureEventUseCase captureEvents;
     private final RefreshDeviceStatusUseCase refreshDeviceStatus;
     private final BrowseMediaUseCase browseMedia;
     private final ExecutorService mediaIo = Executors.newSingleThreadExecutor(runnable -> {
@@ -38,20 +32,11 @@ public final class MainViewModel extends ViewModel {
     public MainViewModel(
             DcamConfig config,
             DeviceStatus deviceStatus,
-            PhotoCaptureUseCase photoCapture,
-            VideoRecordingUseCase videoRecording,
-            AudioRecordingUseCase audioRecording,
-            CaptureEventUseCase captureEvents,
             RefreshDeviceStatusUseCase refreshDeviceStatus,
             BrowseMediaUseCase browseMedia) {
         this.config = config;
-        this.photoCapture = photoCapture;
-        this.videoRecording = videoRecording;
-        this.audioRecording = audioRecording;
-        this.captureEvents = captureEvents;
         this.refreshDeviceStatus = refreshDeviceStatus;
         this.browseMedia = browseMedia;
-        this.captureEvents.setListener(this::onCaptureEvent);
         state = new MutableLiveData<>(new MainUiState(
                 MainScreen.CAMERA, new CaptureState(), deviceStatus, MediaBrowserState.root(), null));
     }
@@ -59,9 +44,22 @@ public final class MainViewModel extends ViewModel {
     public LiveData<MainUiState> state() { return state; }
     public DcamConfig getConfig() { return config; }
 
-    public void onCapturePlatformReleased() {
-        if (captureEvents.currentMode() != RecordingMode.IDLE) {
-            captureEvents.captureFailed("Recording", "camera lifecycle ended");
+    public void bindCaptureEvents(CaptureEventUseCase events) {
+        if (captureEvents == events) return;
+        if (captureEvents != null) captureEvents.clearListener();
+        captureEvents = events;
+        if (captureEvents != null) captureEvents.setListener(this::onCaptureEvent);
+    }
+
+    public void unbindCaptureEvents(CaptureEventUseCase events) {
+        if (captureEvents != events) return;
+        captureEvents.clearListener();
+        captureEvents = null;
+    }
+
+    public void onCapturePlatformReleased(CaptureEventUseCase events) {
+        if (captureEvents == events && events.currentMode() != RecordingMode.IDLE) {
+            onCaptureEvent(CaptureEvent.error("Recording", "camera lifecycle ended"));
         }
     }
 
@@ -98,31 +96,6 @@ public final class MainViewModel extends ViewModel {
         state.setValue(current().withDeviceStatus(refreshDeviceStatus.execute()));
     }
 
-    public void takePhoto() {
-        photoCapture.takePhoto();
-    }
-
-    public void toggleVideo() {
-        videoRecording.toggleVideo();
-    }
-
-    public void startVideo() {
-        videoRecording.startVideo();
-    }
-
-    public void stopRecording() {
-        videoRecording.stopRecording();
-    }
-
-    public void toggleAudio() {
-        String output = audioRecording.toggleAudio();
-        state.setValue(current().withMessage(output == null ? "Audio unavailable" : "Audio " + output));
-    }
-
-    public void toggleSos() {
-        videoRecording.toggleSos();
-    }
-
     private void onCaptureEvent(CaptureEvent event) {
         switch (event.getType()) {
             case RECORDING_STARTED:
@@ -156,7 +129,8 @@ public final class MainViewModel extends ViewModel {
     }
 
     @Override protected void onCleared() {
-        captureEvents.clearListener();
+        if (captureEvents != null) captureEvents.clearListener();
+        captureEvents = null;
         mediaIo.shutdownNow();
         super.onCleared();
     }

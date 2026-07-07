@@ -1,5 +1,7 @@
 # Data, storage, and DCAM–BDMA boundary
 
+Data Contract status: **Approved 1.2**, updated 2026-07-06. The [contract digest](../01-requirements/data-contract.md) is authoritative over earlier proposed directions in this architecture summary.
+
 ## Core boundary decision
 
 **DCAM is a passive data producer. BDMA is an active data consumer and manager.**
@@ -20,7 +22,7 @@
 | Import staging, validation, and retry | BDMA |
 | Managed desktop copy, index, display, backup/export | BDMA |
 
-Normal sync should treat Android source data as read-only. Deleting source files, writing import markers, or changing config requires an explicit future policy, design, and ADR.
+BDMA must treat source media bytes, embedded metadata, MD5 content, `Temp`, and logs as non-writable. Contract 1.2 explicitly permits BDMA to update device information in `dcam_config.cson`, read/write/update `dcam.db`, and delete successfully imported media under the cleanup rules. These writes require schema, locking, corruption, and concurrent-access safeguards.
 
 ## Data categories
 
@@ -29,43 +31,28 @@ Normal sync should treat Android source data as read-only. Deleting source files
 | Video | `.mp4` source media |
 | Image | `.jpg` source media |
 | Audio/PTT | Audio file if applicable; final format TBD |
-| Metadata | Local DB record, standalone file, or both; format TBD |
-| Local DB | May hold media/status/device/user context; BDMA access TBD |
-| Logs | Local file/DB; may be copied for support/import diagnostics |
+| Metadata | Embedded in media when supported; standalone media JSON is not part of contract 1.2; exact fields/encoding remain TBD |
+| Local DB | Internal `Database/dcam.db`; user, device-tracking, and operational data/config; BDMA may read/write/update |
+| Logs | Internal `Logs/logs.txt`; BDMA read-only |
 | Device/User context | Created or captured by DCAM, then mapped by BDMA |
 | Config | Ownership and BDMA visibility/write policy TBD |
 
-Do not treat these possible extensions/formats as a final contract except where the Data Contract later confirms them.
+Media formats are `.mp4`, `.jpg`, and `.mp3/.aac/.wav`. Logical roots, folders, naming, access, and cleanup are final at the contract baseline; physical paths and detailed schemas are not.
 
-## Source media lifecycle direction
+## Import and integrity outcomes
 
-Proposed DCAM states:
+- MP4 with matching MD5: import as Verified when it passes; reject as Checksum Mismatch when it fails.
+- MP4 without MD5: import as Unverified; require per-file confirmation before source deletion.
+- Image/audio: import without MD5 and do not warn about its absence.
+- Unsupported/unreadable/unsupported-encrypted media and `Temp` are not deleted.
 
-```text
-recording → pending → completed
-               ├────→ corrupted
-               └────→ recovered (TBD)
-```
-
-Proposed BDMA import states are separate: `discovered`, `imported`, `validated`, `indexed`, and `import_failed`.
-
-Source state and import state must not be collapsed. DCAM owns readiness/integrity before import; BDMA owns desktop import progress afterward.
+The DCAM-side persisted lifecycle (`recording`, pending/finalizing, completed, corrupt, recovered) remains a design gap and must not be collapsed into BDMA import state.
 
 ## Metadata direction
 
-DCAM must create enough versioned metadata for BDMA to map media without guessing. The baseline fields are `file_id`, `file_type`, `device_id`, `timestamp`, optional valid GPS, source `status`, and `schema_version`; user/operator arrives with the Phase 2 foundation, and checksum remains TBD.
+Contract 1.2 binds media association to deterministic naming and embedded metadata when supported. It does not define a standalone media JSON artifact. Exact embedded fields/types, GPS validity, source lifecycle, collision handling, and schema encoding still need Metadata/Database Design.
 
-The missing Data Contract must specify:
-
-- Storage root, folders, filenames, and discovery rules.
-- Whether the DB, metadata files, or both are authoritative/exposed.
-- Exact fields, types, required/optional rules, status values, and schema versions.
-- Media-to-metadata association.
-- ADB read expectations.
-- Validation and error behavior.
-- Duplicate, partial, interrupted, and repeated import behavior.
-- Integrity/checksum behavior.
-- Cleanup, retention, and any permitted BDMA writes.
+The filename baseline is `DCAM_<CameraID>_<UserID>_<YYYYMMDD>_<HHMMSS>[_IMP][_enc].<ext>`. Important media lives in `Media/IMP`; MD5 applies only to MP4 and uses the same base name in the same folder.
 
 ## Error ownership
 
@@ -78,7 +65,7 @@ The missing Data Contract must specify:
 | GPS unavailable | DCAM continues core work and marks unavailable |
 | ADB detection/disconnect/read transport issue | BDMA |
 | Desktop import/validation/index/display issue | BDMA |
-| Data Contract/schema mismatch | Shared and versioned |
+| Data Contract/media naming/DB schema mismatch | Shared and versioned; BDMA must stop unsafe DB updates and report compatibility errors |
 
 ## Boundary for future features
 
@@ -86,4 +73,4 @@ The missing Data Contract must specify:
 - Streaming adds a real-time channel while recorded-media ownership remains local/ADB-based.
 - PTT adds real-time audio and possibly stored artifacts that need a contract.
 - Cloud sync may add a new consumer and must explicitly revisit ownership.
-- Any future write/delete responsibility across the boundary requires an ADR.
+- Any write/delete responsibility beyond the explicit config, database, and cleanup permissions in contract 1.2 requires a contract update and, when architecturally significant, an ADR.

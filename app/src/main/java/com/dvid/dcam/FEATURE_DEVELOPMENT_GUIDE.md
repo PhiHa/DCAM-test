@@ -72,10 +72,15 @@ Không tạo interface cho:
 - model/enum/value object;
 - helper nhỏ;
 - class chỉ có một responsibility nội bộ, không cần fake;
-- feature chưa có requirement.
+- feature chưa có requirement;
+- marker/placeholder interface rỗng chỉ để "giữ chỗ".
 
 Nếu chưa trả lời được “ai gọi interface này?” và “implementation nào làm thật?”,
 thì khoan tạo.
+
+Không tạo `EventBus`, `DomainEventPublisher` hoặc application-event dispatcher chung
+cho tới khi có workflow cụ thể cần side effect tách rời giữa metadata/media lifecycle,
+cloud hoặc feature khác.
 
 ## 5. Use case interface
 

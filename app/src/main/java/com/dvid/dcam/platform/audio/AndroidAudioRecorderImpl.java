@@ -46,7 +46,7 @@ public final class AndroidAudioRecorderImpl implements AudioRecorder {
             outputMediaFile = mediaOutput.mediaFile(DcamFileType.AUDIO, config, at, false);
             MediaRecorder next = Build.VERSION.SDK_INT >= 31 ? new MediaRecorder(context) : new MediaRecorder();
             next.setAudioSource(MediaRecorder.AudioSource.MIC);
-            next.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+            next.setOutputFormat(MediaRecorder.OutputFormat.AAC_ADTS);
             next.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
             next.setAudioChannels(1);
             next.setAudioSamplingRate(8000);

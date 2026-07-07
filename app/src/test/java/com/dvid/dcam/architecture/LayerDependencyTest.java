@@ -16,6 +16,11 @@ import org.junit.jupiter.api.Test;
 final class LayerDependencyTest {
     private static final Pattern IMPORT = Pattern.compile("^import\\s+([^;]+);", Pattern.MULTILINE);
     private static final Pattern PUBLIC_INTERFACE = Pattern.compile("\\bpublic\\s+interface\\s+");
+    private static final Pattern PUBLIC_INTERFACE_DECLARATION =
+            Pattern.compile("\\bpublic\\s+interface\\s+(\\w+)\\s*\\{", Pattern.MULTILINE);
+    private static final Pattern INTERFACE_METHOD = Pattern.compile(
+            "(?:^|\\n)\\s*(?:[\\w<>\\[\\].?,]+\\s+)+\\w+\\s*\\([^;{}]*\\)"
+                    + "\\s*(?:throws\\s+[\\w\\s,.]+)?;");
     private static final Pattern PROJECT_INTERFACE_IMPLEMENTATION = Pattern.compile(
             "\\bclass\\s+(\\w+)\\s+implements\\s+[^\\{;]*\\b"
                     + "(UseCase|Repository|Gateway|Recorder|Opener|Store|Source|Sink|Output)\\b");
@@ -64,6 +69,28 @@ final class LayerDependencyTest {
                         + String.join("\n", violations));
     }
 
+    @Test void publicInterfacesDeclareCallableBehavior() throws IOException {
+        Path root = mainJavaRoot().resolve("com/dvid/dcam");
+        List<String> violations = new ArrayList<>();
+        try (Stream<Path> files = Files.walk(root)) {
+            for (Path file : files.filter(LayerDependencyTest::isJava).toList()) {
+                String source = Files.readString(file, StandardCharsets.UTF_8);
+                Matcher declaration = PUBLIC_INTERFACE_DECLARATION.matcher(source);
+                while (declaration.find()) {
+                    int bodyEnd = findMatchingBrace(source, declaration.end() - 1);
+                    String body = bodyEnd < 0 ? "" : source.substring(declaration.end(), bodyEnd);
+                    if (!INTERFACE_METHOD.matcher(body).find()) {
+                        violations.add(normalized(root.relativize(file)) + " declares empty interface "
+                                + declaration.group(1));
+                    }
+                }
+            }
+        }
+        assertTrue(violations.isEmpty(),
+                "Public interfaces must describe current callable behavior, not placeholders:\n"
+                        + String.join("\n", violations));
+    }
+
     @Test void projectInterfaceImplementationsEndWithImpl() throws IOException {
         Path root = mainJavaRoot().resolve("com/dvid/dcam");
         List<String> violations = new ArrayList<>();
@@ -94,6 +121,19 @@ final class LayerDependencyTest {
         }
         assertTrue(violations.isEmpty(),
                 "Production classes outside app/core/feature/platform:\n" + String.join("\n", violations));
+    }
+
+    private static int findMatchingBrace(String source, int openBrace) {
+        int depth = 0;
+        for (int i = openBrace; i < source.length(); i++) {
+            char current = source.charAt(i);
+            if (current == '{') depth++;
+            else if (current == '}') {
+                depth--;
+                if (depth == 0) return i;
+            }
+        }
+        return -1;
     }
 
     private static void collectNonCanonicalPaths(

@@ -35,6 +35,7 @@ import com.dvid.dcam.feature.media.domain.MediaEntry;
 import com.dvid.dcam.feature.settings.application.usecase.LanguageSettingsUseCase;
 import com.dvid.dcam.feature.settings.domain.AppLanguage;
 import com.dvid.dcam.platform.config.AndroidLanguagePreferenceStoreImpl;
+import com.dvid.dcam.platform.device.DcamKioskController;
 import com.dvid.dcam.platform.input.HardwareButtonRouter;
 import com.dvid.dcam.platform.logging.DcamLogger;
 import com.dvid.dcam.platform.permission.DcamPermissions;
@@ -52,6 +53,7 @@ public final class MainActivity extends ComponentActivity {
     private OpenMediaUseCase openMedia;
     private LanguageSettingsUseCase languageSettings;
     private ActivityResultLauncher<String[]> permissionLauncher;
+    private DcamKioskController kioskController;
     private MainUiState latestState;
     private MainScreen renderedScreen;
     private ScreenCameraBinding cameraScreen;
@@ -66,6 +68,8 @@ public final class MainActivity extends ComponentActivity {
         super.onCreate(savedInstanceState);
         AppComposition composition = AppComposition.create(this);
         languageSettings = composition.languageSettingsUseCase();
+        kioskController = new DcamKioskController(this);
+        kioskController.applyActiveKioskPolicy();
 
         getWindow().setStatusBarColor(Color.BLACK);
         getWindow().setNavigationBarColor(Color.BLACK);
@@ -76,22 +80,23 @@ public final class MainActivity extends ComponentActivity {
         permissionLauncher = registerForActivityResult(
                 new ActivityResultContracts.RequestMultiplePermissions(),
                 result -> {
-                    if (captureRuntime != null) captureRuntime.camera().bindIfPermitted();
+                    if (captureRuntime != null) captureRuntime.bindCameraIfPermitted();
                 });
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override public void handleOnBackPressed() { navigateBack(); }
         });
 
-        permissionLauncher.launch(DcamPermissions.runtime());
+        if (!DcamPermissions.allRuntimeGranted(this)) {
+            permissionLauncher.launch(DcamPermissions.runtime());
+        }
         captureRuntime = composition.createCaptureRuntime(this);
         openMedia = composition.createOpenMediaUseCase(this);
         viewModel = new ViewModelProvider(
                 this, new MainViewModelFactory(
                         composition.config(), composition.initialDeviceStatus(),
-                        captureRuntime.photoCapture(), captureRuntime.videoRecording(),
-                        captureRuntime.audioRecording(), captureRuntime.captureEvents(),
                         composition.refreshDeviceStatusUseCase(), composition.browseMediaUseCase()))
                 .get(MainViewModel.class);
+        viewModel.bindCaptureEvents(captureRuntime.captureEvents());
         hardwareButtons = composition.createHardwareButtonRouter(
                 captureRuntime.photoCapture(), captureRuntime.videoRecording(), captureRuntime.audioRecording());
         viewModel.state().observe(this, this::render);
@@ -99,6 +104,10 @@ public final class MainActivity extends ComponentActivity {
 
     @Override protected void onResume() {
         super.onResume();
+        if (kioskController != null) {
+            kioskController.applyActiveKioskPolicy();
+            kioskController.enterLockTaskIfAllowed(this);
+        }
         if (viewModel != null) viewModel.refreshDeviceStatus();
     }
 
@@ -121,11 +130,11 @@ public final class MainActivity extends ComponentActivity {
         DcamConfig config = viewModel.getConfig();
         cameraScreen.accountId.setText("CAM " + config.getAccountUserId());
         cameraScreen.operatorId.setText("USER " + config.getPoliceUserId());
-        cameraScreen.captureAction.setOnClickListener(view -> viewModel.takePhoto());
-        if (captureRuntime.camera().getParent() instanceof ViewGroup) {
-            ((ViewGroup) captureRuntime.camera().getParent()).removeView(captureRuntime.camera());
+        cameraScreen.captureAction.setOnClickListener(view -> captureRuntime.photoCapture().takePhoto());
+        if (captureRuntime.cameraPreview().getParent() instanceof ViewGroup) {
+            ((ViewGroup) captureRuntime.cameraPreview().getParent()).removeView(captureRuntime.cameraPreview());
         }
-        cameraScreen.previewContainer.addView(captureRuntime.camera(), new FrameLayout.LayoutParams(
+        cameraScreen.previewContainer.addView(captureRuntime.cameraPreview(), new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         root.addView(cameraScreen.getRoot());
     }
@@ -364,7 +373,10 @@ public final class MainActivity extends ComponentActivity {
 
     @Override protected void onDestroy() {
         DcamLogger.i("MainActivity destroyed");
-        if (viewModel != null) viewModel.onCapturePlatformReleased();
+        if (viewModel != null && captureRuntime != null) {
+            viewModel.onCapturePlatformReleased(captureRuntime.captureEvents());
+            viewModel.unbindCaptureEvents(captureRuntime.captureEvents());
+        }
         if (captureRuntime != null) captureRuntime.release();
         super.onDestroy();
     }
