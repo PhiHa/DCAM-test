@@ -5,7 +5,7 @@
     <string name="media_saved">Đã lưu %1$s</string>
     <string name="recording_file">Đang ghi %1$s</string>
     <string name="capture">Chụp</string>
-    <string name="settings_detail_hint">Các cài đặt khả dụng · phần điều khiển sẽ được bổ sung sau</string>
+    <string name="settings_detail_hint">Các điều khiển chỉ cập nhật giao diện; lưu cấu hình sẽ bổ sung sau</string>
     <string name="files">Tệp</string>
     <string name="media_root">Media DCAM</string>
     <string name="folder_up">↑ Lên</string>
@@ -32,4 +32,3 @@
     <string name="language_vietnamese">Tiếng Việt</string>
     <string name="language_changed">Đã đổi ngôn ngữ</string>
 </resources>
-

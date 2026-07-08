@@ -1,6 +1,6 @@
 # Data, storage, and DCAM–BDMA boundary
 
-Data Contract status: **Approved 1.2**, updated 2026-07-06. The [contract digest](../01-requirements/data-contract.md) is authoritative over earlier proposed directions in this architecture summary.
+Data Contract status: **Approved 1.6**, updated 2026-07-08. The [contract digest](../01-requirements/data-contract.md) is authoritative over earlier proposed directions in this architecture summary.
 
 ## Core boundary decision
 
@@ -22,7 +22,7 @@ Data Contract status: **Approved 1.2**, updated 2026-07-06. The [contract digest
 | Import staging, validation, and retry | BDMA |
 | Managed desktop copy, index, display, backup/export | BDMA |
 
-BDMA must treat source media bytes, embedded metadata, MD5 content, `Temp`, and logs as non-writable. Contract 1.2 explicitly permits BDMA to update device information in `dcam_config.cson`, read/write/update `dcam.db`, and delete successfully imported media under the cleanup rules. These writes require schema, locking, corruption, and concurrent-access safeguards.
+BDMA must treat source media bytes, embedded metadata, MD5 content, `Temp`, active runtime state, and logs as non-writable. Contract 1.6 explicitly permits BDMA to update device information in `dcam_config.cson` through approved paths, write only approved `dcam.db` tables/fields, and delete successfully imported media under the cleanup rules. These writes require schema, locking, corruption, and concurrent-access safeguards.
 
 ## Data categories
 
@@ -31,11 +31,12 @@ BDMA must treat source media bytes, embedded metadata, MD5 content, `Temp`, and 
 | Video | `.mp4` source media |
 | Image | `.jpg` source media |
 | Audio/PTT | Audio file if applicable; final format TBD |
-| Metadata | Embedded in media when supported; standalone media JSON is not part of contract 1.2; exact fields/encoding remain TBD |
-| Local DB | Internal `Database/dcam.db`; user, device-tracking, and operational data/config; BDMA may read/write/update |
+| Metadata | Embedded in media when supported; standalone media JSON is not part of contract 1.6; exact fields/encoding remain TBD |
+| App/contract metadata | App package/version plus data/media/encoder contract versions; no `bdma_decoder_profile_id` |
+| Local DB | Internal `Database/dcam.db`; identity/provisioning, user/operator, settings, runtime, media/session, tracking, import/write-back, and config-cache data |
 | Logs | Internal `Logs/logs.txt`; BDMA read-only |
 | Device/User context | Created or captured by DCAM, then mapped by BDMA |
-| Config | Ownership and BDMA visibility/write policy TBD |
+| Config | `dcam_config.cson` is device-information only; operational settings belong in `dcam.db` |
 
 Media formats are `.mp4`, `.jpg`, and `.mp3/.aac/.wav`. Logical roots, folders, naming, access, and cleanup are final at the contract baseline; physical paths and detailed schemas are not.
 
@@ -50,7 +51,7 @@ The DCAM-side persisted lifecycle (`recording`, pending/finalizing, completed, c
 
 ## Metadata direction
 
-Contract 1.2 binds media association to deterministic naming and embedded metadata when supported. It does not define a standalone media JSON artifact. Exact embedded fields/types, GPS validity, source lifecycle, collision handling, and schema encoding still need Metadata/Database Design.
+Contract 1.6 binds media association to deterministic naming and embedded metadata when supported. It does not define a standalone media JSON artifact. Exact embedded fields/types, GPS validity, source lifecycle, collision handling, and schema encoding still need Metadata/Database Design.
 
 The filename baseline is `DCAM_<CameraID>_<UserID>_<YYYYMMDD>_<HHMMSS>[_IMP][_enc].<ext>`. Important media lives in `Media/IMP`; MD5 applies only to MP4 and uses the same base name in the same folder.
 
@@ -73,4 +74,4 @@ The filename baseline is `DCAM_<CameraID>_<UserID>_<YYYYMMDD>_<HHMMSS>[_IMP][_en
 - Streaming adds a real-time channel while recorded-media ownership remains local/ADB-based.
 - PTT adds real-time audio and possibly stored artifacts that need a contract.
 - Cloud sync may add a new consumer and must explicitly revisit ownership.
-- Any write/delete responsibility beyond the explicit config, database, and cleanup permissions in contract 1.2 requires a contract update and, when architecturally significant, an ADR.
+- Any write/delete responsibility beyond the explicit device-info, database-field, and cleanup permissions in contract 1.6 requires a contract update and, when architecturally significant, an ADR.

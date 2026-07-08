@@ -34,17 +34,17 @@ final class LogOutbox {
         thread.setDaemon(true);
         return thread;
     });
+    private boolean uploadsEnabled;
 
-    LogOutbox(Context context) {
+    LogOutbox(Context context, boolean uploadsEnabled) {
         this.context = context.getApplicationContext();
+        this.uploadsEnabled = uploadsEnabled;
         database = AppDatabase.get(this.context);
         dao = database.pendingLogs();
         writer.execute(() -> {
             prune();
-            if (!BuildConfig.LOGGLY_TOKEN.isBlank()) {
-                if (dao.pendingCount() > 0) LogUploadScheduler.scheduleNow(this.context);
-                LogUploadScheduler.scheduleRetryWake(this.context, dao.earliestRetryAt());
-            }
+            if (this.uploadsEnabled) schedulePendingUploads();
+            else LogUploadScheduler.cancel(this.context);
         });
     }
 
@@ -52,7 +52,7 @@ final class LogOutbox {
         runAndWait(() -> {
             dao.insert(newEvent(level, payload));
             prune();
-            if (!BuildConfig.LOGGLY_TOKEN.isBlank() && dao.pendingCount() == 1) {
+            if (uploadsEnabled && !BuildConfig.LOGGLY_TOKEN.isBlank() && dao.pendingCount() == 1) {
                 LogUploadScheduler.scheduleNow(context);
             }
         }, "Failed to persist Loggly event");
@@ -60,6 +60,14 @@ final class LogOutbox {
 
     void archiveDeadEvents(LocalDate archiveDate) {
         runAndWait(() -> archiveDeadEventsInternal(archiveDate), "Failed to archive dead Loggly events");
+    }
+
+    void setUploadsEnabled(boolean enabled) {
+        runAndWait(() -> {
+            uploadsEnabled = enabled;
+            if (enabled) schedulePendingUploads();
+            else LogUploadScheduler.cancel(context);
+        }, "Failed to update Loggly upload schedule");
     }
 
     private PendingLogEntity newEvent(String level, String payload) {
@@ -99,7 +107,7 @@ final class LogOutbox {
             dao.insert(summary);
             dao.deleteIds(deadIds);
         });
-        if (!BuildConfig.LOGGLY_TOKEN.isBlank()) LogUploadScheduler.scheduleNow(context);
+        if (uploadsEnabled && !BuildConfig.LOGGLY_TOKEN.isBlank()) LogUploadScheduler.scheduleNow(context);
     }
 
     private String summaryPayload(String archiveName, List<PendingLogEntity> events) {
@@ -170,6 +178,12 @@ final class LogOutbox {
         if (hardPruned) {
             LogglyDiagnostics.write(context, "ERROR", "Log outbox exceeded hard limit; oldest events removed", null);
         }
+    }
+
+    private void schedulePendingUploads() {
+        if (BuildConfig.LOGGLY_TOKEN.isBlank()) return;
+        if (dao.pendingCount() > 0) LogUploadScheduler.scheduleNow(context);
+        LogUploadScheduler.scheduleRetryWake(context, dao.earliestRetryAt());
     }
 
     private static String escape(String value) {

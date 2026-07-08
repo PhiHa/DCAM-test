@@ -22,6 +22,7 @@ import com.dvid.dcam.core.logging.application.port.LogSink;
 import com.dvid.dcam.feature.capture.application.port.CameraGateway;
 import com.dvid.dcam.feature.capture.application.usecase.CaptureEventUseCase;
 import com.dvid.dcam.feature.capture.domain.RecordingMode;
+import com.dvid.dcam.feature.settings.application.usecase.MediaEncryptionSettingsUseCase;
 import com.dvid.dcam.platform.recording.RecordingForegroundService;
 import com.dvid.dcam.platform.storage.DcamFileType;
 import com.dvid.dcam.platform.storage.DcamMediaFile;
@@ -38,6 +39,7 @@ public final class CameraXCameraGatewayImpl implements CameraGateway {
     private final CameraXPreviewView previewView;
     private final LogSink log;
     private final CaptureEventUseCase captureEvents;
+    private final MediaEncryptionSettingsUseCase mediaEncryptionSettings;
     private final ImageCapture imageCapture = new ImageCapture.Builder().build();
     private final VideoCapture<Recorder> videoCapture;
     private ListenableFuture<ProcessCameraProvider> providerFuture;
@@ -47,10 +49,12 @@ public final class CameraXCameraGatewayImpl implements CameraGateway {
     public CameraXCameraGatewayImpl(Context context, LifecycleOwner lifecycleOwner, DcamConfig config,
                                     DcamMediaOutput mediaOutput, LogSink log,
                                     CaptureEventUseCase captureEvents,
+                                    MediaEncryptionSettingsUseCase mediaEncryptionSettings,
                                     CameraXPreviewView previewView) {
         this.context = context;
         this.lifecycleOwner = lifecycleOwner; this.config = config; this.mediaOutput = mediaOutput; this.log = log;
         this.captureEvents = captureEvents;
+        this.mediaEncryptionSettings = mediaEncryptionSettings;
         this.previewView = previewView;
         Recorder recorder = new Recorder.Builder().setQualitySelector(QualitySelector.from(Quality.FHD)).build();
         videoCapture = VideoCapture.withOutput(recorder);
@@ -76,14 +80,25 @@ public final class CameraXCameraGatewayImpl implements CameraGateway {
 
     @Override public void takePhoto() {
         LocalDateTime at = LocalDateTime.now();
-        DcamMediaFile mediaFile = mediaOutput.mediaFile(DcamFileType.IMAGE, config, at, false);
+        boolean encrypt = mediaEncryptionSettings.isMediaEncryptionEnabled();
+        DcamMediaFile mediaFile = mediaOutput.mediaFile(DcamFileType.IMAGE, config, at, encrypt);
         ImageCapture.OutputFileOptions options = mediaOutput.imageOptions(context, mediaFile);
         imageCapture.takePicture(options, ContextCompat.getMainExecutor(context), new ImageCapture.OnImageSavedCallback() {
             @Override public void onImageSaved(ImageCapture.OutputFileResults result) {
-                mediaOutput.publishSaved(context, mediaFile);
-                previewView.showSaved(mediaFile.getFileName());
-                log.info("Photo saved: " + mediaFile.getFileName());
-                captureEvents.photoSaved(mediaFile.getFileName());
+                try {
+                    if (encrypt) {
+                        mediaOutput.encryptSaved(context, mediaFile, result.getSavedUri(),
+                                config.getMediaEncryptionPassword());
+                    }
+                    mediaOutput.publishSaved(context, mediaFile);
+                    previewView.showSaved(mediaFile.getFileName());
+                    log.info((encrypt ? "Encrypted photo saved: " : "Photo saved: ") + mediaFile.getFileName());
+                    captureEvents.photoSaved(mediaFile.getFileName());
+                } catch (Exception error) {
+                    log.error("Photo encryption failed: " + mediaFile.getFileName(), error);
+                    captureEvents.captureFailed("Photo encryption", message(error));
+                    previewView.showError("Photo encryption failed");
+                }
             }
             @Override public void onError(ImageCaptureException error) {
                 log.error("Photo failed", error);
@@ -117,7 +132,8 @@ public final class CameraXCameraGatewayImpl implements CameraGateway {
             return;
         }
         LocalDateTime at = LocalDateTime.now();
-        DcamMediaFile mediaFile = mediaOutput.mediaFile(type, config, at, config.isVideoEncrypted());
+        boolean encrypt = mediaEncryptionSettings.isMediaEncryptionEnabled();
+        DcamMediaFile mediaFile = mediaOutput.mediaFile(type, config, at, encrypt);
         PendingRecording pending = mediaOutput.prepareVideoRecording(context, videoCapture, mediaFile);
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED)
             pending = pending.withAudioEnabled();
@@ -140,9 +156,20 @@ public final class CameraXCameraGatewayImpl implements CameraGateway {
                     captureEvents.captureFailed("Recording", "CameraX error " + done.getError());
                 }
                 else {
-                    mediaOutput.publishSaved(context, mediaFile);
-                    log.info("Recording saved: " + mediaFile.getFileName());
-                    captureEvents.recordingCompleted(mediaFile.getFileName());
+                    try {
+                        if (encrypt) {
+                            mediaOutput.encryptSaved(context, mediaFile, done.getOutputResults().getOutputUri(),
+                                    config.getMediaEncryptionPassword());
+                        }
+                        mediaOutput.publishSaved(context, mediaFile);
+                        log.info((encrypt ? "Encrypted recording saved: " : "Recording saved: ")
+                                + mediaFile.getFileName());
+                        captureEvents.recordingCompleted(mediaFile.getFileName());
+                    } catch (Exception error) {
+                        log.error("Recording encryption failed: " + mediaFile.getFileName(), error);
+                        captureEvents.captureFailed("Recording encryption", message(error));
+                        previewView.showError("Recording encryption failed");
+                    }
                 }
                 activeRecording = null;
                 RecordingForegroundService.stop(context);
@@ -159,6 +186,10 @@ public final class CameraXCameraGatewayImpl implements CameraGateway {
         log.error("Camera error: " + text, null);
         captureEvents.captureFailed("Camera", text);
         previewView.showError(text);
+    }
+
+    private static String message(Exception error) {
+        return error.getMessage() == null ? error.getClass().getSimpleName() : error.getMessage();
     }
 
     public void release() {

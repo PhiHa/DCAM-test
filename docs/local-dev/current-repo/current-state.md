@@ -1,6 +1,6 @@
 # Current repository state
 
-This page describes the refactored code visible on 2026-07-06. It records implementation reality and compares it with approved Data Contract 1.2; it is not a substitute for the contract or formal requirements.
+This page describes the refactored code visible on 2026-07-08. It records implementation reality and compares it with the approved Data Contract baseline now refreshed to 1.6; it is not a substitute for the contract or formal requirements.
 
 ## Build and platform
 
@@ -12,7 +12,7 @@ This page describes the refactored code visible on 2026-07-06. It records implem
 - JUnit Jupiter 6.1.0 is used for local tests.
 - No Retrofit, dependency-injection framework, or Kotlin dependency is present.
 
-The SDK values remain implementation choices. Data Contract 1.2 now fixes the logical database location, purpose, access rights, and need for schema versioning, while the exact SQLite schema/design and final device/SDK policy remain TBD.
+The SDK values remain implementation choices. Data Contract 1.6 now fixes the logical database location, purpose, access rights, and need for schema/app/contract versioning, while the exact SQLite table details and final device/SDK policy remain TBD.
 
 ## Refactored architecture
 
@@ -53,10 +53,14 @@ The source-level map and dependency rules live in `app/src/main/java/com/dvid/dc
 - CameraX events are mapped to domain capture events before they update UI state.
 - SOS handoff serializes stop/finalize/start rather than overlapping CameraX recordings.
 - Active video/SOS recording starts an Android foreground service and persistent notification.
-- Menu feature bodies remain placeholders, but their shared shells now use XML/ViewBinding rather than programmatic view construction.
-- The settings home presents a three-column launcher with 12 clear categories. Opening a settings item shows a short non-editable OEM/CSON setting-name list; sensitive values are not shown.
+- Project-phase feature gates are persisted in Android SharedPreferences. Image, video, and audio capture are enabled by default; media browser, settings categories, GPS, security/encryption, cloud/network, transfer, and streaming are disabled by default.
+- The menu is driven by `MainMenuModel`, keeps the declared order, hides disabled feature tiles, and falls back to Menu when a disabled screen is requested. About remains visible.
+- Physical hardware capture keys now consult the same feature gates before invoking photo, video/SOS, or audio commands.
+- A hidden Developer settings screen can toggle project-phase feature gates; it is reached from About through the local developer unlock gesture.
+- The settings home presents a three-column launcher with 12 categories when the corresponding gates are enabled. Draft/demo setting controls are not counted as completed operational settings.
 - Files is a read-only explorer limited to contract media roots `Video`, `IMP`, `Image`, and `Audio`. It supports folder navigation and opens media through a temporary FileProvider grant.
 - Battery percentage, available app-storage bytes, and GPS capability/enabled state flow through `DeviceRepository`, a refresh use case, and ViewModel state.
+- Language selection is implemented through a settings use case and Android SharedPreferences; changing language recreates the Activity with the localized context.
 
 ## Current storage behavior
 
@@ -75,7 +79,9 @@ Current filename shape:
 DCAM_<CameraID>_<UserID>_<yyyyMMdd>_<HHmmss>[_IMP][_enc].<ext>
 ```
 
-The listed media layout, naming, and AAC output align with the corresponding Data Contract 1.2 rules. SOS remains an application action/state name, but its persisted artifact is contract-important media in `IMP` with `_IMP`. Configuration is still the legacy `configs.cson` with existing `account.user_id`, `police.user_id`, and operational keys; the approved device-only `Config/dcam_config.cson` plus DB-backed operational settings are not implemented. Encryption configuration still exists without an AES-256 implementation, so encryption behavior remains a critical gap.
+The listed media layout, naming, and AAC output align with the corresponding Data Contract 1.6 media artifact rules. SOS remains an application action/state name, but its persisted artifact is contract-important media in `IMP` with `_IMP`. Configuration is still the legacy `configs.cson` with existing `account.user_id`, `police.user_id`, encryption password, and operational keys; the approved device-information-only `Config/dcam_config.cson`, app/contract metadata, provisioning identity mirror, and DB-backed operational settings are not implemented.
+
+AES-256-CTR media encryption now exists in `BodycamMediaCrypto` and is applied to saved photo, video/SOS, and audio artifacts when the Security/Encryption gate and saved media-encryption preference are enabled. Encrypted files use the existing `_enc` filename marker. Final key management, BDMA decryption compatibility evidence, and operational policy remain open and must not be treated as fully approved security design.
 
 MP4 MD5 generation is not implemented. The contract fixes its scope and sidecar naming, but the sidecar content representation, enablement persistence, generation/finalization workflow, and BDMA fixture still need agreement. There is also no contract-aligned embedded media metadata implementation, media/database schema version, persisted file lifecycle, cross-root BDMA scanner/importer, or verified cleanup/write-back flow.
 
@@ -85,11 +91,11 @@ MP4 MD5 generation is not implemented. The contract fixes its scope and sidecar 
 - Context includes version, thread, source, hardware ID, model, and camera/account ID.
 - Room-backed `dcam.db` currently stores only the pending Loggly outbox. Its filename matches the contract, but its schema does not yet cover contracted user, device-tracking, and operational data/configuration or BDMA-safe write-back.
 - `LogSink` isolates capture/audio application-facing diagnostics from `DcamLogger`.
-- Loggly remains a concrete provider inside the logging adapter package; a full provider-neutral diagnostics design is still future work.
+- Loggly remains a concrete provider inside the logging adapter package. Remote upload enablement is now controlled by the Cloud/Network feature gate; a full provider-neutral diagnostics design is still future work.
 
 ## Future capabilities
 
-Location, Metadata, durable media lifecycle, MP4 checksum, AES-256 encryption, contract configuration/database migration, Cloud, Remote Config, Update, Streaming, and PTT remain roadmap/documentation capabilities only. Contract media folder/naming rules have concrete platform implementation; broader capabilities enter source only when approved behavior defines their domain values and application boundaries.
+Location, Metadata, durable media lifecycle, MP4 checksum, contract configuration/database migration, Cloud, Remote Config, Update, Streaming, and PTT remain roadmap/documentation capabilities only. Contract media folder/naming rules and local AES-256-CTR media transforms have concrete platform implementation; broader capabilities enter source only when approved behavior defines their domain values and application boundaries.
 
 ## Local property behavior
 
@@ -99,13 +105,14 @@ Private workflow instructions for local-property handling belong in `application
 
 ## Remaining gaps
 
-- Each approved menu feature still needs its own XML/ViewBinding screen and feature ViewModel/use cases.
+- Each approved menu feature still needs its own XML/ViewBinding screen and feature ViewModel/use cases beyond the feature-gated launcher/shell.
+- `DemoSettingsState` and draft/demo setting controls are local UI scaffolding, not accepted implementation evidence.
 - CameraX is lifecycle-owned by the Activity adapter; the foreground service does not yet own/recover recording after process death.
 - HandlerThread/vendor-SDK serialization is scaffolded by architecture, but CameraX currently uses its lifecycle/main-executor contract.
 - No GPS/location implementation or metadata integration yet.
 - Device status currently covers battery, available app storage, and GPS capability/enabled state; richer network/firmware/USB status remains future work.
 - No persistent media status/recovery state machine.
-- Data Contract media folders/naming, important-media mapping, AAC output, and active log filename are implemented locally. Storage modes/physical roots, device-only CSON, DB-backed settings, MP4 MD5, embedded metadata, AES-256/key handling, BDMA permissions, import results, cleanup, and E2E proof remain open.
+- Data Contract media folders/naming, important-media mapping, AAC output, active log filename, and local AES-256-CTR transforms are implemented locally. Storage modes/physical roots, device-information-only CSON, app/contract metadata, DB-backed settings, MP4 MD5, embedded metadata, final key handling, BDMA permissions, import results, cleanup, and E2E proof remain open.
 - Android Device Operation: existing permission/foreground-notification behavior is present, and system bars are intentionally visible. Boot receiver, Home/Launcher role, managed kiosk/exit control, exact dedicated-screen behavior, screen/power policy, durable service ownership, and crash/reboot recovery remain pending Technical Design/device policy.
 - No streaming, PTT, cloud, remote config, update, or Device/User implementation beyond boundaries/placeholders.
 - Real BodyCamera POC and hardware matrix validation remain mandatory.
@@ -114,7 +121,7 @@ Private workflow instructions for local-property handling belong in `application
 
 After refactoring:
 
-- `testDebugUnitTest`: 22 tests pass, including architecture, immutable UI-state, capture rebinding, contract media paths/naming, legacy config, and media-browser sandbox guards.
-- `assembleDebug`: succeeds.
+- `testDebugUnitTest`: the prior 2026-07-07 baseline passed 22 tests, including architecture, immutable UI-state, capture rebinding, contract media paths/naming, legacy config, and media-browser sandbox guards. The 2026-07-08 local doc refresh counted 34 test methods after adding feature-gate and media-crypto coverage; Gradle was not re-run for this documentation-only update.
+- `assembleDebug`: the prior 2026-07-07 baseline succeeded.
 - `lintDebug`: last verified as succeeding on 2026-07-06; the final 2026-07-07 re-run was blocked when the sandboxed Gradle wrapper attempted a network download.
 - Generated `BuildConfig`: intentionally contains all application and local-property fields.

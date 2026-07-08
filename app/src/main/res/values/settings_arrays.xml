@@ -76,13 +76,17 @@
     </string-array>
 
     <string-array name="network_settings_items">
-        <item>Server address</item>
-        <item>Server port</item>
-        <item>Use APN</item>
-        <item>APN name</item>
-        <item>APN authentication</item>
-        <item>APN username</item>
-        <item>APN password</item>
+        <item>Cloud device ID</item>
+        <item>Android ID recovery hash</item>
+        <item>Provisioning state</item>
+        <item>Web Portal QR provisioning</item>
+        <item>Remote config revision</item>
+        <item>Remote config apply status</item>
+        <item>Cloud provider mode</item>
+        <item>AutoUpdate readiness</item>
+        <item>Update artifact provider</item>
+        <item>Future WebServer endpoint</item>
+        <item>APN profile</item>
     </string-array>
 
     <string-array name="transfer_settings_items">
@@ -99,6 +103,9 @@
     <string-array name="about_settings_items">
         <item>Application version</item>
         <item>Device information</item>
+        <item>Cloud identity state</item>
+        <item>Provisioning / recovery state</item>
+        <item>Remote config cache</item>
         <item>Firmware information</item>
         <item>Available hardware features</item>
         <item>Diagnostics and logs</item>

@@ -1,8 +1,8 @@
 # Source structure and requirement evidence report
 
-Audit date: **2026-07-07** (Asia/Saigon)
-Repository baseline: working tree based on commit `dcd1082` (`Update document`)
-Documentation baseline: local Confluence digest refreshed through **2026-07-07**, including Approved Android Device Operation Requirements 1.0
+Audit date: **2026-07-08** (Asia/Saigon)
+Repository baseline: working tree based on commit `dcd1082` (`Update document`) plus local July 8 feature-gate/encryption changes
+Documentation baseline: originally refreshed through **2026-07-07**; Confluence was refreshed again on **2026-07-08** with Data Contract 1.6, Android Device Operation Requirements 1.8, System Settings Requirements 1.13, and the 4.2 Technical Design draft set. This evidence report has not been fully re-audited against every July 8 draft design.
 
 ## Executive conclusion
 
@@ -10,7 +10,7 @@ The current project **substantially satisfies the documented architecture direct
 
 The strongest evidence is a standardized feature-first Clean Architecture/Ports-and-Adapters structure with explicit `domain`, `application/usecase`, `application/port`, `presentation`, and outer `platform` responsibilities. A source-level architecture test enforces canonical package paths, boundary-interface placement/naming, dependency direction, implementation `Impl` naming, and the four approved top-level package families. Capture is local-first, physical and touch controls share the same use-case interfaces, configuration falls back to safe local defaults, and online log upload is asynchronous and optional.
 
-The source now implements only the directly supported artifact-shape changes from Data Contract 1.2: media folders, contract filenames, important-media mapping, AAC output, and the active `logs.txt` filename. It deliberately does not invent the still-undefined physical roots, config schema migration, MP4 sidecar content, or DB operational schema. Product-critical gaps remain: Internal/External/Auto behavior, device-only CSON, MP4 MD5 generation, embedded metadata/database schema, persisted media lifecycle, low-storage policy, GPS capture, AES-256 encryption, process-death recovery, BDMA import/cleanup/write-back proof, and a real BodyCamera compatibility matrix. Android Device Operation adds approved boot/launcher/kiosk/power/recovery expectations; existing permission/foreground behavior is present, while exact dedicated-screen/kiosk behavior remains open and Android system bars are intentionally visible for device indicators.
+The source implements the directly supported Data Contract media artifact-shape subset that remains in Data Contract 1.6, plus local project-control features: media folders, contract filenames, important-media mapping, AAC output, the active `logs.txt` filename, feature-gated menu/hardware-key behavior, local language preference, gated remote diagnostics upload, and local AES-256-CTR media transforms. It deliberately does not invent the still-undefined physical roots, config schema migration, MP4 sidecar content, DB operational schema, app/contract metadata, key-management policy, or BDMA decryption behavior. Product-critical gaps remain: Internal/External/Auto behavior, device-information-only CSON, MP4 MD5 generation, embedded metadata/database schema, persisted media lifecycle, low-storage policy, GPS capture, final encryption/key design, process-death recovery, BDMA import/cleanup/write-back proof, and a real BodyCamera compatibility matrix. Android Device Operation adds approved boot/launcher/kiosk/power/recovery expectations; existing permission/foreground behavior is present, while exact dedicated-screen/kiosk behavior remains open and Android system bars are intentionally visible for device indicators.
 
 ### Verdict at a glance
 
@@ -19,21 +19,21 @@ The source now implements only the directly supported artifact-shape changes fro
 | Is the code modular? | **Yes at package/layer level; partially at build level.** There is one Gradle `:app` module, so isolation is source/test-enforced rather than compiler-enforced between Gradle modules. |
 | Is it expandable? | **Yes structurally.** Feature slices, use cases, explicit application boundaries, platform implementations, and composition give clear extension seams without speculative source scaffolds. |
 | Is core logic tied to one hardware implementation? | **Mostly no, but portability is not yet proven.** Feature application/domain code is Android- and vendor-independent; `AppComposition` selects the current CameraX adapter. Real devices and vendor fallbacks remain untested. |
-| Is core operation tied to online services? | **No for current capture/storage.** The capture flow contains no cloud dependency. Loggly upload is token-gated, network-constrained, queued, and asynchronous. Diagnostics are nevertheless still concretely Loggly-oriented. |
+| Is core operation tied to online services? | **No for current capture/storage.** The capture flow contains no cloud dependency. Loggly upload is feature-gated, token-gated, network-constrained, queued, and asynchronous. Diagnostics are nevertheless still concretely Loggly-oriented. |
 | Does the project satisfy the full requirement baseline? | **No.** Architecture alignment is strong; functional MVP coverage is partial; acceptance targets need missing implementation plus device/BDMA/QA evidence. |
 
 ## Scope and evidence rules
 
 This audit compares the source to:
 
-- [MVP requirement baseline](../01-requirements/mvp-baseline.md)
-- [System and application architecture](../02-architecture/system-architecture.md)
-- [Data, storage, and DCAM-BDMA boundary](../02-architecture/data-and-bdma.md)
-- [Cloud, quality, and security direction](../02-architecture/cloud-quality-security.md)
-- [Android development standard](../03-development/android-standard.md)
-- [Current repository state](../05-current-repo/current-state.md)
+- [MVP requirement baseline](../../dcam-knowledge/01-requirements/mvp-baseline.md)
+- [System and application architecture](../../dcam-knowledge/02-architecture/system-architecture.md)
+- [Data, storage, and DCAM-BDMA boundary](../../dcam-knowledge/02-architecture/data-and-bdma.md)
+- [Cloud, quality, and security direction](../../dcam-knowledge/02-architecture/cloud-quality-security.md)
+- [Android development standard](../../dcam-knowledge/03-development/android-standard.md)
+- [Current repository state](../current-repo/current-state.md)
 
-Confluence now has Approved Data Contract 1.2 plus a Requirements Home and ten functional-requirement pages, including Approved Android Device Operation Requirements 1.0; Non-functional Requirements remain Not Started. The IDs in this report are local audit labels, not Confluence requirement IDs.
+Confluence now has Approved Data Contract 1.6 plus a Requirements Home and functional-requirement pages, including Approved Android Device Operation Requirements 1.8 and System Settings Requirements 1.13; Non-functional Requirements and Technical Design draft pages were also updated on July 8. The IDs in this report are local audit labels, not Confluence requirement IDs.
 
 Status meanings:
 
@@ -126,16 +126,16 @@ capture/audio implementation -> LogSink -> DcamLogSinkImpl -> DcamLogger
                                       ├─> Logcat + internal Logs/logs.txt
                                       └─> Room outbox
                                             -> WorkManager (network required)
-                                            -> Loggly only when token is configured
+                                            -> Loggly only when feature gate and token allow it
 ```
 
-[`DcamLogger`](../../../app/src/main/java/com/dvid/dcam/platform/logging/DcamLogger.java) writes locally before queuing remote diagnostics. [`LogOutbox`](../../../app/src/main/java/com/dvid/dcam/platform/logging/LogOutbox.java) persists events, and [`LogUploadScheduler`](../../../app/src/main/java/com/dvid/dcam/platform/logging/LogUploadScheduler.java) requires a connected network. [`LogglyUploadWorker`](../../../app/src/main/java/com/dvid/dcam/platform/logging/LogglyUploadWorker.java) exits successfully when no token is configured. Therefore Internet/Loggly is not on the capture success path. However, the diagnostics implementation and naming are provider-specific, so general provider neutrality is incomplete.
+[`DcamLogger`](../../../app/src/main/java/com/dvid/dcam/platform/logging/DcamLogger.java) writes locally before queuing remote diagnostics. [`LogOutbox`](../../../app/src/main/java/com/dvid/dcam/platform/logging/LogOutbox.java) persists events, and [`LogUploadScheduler`](../../../app/src/main/java/com/dvid/dcam/platform/logging/LogUploadScheduler.java) requires a connected network. Remote upload enablement is controlled by the Cloud/Network feature gate, and [`LogglyUploadWorker`](../../../app/src/main/java/com/dvid/dcam/platform/logging/LogglyUploadWorker.java) exits successfully when no token is configured. Therefore Internet/Loggly is not on the capture success path. However, the diagnostics implementation and naming are provider-specific, so general provider neutrality is incomplete.
 
 ### BDMA boundary
 
-DCAM now produces contract-shaped media folders and names inside the existing prototype root selection. [`DcamStorage`](../../../app/src/main/java/com/dvid/dcam/platform/storage/DcamStorage.java) creates `Media/{Video,Image,Audio,IMP}`, [`DcamFileName`](../../../app/src/main/java/com/dvid/dcam/platform/storage/DcamFileName.java) creates `DCAM_...[_IMP][_enc]` names, and [`LocalMediaRepositoryImpl`](../../../app/src/main/java/com/dvid/dcam/platform/storage/LocalMediaRepositoryImpl.java) restricts browsing to those four roots and blocks path traversal. MP4 MD5 generation is not implemented because its content representation and persisted enablement are not yet specified.
+DCAM now produces contract-shaped media folders and names inside the existing prototype root selection. [`DcamStorage`](../../../app/src/main/java/com/dvid/dcam/platform/storage/DcamStorage.java) creates `Media/{Video,Image,Audio,IMP}`, [`DcamFileName`](../../../app/src/main/java/com/dvid/dcam/platform/storage/DcamFileName.java) creates `DCAM_...[_IMP][_enc]` names, [`BodycamMediaCrypto`](../../../app/src/main/java/com/dvid/dcam/platform/storage/BodycamMediaCrypto.java) applies local AES-256-CTR transforms when the gated preference is enabled, and [`LocalMediaRepositoryImpl`](../../../app/src/main/java/com/dvid/dcam/platform/storage/LocalMediaRepositoryImpl.java) restricts browsing to those four roots and blocks path traversal. MP4 MD5 generation is not implemented because its content representation and persisted enablement are not yet specified.
 
-There is no BDMA-side code in this repository and no contract-aligned embedded metadata record for BDMA to validate. Media folders/names now match their contract rules, but storage-mode discovery, MP4 MD5, ADB access, import results, database/config write-back, cleanup, duplicate/retry behavior, and shared fixtures are not demonstrated. Consequently, end-to-end DCAM-BDMA compatibility remains unproven.
+There is no BDMA-side code in this repository and no contract-aligned embedded metadata record for BDMA to validate. Media folders/names now match their contract rules and local encryption transforms exist, but storage-mode discovery, MP4 MD5, ADB access, BDMA decryption compatibility, import results, database/config write-back, cleanup, duplicate/retry behavior, and shared fixtures are not demonstrated. Consequently, end-to-end DCAM-BDMA compatibility remains unproven.
 
 ## Requirement traceability
 
@@ -149,12 +149,12 @@ There is no BDMA-side code in this repository and no contract-aligned embedded m
 | ARCH-04 | Modular and maintainable structure | Four enforced top-level package families with vertical `capture`, `media`, and `device` slices | **Partial** | Source ownership and dependency direction are clear; compiler isolation remains limited by the single Gradle module, and cross-feature presentation still sits in one ViewModel/Activity shell. |
 | ARCH-05 | Hardware capability behind replaceable implementations | `CameraGateway`, `AudioRecorder`, and `DeviceRepository`; CameraX/MediaRecorder/Android implementations remain outside application/domain | **Partial** | Replacing implementations leaves application/domain code mostly unchanged. Runtime selection, vendor fallback, and device matrix are missing; manifest requires a camera. |
 | ARCH-06 | Offline-first core; cloud must not block capture | No cloud call in use cases/repositories/camera output; local storage/logging; token-gated WorkManager upload | **Verified** for current capture path | Video, photo, audio, storage, config, and UI do not require an online service. Metadata/BDMA readiness is still absent, so the entire offline MVP is not complete. |
-| ARCH-07 | Provider-neutral cloud/config/update integration | Config uses `ConfigurationSource`; no approved cloud/update use case or boundary exists; the concrete Loggly worker is isolated in logging | **Gap** | Speculative empty interfaces were removed. Cloud/update boundaries should be introduced only with approved behavior; diagnostics remain Loggly-specific. |
-| ARCH-08 | Configuration over hardcoding with safe defaults | Legacy `configs.cson`, `DcamConfig.defaults`, and prototype `APP_DATA`/`PUBLIC_DCIM` selection | **Partial** | Contract folders/naming are fixed. Device-only CSON migration, DB-backed operational settings, Internal/External/Auto behavior, Camera FHD quality, key mappings, and provider behavior still need designs. |
+| ARCH-07 | Provider-neutral cloud/config/update integration | Config uses `ConfigurationSource`; no approved cloud/update use case or boundary exists; the concrete Loggly worker is isolated in logging and gated at runtime | **Gap** | Speculative empty interfaces were removed. Cloud/update boundaries should be introduced only with approved behavior; diagnostics remain Loggly-specific even though upload enablement is now gated. |
+| ARCH-08 | Configuration over hardcoding with safe defaults | Legacy `configs.cson`, `DcamConfig.defaults`, prototype `APP_DATA`/`PUBLIC_DCIM` selection, feature-gate preferences, language preference, and media-encryption preference | **Partial** | Contract folders/naming and local preferences are implemented. Device-only CSON migration, DB-backed operational settings, Internal/External/Auto behavior, Camera FHD quality, key mappings, and provider behavior still need designs. |
 | ARCH-09 | Long/blocking work off UI; serialized hardware work | Single-thread media browser executor, Room, WorkManager; CameraX executor/callback contract | **Partial** | Some threading choices conform. No performance/ANR evidence, priority tests, or vendor `HandlerThread` implementation exists. |
-| ARCH-10 | Testability through interfaces/fakes | Architecture, storage, browser, input, config, UI-state, DB-manifest, and log-worker unit tests | **Partial** | Boundary tests exist, but capture use cases/repository/camera error flows lack broad fake-based tests and instrumentation coverage is only a placeholder. |
+| ARCH-10 | Testability through interfaces/fakes | Architecture, storage, browser, input, config, UI-state, DB-manifest, feature-gate/encryption, and log-worker unit tests | **Partial** | Boundary tests exist, but capture use cases/repository/camera error flows lack broad fake-based tests and instrumentation coverage is only a placeholder. |
 | ARCH-11 | Versioned database evolution | Central Room manifest, exported schemas 1/2, explicit `V1_TO_V2`, DB manifest test | **Verified** for log DB | Database migration discipline exists. It does not provide the required media metadata schema or DCAM-BDMA schema version. |
-| ARCH-12 | Security-aware local access and secret handling | Local properties are gitignored; media browser canonicalizes and restricts paths; FileProvider is non-exported and grants temporary access | **Partial** | Useful controls exist. Encryption/key management, update validation, media protection, full permission audit, and security testing are unresolved. |
+| ARCH-12 | Security-aware local access and secret handling | Local properties are gitignored; media browser canonicalizes and restricts paths; FileProvider is non-exported and grants temporary access; local AES-256-CTR media transform is implemented behind a feature-gated preference | **Partial** | Useful controls exist. Final key management, BDMA decryption validation, update validation, media protection, full permission audit, and security testing are unresolved. |
 
 ### MVP behavior and acceptance
 
@@ -194,23 +194,23 @@ The architecture is a good foundation, but it should not be interpreted as a com
 
 | Area | Current limitation | Consequence |
 |---|---|---|
-| Requirement authority | Data Contract 1.2 is approved and an initial functional-requirements structure exists; detailed acceptance criteria, NFRs, technical designs, and ADRs remain incomplete. | The approved contract now overrides conflicting prototype behavior, while open design details still cannot be invented. |
-| Storage contract | Media folders, filename, AAC, and active log filename follow contract 1.2; config, storage modes, physical roots, and MP4 sidecars do not. | Several contract areas still need approved design and implementation before BDMA can rely on them. |
+| Requirement authority | Data Contract 1.6 is approved and the functional-requirements / technical-design structure has expanded. | The approved contract now overrides conflicting prototype behavior, while draft technical-design details still should not be mistaken for current implementation. |
+| Storage contract | Media folders, filename, AAC, active log filename, and local `_enc` transforms follow parts of the current contract media-artifact direction; config, storage modes, physical roots, app/contract metadata, and MP4 sidecars do not. | Several contract areas still need approved design and implementation before BDMA can rely on them. |
 | Metadata | No authoritative per-media metadata entity/file contains file ID, device ID, capture time, location, source state, and schema version. | BDMA cannot validate or map evidence without guessing, so the core product handoff is incomplete. |
 | Media lifecycle | UI state is transient; completed, pending, corrupt, interrupted, and recovered media states are not persisted. | Restart and recovery logic cannot reliably determine whether a file is ready for import. |
-| File integrity | Contract 1.2 defines MP4 MD5 scope/naming, but sidecar content and generation are not implemented; no lifecycle persistence or corruption classification exists. | Contracted verified/unverified import behavior cannot yet operate. |
+| File integrity | Contract 1.6 defines MP4 MD5 scope/naming, but sidecar content and generation are not implemented; no lifecycle persistence or corruption classification exists. | Contracted verified/unverified import behavior cannot yet operate. |
 | Storage safety | Available bytes are displayed, but recording has no documented threshold, preflight decision, reserve, or full-storage transition. | Near-full storage can still cause capture/finalization failure despite status visibility. |
 | GPS | The code detects whether GPS exists and is enabled but does not request, validate, timestamp, or associate a location with media. | The MVP GPS metadata requirement is not implemented. |
 | Device capability | CameraX is the only camera implementation; physical key codes and FHD selection are fixed prototype behavior; broader camera, microphone, network, GMS, USB, and firmware capabilities are not modeled. | Source abstraction reduces coupling, but compatibility across BodyCamera models is not demonstrated. |
 | Configuration | Built-in defaults and local CSON exist; runtime override and remote precedence are absent, and several behavior choices remain hardcoded. | Customer/device variation still requires code changes in some areas. |
-| Diagnostics provider | Capture depends on `LogSink`, but the outbox, worker, endpoint construction, and class names are Loggly-specific. | Core capture stays offline-capable, but replacing the online diagnostics provider is not yet a pure configuration change. |
+| Diagnostics provider | Capture depends on `LogSink`, and remote upload is feature-gated, but the outbox, worker, endpoint construction, and class names are Loggly-specific. | Core capture stays offline-capable, but replacing the online diagnostics provider is not yet a pure configuration change. |
 | Database scope | Room currently persists the log outbox only. | Versioned database mechanics exist, but media, metadata, lifecycle, device/user mapping, and recovery records do not. |
-| Feature UI | Settings detail pages are read-only prototypes and most menu features remain placeholders. | Navigation demonstrates structure, not completed feature behavior or persistence. |
-| Security | Encryption, key ownership/rotation, media protection, update verification, sensitive metadata rules, and BDMA decryption compatibility are unresolved. | Security readiness cannot be inferred from package isolation or secret hygiene alone. |
+| Feature UI | Feature-gated navigation, Files, language selection, and media-encryption preference are code-backed; `DemoSettingsState` controls and most menu feature pages remain placeholders. | Navigation and a few local preferences demonstrate structure, not completed feature behavior or operational settings persistence. |
+| Security | Local AES-256-CTR media transforms exist, but key ownership/rotation, media protection, update verification, sensitive metadata rules, and BDMA decryption compatibility are unresolved. | Security readiness cannot be inferred from package isolation, secret hygiene, or the local transform alone. |
 
 ### Verification limitations
 
-- The 22 local unit tests cover useful boundaries, including architecture rules, storage naming/path rules, legacy config loading, and media-browser guards, but not the complete capture repository/use-case flow, CameraX behavior, lifecycle recovery, low storage, GPS, permissions, database migration execution, or BDMA integration.
+- The 34 local unit tests cover useful boundaries, including architecture rules, storage naming/path rules, legacy config loading, feature gates, local media crypto, and media-browser guards, but not the complete capture repository/use-case flow, CameraX behavior, lifecycle recovery, low storage, GPS, permissions, database migration execution, BDMA decryption, or BDMA integration.
 - There is no instrumentation or automated real-device UI/camera suite.
 - A successful debug build and unit-test run prove build health, not recording reliability, corruption resistance, battery behavior, performance, or security.
 - No audited evidence demonstrates the `>=99%` recording/image target, `100%` BDMA import target, zero critical corruption, or zero critical main-flow crashes.
@@ -222,7 +222,7 @@ Improvements should preserve the existing dependency direction and proceed from 
 
 ### Direction 1: establish contracts before expanding implementation
 
-1. Turn the implemented Data Contract 1.2 artifact shape into shared DCAM-BDMA fixtures and integration tasks.
+1. Turn the implemented Data Contract 1.6 media artifact subset into shared DCAM-BDMA fixtures and integration tasks.
 2. Write the physical storage, embedded metadata, SQLite, recording lifecycle/recovery, GPS validity, and security designs for details not fixed by the contract.
 3. Record decisions that materially constrain adapters or data using ADRs, especially camera API/fallback, metadata encoding, DB concurrency, encryption, and process-recovery ownership.
 4. Expand the initial functional pages into traceable requirement IDs and acceptance tests shared with BDMA and QA.
@@ -261,7 +261,7 @@ This is targeted refactoring around composition and lifecycle—not a rewrite of
 
 ### Direction 5: grow features without weakening boundaries
 
-- Give each approved settings/feature area its own ViewBinding screen, feature state/ViewModel, use cases, and domain contracts where justified.
+- Give each approved settings/feature area its own ViewBinding screen, feature state/ViewModel, use cases, and domain contracts where justified. Keep draft/demo controls out of completed-status evidence.
 - Keep physical keys and touch actions converging on application commands rather than separate hardware-only business flows.
 - Add Device/User foundations before streaming and PTT so identity and authorization do not get embedded in provider SDK callbacks.
 - Do not add speculative boundaries; define them from an approved use case and expected domain result/error model.
@@ -285,7 +285,7 @@ This is targeted refactoring around composition and lifecycle—not a rewrite of
 | **Now / before major feature work** | Define approved data/lifecycle contracts; add fake-based workflow and composition tests; keep new policy out of UI and adapters. (`AppComposition` extraction is complete.) |
 | **Before vendor camera or recovery work** | Separate preview UI from capture ownership and decide the long-running recording lifecycle owner. |
 | **Before adding another diagnostics provider** | Introduce a neutral uploader/local-only boundary around Loggly-specific code. |
-| **Now that media folder/name shape is aligned** | Define remaining MD5/config/storage details, then create BDMA fixtures/E2E tests and implement metadata, database settings, permissions, import results, cleanup, and recovery. |
+| **Now that media folder/name and local encryption shape are aligned** | Define remaining MD5/config/storage/key-management details, then create BDMA fixtures/E2E tests and implement metadata, database settings, permissions, decryption validation, import results, cleanup, and recovery. |
 | **Later, if measurable pressure appears** | Split Gradle modules or introduce a DI framework. Neither is required merely to make the current architecture respectable. |
 | **Do not do yet** | Rewrite working layers, invent ports for unapproved future capabilities, or modularize every package without an ownership/build/enforcement reason. |
 
@@ -293,13 +293,13 @@ This is targeted refactoring around composition and lifecycle—not a rewrite of
 
 | Priority | Required next outcome | Evidence that closes the gap |
 |---|---|---|
-| P0 | Complete Data Contract 1.2 integration beyond local artifact shape | Shared fixtures, ADB discovery, embedded media association, schema/lifecycle rules, cleanup/write-back, duplicate/retry behavior, and joint DCAM-BDMA tests. |
+| P0 | Complete Data Contract 1.6 integration beyond local media artifact/encryption shape | Shared fixtures, ADB discovery, app/contract metadata, embedded media association, schema/lifecycle rules, BDMA decryption validation, cleanup/write-back, duplicate/retry behavior, and joint DCAM-BDMA tests. |
 | P0 | Persist media lifecycle and recover interrupted recordings | State-machine tests plus app-kill, reboot/power-loss, corrupt/partial-file, and recovery results on BodyCamera. |
 | P0 | Implement storage safety | Configured threshold/policy, preflight checks, safe finalize/stop behavior, and near-full/exhausted-device tests. |
 | P0 | Validate target hardware | Device/firmware/Android capability matrix with record, photo, audio, key, storage, lifecycle, and permission results. |
 | P1 | Implement valid GPS-to-metadata flow | Fake-location unit tests and unavailable/stale/valid real-device scenarios. |
 | P1 | Make adapter selection capability-driven | `AppComposition` exists; add CameraX/vendor/unsupported selections plus adapter contract tests. |
-| P1 | Generalize diagnostics provider boundary | Provider-neutral upload contract, local-only implementation, Loggly adapter, and offline/failure tests. |
+| P1 | Generalize diagnostics provider boundary | Provider-neutral upload contract, local-only implementation, Loggly adapter, and offline/failure tests beyond the current runtime gate. |
 | P1 | Expand automated coverage | Fake-port tests for use cases/repositories, CameraX instrumentation, Room migration tests, and UI/permission/lifecycle tests. |
 | P2 | Consider multiple Gradle modules | ADR based on measured build/team coupling; preserve the established app/core/feature/platform dependency direction if extraction becomes justified. |
 
@@ -307,10 +307,10 @@ This is targeted refactoring around composition and lifecycle—not a rewrite of
 
 Static verification performed during this audit:
 
-- Confirmed a single `:app` Gradle module and enumerated 84 production Java files, 12 local unit-test files, and 22 test methods.
+- Confirmed a single `:app` Gradle module and enumerated 98 production Java files, 16 local unit-test files, and 34 test methods.
 - Confirmed `core` and feature application/domain do not import Android, AndroidX, Google/provider APIs, `app`, or `platform`; confirmed platform does not import the app shell.
-- Reviewed composition, capture, storage, config, device-status, logging/outbox, Room migration, physical-key, and media-browser paths.
-- Recorded the evidence against the working tree based on commit `dcd1082`; the current contract-alignment changes are intentionally local until reviewed.
+- Reviewed composition, capture, storage, config, feature-gate, media-encryption, device-status, logging/outbox, Room migration, physical-key, and media-browser paths.
+- Recorded the evidence against the working tree based on commit `dcd1082`; the current contract-alignment and feature-gate/encryption changes are intentionally local until reviewed.
 
 Build verification command:
 
@@ -318,7 +318,7 @@ Build verification command:
 .\gradlew.bat test assembleDebug
 ```
 
-Result: **PASS** on 2026-07-07; all 22 local unit tests passed and the debug APK assembled successfully. Automated unit/build success is necessary engineering evidence, but it does not substitute for BodyCamera, BDMA, performance, reliability, security, or QA acceptance evidence.
+Result: **PASS** on 2026-07-07 for the prior 22-test baseline. The 2026-07-08 local markdown refresh counted 34 test methods but did not re-run Gradle. Automated unit/build success is necessary engineering evidence, but it does not substitute for BodyCamera, BDMA, performance, reliability, security, or QA acceptance evidence.
 
 Android lint verification:
 

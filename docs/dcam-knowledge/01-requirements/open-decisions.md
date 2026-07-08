@@ -6,23 +6,23 @@
 |---|---|---|
 | P1 | Expand initial Functional Requirements | Add workflows, exceptions, and acceptance criteria, especially for capture and BDMA integration |
 | P1 | Jira backlog from Requirements + MVP + Data Contract | Turns approved direction into traceable epics/stories/tasks and tests |
-| P2 | Non-functional Requirements | Sets measurable stability, performance, battery, storage, GPS, offline, and security constraints |
-| P2 | Storage Design | Defines root/folders, filenames, temporary/final handling, DB/files, and ADB visibility |
+| P2 | Non-functional Requirements completion/review | Sets measurable stability, performance, battery, storage, GPS, offline, and security constraints |
+| P2 | Storage Design correction/completion | Defines root/folders, filenames, temporary/final handling, DB/files, and ADB visibility |
 | P2 | Metadata Design | Defines fields, validation, state model, schema versioning, and BDMA mapping |
-| P2 | Security & Encryption Design | Defines Phase 2 basic and Phase 3 advanced encryption and BDMA compatibility |
+| P2 | Security & Encryption Design correction/completion | Defines Phase 2 basic and Phase 3 advanced encryption and BDMA compatibility |
 | P3 | Streaming, PTT, GPS-route designs | Required before Phase 3 implementation |
 | P3 | Release Plan | Defines build/version/release/pilot process |
 | P3 | ADRs | Records stable choices and their trade-offs |
 
-The DCAM-BDMA Data Contract is no longer missing: version 1.2 is Approved. The following are the remaining design/requirement gaps around that baseline.
+The DCAM-BDMA Data Contract is no longer missing: version 1.6 is Approved. The following are the remaining design/requirement gaps around that baseline and the July 8 draft Technical Design set.
 
 ## Data and BDMA decisions
 
 - Exact Android storage root exposed through ADB.
 - Exact mapping from logical roots to physical paths on each supported BodyCamera/storage API.
-- Complete embedded metadata fields, encoding, validation, and media-format support; standalone media JSON is excluded by contract 1.2.
+- Complete embedded metadata fields, encoding, validation, and media-format support; standalone media JSON is excluded by contract 1.6.
 - Exact `dcam.db` schema and schema-version negotiation.
-- Stable device ID source and user/operator mapping.
+- Stable local implementation of `dcam_cloud_device_id`, `android_id_hash`, app/contract metadata, and user/operator mapping.
 - Source-state vocabulary; `recording`, `pending`, `completed`, `corrupted`, and `recovered` are only proposed directions.
 - Schema evolution and backward-compatibility rules.
 - MP4 MD5 enablement/default, generation timing, file content format, and performance; its import and cleanup outcomes are already contracted.
@@ -57,7 +57,7 @@ The DCAM-BDMA Data Contract is no longer missing: version 1.2 is Approved. The f
 - Firebase SDK features that work on target devices and their GMS dependency.
 - REST/API fallback and BDMA-desktop cloud responsibilities.
 - Remote-config schema, keys, validation, and safe rollout behavior.
-- Runtime override controls and config precedence. Device identity uses internal `dcam_config.cson`; operational settings belong in `dcam.db`.
+- Runtime override controls and config precedence. Device information may use internal `dcam_config.cson`; identity/provisioning mirror, remote-config cache, and operational settings belong in `dcam.db`.
 - Self-update server/mechanism, signature validation, rollback, forced/silent update policy.
 - Mandatory performance metrics and their local/cloud format.
 

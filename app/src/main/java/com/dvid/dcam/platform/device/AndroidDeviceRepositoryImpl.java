@@ -11,6 +11,9 @@ import com.dvid.dcam.feature.device.domain.CapabilityStatus;
 import com.dvid.dcam.feature.device.domain.DeviceInfo;
 import com.dvid.dcam.feature.device.domain.DeviceStatus;
 import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 /** Android implementation of the device repository. */
 public final class AndroidDeviceRepositoryImpl implements DeviceRepository {
@@ -24,7 +27,7 @@ public final class AndroidDeviceRepositoryImpl implements DeviceRepository {
         String id = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
         if (id == null || id.isBlank()) id = "unknown";
         String model = Build.MANUFACTURER + " " + Build.MODEL;
-        return new DeviceInfo(id, model.trim());
+        return new DeviceInfo(sha256(id), model.trim(), serialNumber());
     }
 
     @Override public DeviceStatus readStatus() {
@@ -50,5 +53,22 @@ public final class AndroidDeviceRepositoryImpl implements DeviceRepository {
             }
         } catch (RuntimeException ignored) {}
         return new DeviceStatus(batteryPercent, availableBytes, gpsStatus);
+    }
+
+    private static String serialNumber() {
+        String serial = Build.SERIAL;
+        return serial == null || serial.isBlank() || "unknown".equalsIgnoreCase(serial) ? null : serial;
+    }
+
+    private static String sha256(String text) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] bytes = digest.digest(text.getBytes(StandardCharsets.UTF_8));
+            StringBuilder out = new StringBuilder(bytes.length * 2);
+            for (byte value : bytes) out.append(String.format("%02x", value));
+            return out.toString();
+        } catch (NoSuchAlgorithmException error) {
+            return Integer.toHexString(text.hashCode());
+        }
     }
 }

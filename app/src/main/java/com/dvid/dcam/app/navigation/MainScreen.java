@@ -14,5 +14,6 @@ public enum MainScreen {
     DEVICE_SETTINGS,
     AUDIO_SETTINGS,
     CAMERA_SETTINGS,
-    ABOUT
+    ABOUT,
+    DEVELOPER_SETTINGS
 }

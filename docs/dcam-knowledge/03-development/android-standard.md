@@ -1,6 +1,6 @@
 # Android development standard
 
-Source status: **Approved 1.2**, Confluence page version 5, updated 2026-07-04.
+Source status: **Approved 1.7**, Confluence page version 10, updated 2026-07-08.
 
 ## Target stack from the documentation
 

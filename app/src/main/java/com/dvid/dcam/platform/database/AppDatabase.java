@@ -4,8 +4,12 @@ import android.content.Context;
 import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
+import com.dvid.dcam.platform.database.dao.CloudStateDao;
 import com.dvid.dcam.platform.database.dao.PendingLogDao;
+import com.dvid.dcam.platform.database.entities.DeviceIdentityEntity;
+import com.dvid.dcam.platform.database.entities.OperationalSettingEntity;
 import com.dvid.dcam.platform.database.entities.PendingLogEntity;
+import com.dvid.dcam.platform.database.entities.RemoteConfigEntity;
 import com.dvid.dcam.platform.database.migrations.AppDatabaseMigrations;
 
 /**
@@ -21,14 +25,18 @@ import com.dvid.dcam.platform.database.migrations.AppDatabaseMigrations;
  * <ol>
  *     <li>Add its {@code @Entity} class to {@link Database#entities()} below.</li>
  *     <li>Add its DAO accessor to this class.</li>
- *     <li>Add the required version and migration in {@link AppDatabaseMigrations}.</li>
+ *     <li>Add a version and migration in {@link AppDatabaseMigrations} if the
+ *     current database version has already shipped.</li>
  *     <li>Build so Room exports the new schema JSON under {@code app/schemas}.</li>
  * </ol>
  */
 @Database(
         // App table manifest. Fresh installs are created from this list.
         entities = {
-                PendingLogEntity.class
+                PendingLogEntity.class,
+                DeviceIdentityEntity.class,
+                RemoteConfigEntity.class,
+                OperationalSettingEntity.class
         },
         version = AppDatabaseMigrations.LATEST_VERSION,
         exportSchema = true
@@ -39,6 +47,7 @@ public abstract class AppDatabase extends RoomDatabase {
 
     // DAO manifest. Every app table should have its DAO exposed here.
     public abstract PendingLogDao pendingLogs();
+    public abstract CloudStateDao cloudState();
 
     public static AppDatabase get(Context context) {
         AppDatabase current = instance;

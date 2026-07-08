@@ -53,5 +53,7 @@ public final class DcamStorage {
         return mediaFile.getFile();
     }
 
-    public File configsFile() { return new File(root, "configs.cson"); }
+    public File configsFile() { return new File(new File(root, "Config"), "dcam_config.cson"); }
+
+    public File legacyConfigsFile() { return new File(root, "configs.cson"); }
 }

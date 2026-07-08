@@ -2,6 +2,7 @@ package com.dvid.dcam.platform.storage;
 
 import android.content.Context;
 import android.media.MediaScannerConnection;
+import android.net.Uri;
 import android.os.Build;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.video.FileOutputOptions;
@@ -11,6 +12,7 @@ import androidx.camera.video.Recorder;
 import androidx.camera.video.VideoCapture;
 import com.dvid.dcam.core.config.domain.DcamConfig;
 import java.io.File;
+import java.io.IOException;
 import java.time.LocalDateTime;
 
 public final class DcamMediaOutputImpl implements DcamMediaOutput {
@@ -43,6 +45,16 @@ public final class DcamMediaOutputImpl implements DcamMediaOutput {
 
     @Override public File audioFile(DcamMediaFile mediaFile) {
         return storage.prepareFile(mediaFile);
+    }
+
+    @Override public void encryptSaved(Context context, DcamMediaFile mediaFile, Uri savedUri, String password)
+            throws IOException {
+        if (savedUri != null) {
+            BodycamMediaCrypto.encryptContentUri(
+                    context.getContentResolver(), savedUri, context.getCacheDir(), password);
+            return;
+        }
+        BodycamMediaCrypto.encryptFileInPlace(mediaFile.getFile(), password);
     }
 
     @Override public void publishSaved(Context context, DcamMediaFile mediaFile) {

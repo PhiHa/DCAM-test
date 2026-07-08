@@ -2,7 +2,9 @@
 
 ## Architecture intent
 
-The Architecture Home is **Approved 1.11** (Confluence page version 15, updated 2026-07-06). It identifies the approved Data Contract as the official baseline for storage/data/integration details. The Requirements set now also includes Approved Android Device Operation Requirements 1.0.
+The Architecture Home is **Approved 1.20** (Confluence page version 24, updated 2026-07-08). It identifies the approved Data Contract as the official baseline for storage/data/integration details. The Requirements set now includes Approved Data Contract 1.6, Android Device Operation Requirements 1.8, and System Settings Requirements 1.13.
+
+The July 8 Technical Design pages add target-direction language for Android operation, kiosk policy, in-app console/settings, recording, storage, SQLite, BDMA integration, provisioning, update, security, sensors, and AI. Treat those pages as draft/expected design intent until implementation and review correct/complete them.
 
 DCAM is an offline-first, modular, hardware-aware Android application. Core business logic should remain independent of Android APIs, BodyCamera vendor SDKs, camera SDKs, and cloud providers.
 
@@ -87,6 +89,6 @@ Do not reserve future architecture with empty `*Service` interfaces. Location, m
 
 Decided direction: Java-first, offline-first, capability-based operation, feature-first Clean Architecture, application-owned ports/platform adapters, serialized hardware access where needed, cloud abstraction, BDMA compatibility, ADB boundary, and DCAM-producer/BDMA-consumer ownership.
 
-Decided by Data Contract 1.2: logical storage layout, Internal/External/Auto selection, media formats and naming, `_IMP`/`_enc` suffixes, MP4-only MD5 behavior, config/database/log permissions, BDMA import results, and post-import cleanup.
+Decided by Data Contract 1.6: logical storage layout, Internal/External/Auto selection, media formats and naming, `_IMP`/`_enc` suffixes, MP4-only MD5 behavior, app/data/media/encoder contract metadata, no dynamic `bdma_decoder_profile_id`, device-information-only `dcam_config.cson`, broader `dcam.db` ownership, BDMA import/write-back boundaries, and post-import cleanup.
 
-Still pending: physical device paths, exact embedded metadata and SQLite schemas, DB concurrency/write protocol, final camera API, future Gradle-module split, source lifecycle/error model, duplicate/retry recovery behavior, streaming/PTT protocols, encryption/key management/decryption detail, and detailed update mechanism.
+Still pending: physical device paths, exact embedded metadata and SQLite table details, DB concurrency/write protocol, final camera API, future Gradle-module split, source lifecycle/error model, duplicate/retry recovery behavior, Device Owner/DPC POC, maintenance credential policy, streaming/PTT protocols, encryption/key management/decryption detail, and detailed update mechanism.

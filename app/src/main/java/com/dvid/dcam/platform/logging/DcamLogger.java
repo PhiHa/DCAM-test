@@ -31,6 +31,7 @@ public final class DcamLogger {
     private static String hardwareId = "unknown";
     private static String model = "unknown";
     private static String camId = "unknown";
+    private static boolean remoteUploadsEnabled;
 
     private DcamLogger() {}
 
@@ -41,7 +42,7 @@ public final class DcamLogger {
         logDir.mkdirs();
         logFile = new File(logDir, "logs.txt");
         if (logOutbox == null) {
-            try { logOutbox = new LogOutbox(context); }
+            try { logOutbox = new LogOutbox(context, remoteUploadsEnabled); }
             catch (Exception error) { writeInternal("Loggly outbox initialization failed: " + error.getMessage()); }
         }
         prepareLocalLog();
@@ -56,6 +57,11 @@ public final class DcamLogger {
     }
 
     public static synchronized void setCamId(String nextCamId) { camId = safe(nextCamId); }
+
+    public static synchronized void setRemoteUploadsEnabled(boolean enabled) {
+        remoteUploadsEnabled = enabled;
+        if (logOutbox != null) logOutbox.setUploadsEnabled(enabled);
+    }
 
     public static void i(String message) { write("INFO", message, null); }
     public static void w(String message, Throwable error) { write("WARN", message, error); }
@@ -76,7 +82,7 @@ public final class DcamLogger {
             } catch (Exception ignored) {}
         }
         String payload = json(line, error, Thread.currentThread().getName(), callerClass());
-        if (logOutbox != null) logOutbox.enqueue(level, payload);
+        if (remoteUploadsEnabled && logOutbox != null) logOutbox.enqueue(level, payload);
     }
 
     private static String json(String line, Throwable error, String thread, String source) {

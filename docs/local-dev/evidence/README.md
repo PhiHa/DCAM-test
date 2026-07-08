@@ -1,6 +1,6 @@
-# DCAM research reports
+# DCAM evidence reports
 
-This folder contains dated, evidence-based comparisons between the DCAM documentation baseline and the repository. Reports describe what the source proves, what it only prepares for, and what still requires implementation or external validation.
+This folder contains dated, evidence-based comparisons between the Confluence documentation baseline and the repository. Reports describe what the source proves, what it only prepares for, and what still requires implementation or external validation.
 
 | Report | Audit date | Purpose |
 |---|---|---|

@@ -5,6 +5,8 @@ import androidx.annotation.NonNull;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 import com.dvid.dcam.BuildConfig;
+import com.dvid.dcam.feature.settings.domain.FeatureGate;
+import com.dvid.dcam.platform.config.AndroidFeatureGateSettingsFactory;
 import com.dvid.dcam.platform.database.AppDatabase;
 import com.dvid.dcam.platform.database.dao.PendingLogDao;
 import com.dvid.dcam.platform.database.entities.PendingLogEntity;
@@ -29,6 +31,9 @@ public final class LogglyUploadWorker extends Worker {
 
     @NonNull @Override public Result doWork() {
         if (BuildConfig.LOGGLY_TOKEN.isBlank()) return Result.success();
+        if (!AndroidFeatureGateSettingsFactory.isEnabled(getApplicationContext(), FeatureGate.CLOUD_NETWORK)) {
+            return Result.success();
+        }
         PendingLogDao dao = AppDatabase.get(getApplicationContext()).pendingLogs();
         String endpoint = "https://logs-01.loggly.com/inputs/" + BuildConfig.LOGGLY_TOKEN + "/tag/dcam/";
         int consecutiveFailures = 0;

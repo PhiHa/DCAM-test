@@ -30,7 +30,7 @@ MVP Internal Build 0.1 plus demo, test checklist, and known issues.
 
 ### Data and desktop integration
 
-- Implement the approved DCAM–BDMA Data Contract 1.2 baseline.
+- Implement the approved DCAM–BDMA Data Contract 1.6 baseline.
 - ADB discovery/read/import E2E demo.
 - Metadata mapping for media, device, time, GPS, and status.
 - File recovery/pending/corrupt handling.
@@ -79,4 +79,4 @@ These are beta capabilities, not a promise of full production hardening.
 
 ## Important prototype-vs-scope note
 
-The current repository contains standalone AAC recording, SOS action/state, legacy CSON configuration, Loggly upload, a Room-backed log outbox, and contract-shaped media folders/naming. SOS is an application action; its persisted artifact is important media in `Media/IMP` with `_IMP`. Contract storage modes, device-only CSON migration, MP4 MD5 content, and BDMA integration remain implementation gaps.
+The current repository contains standalone AAC recording, SOS action/state, legacy CSON configuration, Loggly upload, a Room-backed log outbox, and contract-shaped media folders/naming. SOS is an application action; its persisted artifact is important media in `Media/IMP` with `_IMP`. Contract storage modes, device-information-only CSON migration, app/contract metadata, MP4 MD5 generation, `dcam.db` operational scope, and BDMA integration remain implementation gaps.

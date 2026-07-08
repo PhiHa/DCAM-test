@@ -4,7 +4,7 @@
     <string name="media_saved">Saved %1$s</string>
     <string name="recording_file">Recording %1$s</string>
     <string name="capture">Capture</string>
-    <string name="settings_detail_hint">Available settings · controls will be implemented later</string>
+    <string name="settings_detail_hint">Controls update local UI state; operational persistence comes later</string>
     <string name="files">Files</string>
     <string name="media_root">DCAM media</string>
     <string name="folder_up">↑ Up</string>
@@ -25,10 +25,11 @@
     <string name="camera_settings">Camera settings</string>
     <string name="camera_settings_short">Cameras</string>
     <string name="about">About</string>
+    <string name="developer_mode">Developer mode</string>
+    <string name="developer_mode_unlocked">Developer mode unlocked</string>
     <string name="language_section_title">Language</string>
     <string name="language_system">System default</string>
     <string name="language_english">English</string>
     <string name="language_vietnamese">Tiếng Việt</string>
     <string name="language_changed">Language changed</string>
 </resources>
-

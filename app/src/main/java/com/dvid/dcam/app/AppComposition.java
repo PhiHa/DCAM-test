@@ -16,6 +16,13 @@ import com.dvid.dcam.feature.capture.application.usecase.PhotoCaptureUseCase;
 import com.dvid.dcam.feature.capture.application.usecase.PhotoCaptureUseCaseImpl;
 import com.dvid.dcam.feature.capture.application.usecase.VideoRecordingUseCase;
 import com.dvid.dcam.feature.capture.application.usecase.VideoRecordingUseCaseImpl;
+import com.dvid.dcam.feature.cloud.application.port.RemoteConfigGateway;
+import com.dvid.dcam.feature.cloud.application.port.OperationalSettingsStore;
+import com.dvid.dcam.feature.cloud.application.usecase.InitializeCloudIdentityUseCase;
+import com.dvid.dcam.feature.cloud.application.usecase.InitializeCloudIdentityUseCaseImpl;
+import com.dvid.dcam.feature.cloud.application.usecase.RefreshRemoteConfigUseCase;
+import com.dvid.dcam.feature.cloud.application.usecase.RefreshRemoteConfigUseCaseImpl;
+import com.dvid.dcam.feature.cloud.domain.DeviceCloudIdentity;
 import com.dvid.dcam.feature.device.application.port.DeviceRepository;
 import com.dvid.dcam.feature.device.application.usecase.RefreshDeviceStatusUseCase;
 import com.dvid.dcam.feature.device.application.usecase.RefreshDeviceStatusUseCaseImpl;
@@ -28,11 +35,23 @@ import com.dvid.dcam.feature.media.application.usecase.OpenMediaUseCase;
 import com.dvid.dcam.feature.media.application.usecase.OpenMediaUseCaseImpl;
 import com.dvid.dcam.feature.settings.application.usecase.LanguageSettingsUseCase;
 import com.dvid.dcam.feature.settings.application.usecase.LanguageSettingsUseCaseImpl;
+import com.dvid.dcam.feature.settings.application.usecase.FeatureGateSettingsUseCase;
+import com.dvid.dcam.feature.settings.application.usecase.FeatureGatedMediaEncryptionSettingsUseCaseImpl;
+import com.dvid.dcam.feature.settings.application.usecase.MediaEncryptionSettingsUseCase;
+import com.dvid.dcam.feature.settings.application.usecase.MediaEncryptionSettingsUseCaseImpl;
+import com.dvid.dcam.feature.settings.domain.FeatureGate;
 import com.dvid.dcam.platform.audio.AndroidAudioRecorderImpl;
 import com.dvid.dcam.platform.camera.CameraXCameraGatewayImpl;
 import com.dvid.dcam.platform.camera.CameraXPreviewView;
+import com.dvid.dcam.platform.cloud.NoOpRemoteConfigGatewayImpl;
+import com.dvid.dcam.platform.cloud.RoomDeviceIdentityRepositoryImpl;
+import com.dvid.dcam.platform.cloud.RoomOperationalSettingsStoreImpl;
+import com.dvid.dcam.platform.cloud.RoomRemoteConfigStoreImpl;
+import com.dvid.dcam.platform.config.AndroidFeatureGateSettingsFactory;
 import com.dvid.dcam.platform.config.AndroidLanguagePreferenceStoreImpl;
+import com.dvid.dcam.platform.config.AndroidMediaEncryptionPreferenceStoreImpl;
 import com.dvid.dcam.platform.config.CsonConfigurationSourceImpl;
+import com.dvid.dcam.platform.database.AppDatabase;
 import com.dvid.dcam.platform.device.AndroidDeviceRepositoryImpl;
 import com.dvid.dcam.platform.input.HardwareButtonRouter;
 import com.dvid.dcam.platform.logging.DcamLogSinkImpl;
@@ -53,6 +72,8 @@ public final class AppComposition {
     private final RefreshDeviceStatusUseCase refreshDeviceStatus;
     private final BrowseMediaUseCase browseMedia;
     private final LanguageSettingsUseCase languageSettings;
+    private final FeatureGateSettingsUseCase featureGateSettings;
+    private final MediaEncryptionSettingsUseCase mediaEncryptionSettings;
 
     private AppComposition(Context context) {
         storage = DcamStorage.from(context);
@@ -60,6 +81,8 @@ public final class AppComposition {
         DeviceRepository deviceRepository = new AndroidDeviceRepositoryImpl(context);
         DeviceInfo deviceInfo = deviceRepository.readInfo();
         initialDeviceStatus = deviceRepository.readStatus();
+        featureGateSettings = AndroidFeatureGateSettingsFactory.create(context);
+        DcamLogger.setRemoteUploadsEnabled(featureGateSettings.isEnabled(FeatureGate.CLOUD_NETWORK));
         DcamLogger.init(context, deviceInfo);
         logSink = new DcamLogSinkImpl();
 
@@ -67,11 +90,16 @@ public final class AppComposition {
                 new CsonConfigurationSourceImpl(storage), logSink);
         config = configurationRepository.load(deviceInfo.getHardwareId());
         DcamLogger.setCamId(config.getAccountUserId());
+        initializeCloudStateAsync(context, deviceInfo);
 
         refreshDeviceStatus = new RefreshDeviceStatusUseCaseImpl(deviceRepository);
         MediaRepository mediaRepository = new LocalMediaRepositoryImpl(storage);
         browseMedia = new BrowseMediaUseCaseImpl(mediaRepository);
         languageSettings = new LanguageSettingsUseCaseImpl(new AndroidLanguagePreferenceStoreImpl(context));
+        MediaEncryptionSettingsUseCase rawMediaEncryptionSettings = new MediaEncryptionSettingsUseCaseImpl(
+                new AndroidMediaEncryptionPreferenceStoreImpl(context, config));
+        mediaEncryptionSettings = new FeatureGatedMediaEncryptionSettingsUseCaseImpl(
+                rawMediaEncryptionSettings, featureGateSettings);
         mediaOutput = new DcamMediaOutputImpl(storage);
     }
 
@@ -84,6 +112,39 @@ public final class AppComposition {
     public RefreshDeviceStatusUseCase refreshDeviceStatusUseCase() { return refreshDeviceStatus; }
     public BrowseMediaUseCase browseMediaUseCase() { return browseMedia; }
     public LanguageSettingsUseCase languageSettingsUseCase() { return languageSettings; }
+    public FeatureGateSettingsUseCase featureGateSettingsUseCase() { return featureGateSettings; }
+    public MediaEncryptionSettingsUseCase mediaEncryptionSettingsUseCase() { return mediaEncryptionSettings; }
+
+    private void initializeCloudStateAsync(Context context, DeviceInfo deviceInfo) {
+        Context appContext = context.getApplicationContext();
+        Thread worker = new Thread(() -> {
+            try {
+                AppDatabase database = AppDatabase.get(appContext);
+                OperationalSettingsStore operationalSettings =
+                        new RoomOperationalSettingsStoreImpl(database.cloudState());
+                operationalSettings.put("storage.mode", storage.getMode().name());
+                operationalSettings.put("media.encryption.enabled.default", String.valueOf(config.isVideoEncrypted()));
+                InitializeCloudIdentityUseCase initializeIdentity =
+                        new InitializeCloudIdentityUseCaseImpl(
+                                new RoomDeviceIdentityRepositoryImpl(database.cloudState()));
+                DeviceCloudIdentity identity = initializeIdentity.execute(deviceInfo);
+                RemoteConfigGateway provider = new NoOpRemoteConfigGatewayImpl();
+                RefreshRemoteConfigUseCase refreshRemoteConfig =
+                        new RefreshRemoteConfigUseCaseImpl(
+                                provider, new RoomRemoteConfigStoreImpl(database.cloudState()));
+                refreshRemoteConfig.execute(identity);
+            } catch (RuntimeException error) {
+                DcamLogger.w("Cloud identity initialization failed", error);
+            }
+        }, "dcam-cloud-init");
+        worker.start();
+    }
+
+    public void applyFeatureGateRuntimeChange(FeatureGate feature, boolean enabled) {
+        if (feature == FeatureGate.CLOUD_NETWORK) {
+            DcamLogger.setRemoteUploadsEnabled(enabled);
+        }
+    }
 
     public OpenMediaUseCase createOpenMediaUseCase(ComponentActivity owner) {
         return new OpenMediaUseCaseImpl(new AndroidMediaOpenerImpl(owner, storage, logSink));
@@ -91,15 +152,17 @@ public final class AppComposition {
 
     public HardwareButtonRouter createHardwareButtonRouter(
             PhotoCaptureUseCase photos, VideoRecordingUseCase videos, AudioRecordingUseCase audio) {
-        return new HardwareButtonRouter(photos, videos, audio);
+        return new HardwareButtonRouter(photos, videos, audio, featureGateSettings);
     }
 
     public CaptureRuntime createCaptureRuntime(ComponentActivity owner) {
         CaptureEventUseCase captureEvents = new CaptureEventUseCaseImpl();
-        AudioRecorder audioRecorder = new AndroidAudioRecorderImpl(owner, mediaOutput, logSink);
+        AudioRecorder audioRecorder = new AndroidAudioRecorderImpl(owner, mediaOutput, logSink,
+                mediaEncryptionSettings);
         CameraXPreviewView cameraPreview = new CameraXPreviewView(owner);
         CameraXCameraGatewayImpl camera = new CameraXCameraGatewayImpl(
-                owner, owner, config, mediaOutput, logSink, captureEvents, cameraPreview);
+                owner, owner, config, mediaOutput, logSink, captureEvents,
+                mediaEncryptionSettings, cameraPreview);
         PhotoCaptureUseCase photos = new PhotoCaptureUseCaseImpl(camera);
         VideoRecordingUseCase videos = new VideoRecordingUseCaseImpl(camera, captureEvents);
         AudioRecordingUseCase audio = new AudioRecordingUseCaseImpl(audioRecorder, config);
