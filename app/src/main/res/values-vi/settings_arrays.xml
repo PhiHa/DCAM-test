@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="record_settings_items">
+        <item>Ghi video</item>
+        <item>Độ dài mỗi đoạn video</item>
+        <item>Thời gian ghi trước</item>
+        <item>Độ trễ khi bắt đầu ghi</item>
+        <item>Tự ghi khi khởi động</item>
+        <item>Ghi vòng lặp</item>
+        <item>Cảnh báo pin yếu</item>
+    </string-array>
+
+    <string-array name="camera_settings_items">
+        <item>Kích thước preview camera sau</item>
+        <item>Kích thước ảnh camera sau</item>
+        <item>Kích thước preview camera trước</item>
+        <item>Kích thước ảnh camera trước</item>
+        <item>Xoay camera</item>
+        <item>Tự động hồng ngoại</item>
+        <item>Đèn pin</item>
+    </string-array>
+
+    <string-array name="video_stream_settings_items">
+        <item>Luồng video mặc định</item>
+        <item>Codec luồng chính</item>
+        <item>Độ phân giải luồng chính</item>
+        <item>Tốc độ khung hình luồng chính</item>
+        <item>Chất lượng luồng chính</item>
+        <item>Codec luồng phụ</item>
+        <item>Độ phân giải luồng phụ</item>
+        <item>Tốc độ khung hình luồng phụ</item>
+        <item>Chất lượng luồng phụ</item>
+    </string-array>
+
+    <string-array name="audio_settings_items">
+        <item>Định dạng tệp âm thanh</item>
+        <item>Ghi âm</item>
+        <item>Tần số lấy mẫu</item>
+        <item>Bit rate âm thanh</item>
+        <item>Số kênh âm thanh</item>
+        <item>Âm lượng loa và cảnh báo</item>
+    </string-array>
+
+    <string-array name="storage_settings_items">
+        <item>Vị trí lưu trữ</item>
+        <item>Cảnh báo dung lượng thấp</item>
+        <item>Tự xoá bản ghi cũ</item>
+        <item>Dừng ghi khi bộ nhớ không khả dụng</item>
+        <item>Xoá media sau khi upload</item>
+    </string-array>
+
+    <string-array name="gps_settings_items">
+        <item>Sử dụng GPS</item>
+        <item>GPS hoặc GPS + AGPS</item>
+        <item>Tần suất cập nhật vị trí</item>
+        <item>Tần suất upload vị trí</item>
+    </string-array>
+
+    <string-array name="device_settings_items">
+        <item>ID thiết bị</item>
+        <item>ID cảnh sát / người vận hành</item>
+        <item>Hiển thị toàn màn hình</item>
+        <item>Điều khiển ghi bằng double-click</item>
+        <item>Phát liên tục</item>
+        <item>Phát hiện ngã</item>
+        <item>Đèn trạng thái</item>
+    </string-array>
+
+    <string-array name="security_settings_items">
+        <item>Bảo vệ menu cài đặt</item>
+        <item>Mật khẩu menu cài đặt</item>
+        <item>Bảo vệ truy cập USB</item>
+        <item>Mật khẩu USB</item>
+        <item>Mã hoá truyền tải mạng</item>
+        <item>Mã truyền tải</item>
+    </string-array>
+
+    <string-array name="network_settings_items">
+        <item>Địa chỉ server</item>
+        <item>Cổng server</item>
+        <item>Sử dụng APN</item>
+        <item>Tên APN</item>
+        <item>Xác thực APN</item>
+        <item>Tên đăng nhập APN</item>
+        <item>Mật khẩu APN</item>
+    </string-array>
+
+    <string-array name="transfer_settings_items">
+        <item>Luồng video RTSP</item>
+        <item>Địa chỉ RTSP</item>
+        <item>Giao thức RTSP</item>
+        <item>Đăng nhập RTSP</item>
+        <item>Upload FTP qua Wi-Fi</item>
+        <item>Server FTP</item>
+        <item>Đăng nhập FTP</item>
+        <item>Xoá sau khi upload thành công</item>
+    </string-array>
+
+    <string-array name="about_settings_items">
+        <item>Phiên bản ứng dụng</item>
+        <item>Thông tin thiết bị</item>
+        <item>Thông tin firmware</item>
+        <item>Tính năng phần cứng khả dụng</item>
+        <item>Chẩn đoán và log</item>
+    </string-array>
+</resources>
+

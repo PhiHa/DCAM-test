@@ -1,0 +1,239 @@
+package com.dvid.dcam.architecture;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.Test;
+
+final class LayerDependencyTest {
+    private static final Pattern IMPORT = Pattern.compile("^import\\s+([^;]+);", Pattern.MULTILINE);
+    private static final Pattern PUBLIC_INTERFACE = Pattern.compile("\\bpublic\\s+interface\\s+");
+    private static final Pattern PUBLIC_INTERFACE_DECLARATION =
+            Pattern.compile("\\bpublic\\s+interface\\s+(\\w+)\\s*\\{", Pattern.MULTILINE);
+    private static final Pattern INTERFACE_METHOD = Pattern.compile(
+            "(?:^|\\n)\\s*(?:[\\w<>\\[\\].?,]+\\s+)+\\w+\\s*\\([^;{}]*\\)"
+                    + "\\s*(?:throws\\s+[\\w\\s,.]+)?;");
+    private static final Pattern PROJECT_INTERFACE_IMPLEMENTATION = Pattern.compile(
+            "\\bclass\\s+(\\w+)\\s+implements\\s+[^\\{;]*\\b"
+                    + "(UseCase|Repository|Gateway|Recorder|Opener|Store|Source|Sink|Output)\\b");
+    private static final Pattern CORE_FORBIDDEN = Pattern.compile(
+            "^(android\\.|androidx\\.|com\\.google\\.|com\\.dvid\\.dcam\\.(app|feature|platform)\\.)");
+    private static final Pattern DOMAIN_FORBIDDEN = Pattern.compile(
+            "^(android\\.|androidx\\.|com\\.google\\.|com\\.dvid\\.dcam\\.(app|platform)\\.)"
+                    + "|^com\\.dvid\\.dcam\\.(feature|core)\\..*\\.(application|adapter)\\.");
+    private static final Pattern APPLICATION_FORBIDDEN = Pattern.compile(
+            "^(android\\.|androidx\\.|com\\.google\\.|com\\.dvid\\.dcam\\.(app|platform)\\.)"
+                    + "|^com\\.dvid\\.dcam\\.(feature|core)\\..*\\.adapter\\.");
+    private static final Pattern APP_PRESENTATION_FORBIDDEN = Pattern.compile(
+            "^(android\\.|com\\.google\\.|com\\.dvid\\.dcam\\.platform\\.)");
+    private static final Pattern PLATFORM_FORBIDDEN = Pattern.compile(
+            "^com\\.dvid\\.dcam\\.app\\.");
+
+    @Test void dependenciesPointInwardAcrossCleanArchitectureLayers() throws IOException {
+        Path root = mainJavaRoot().resolve("com/dvid/dcam");
+        List<String> violations = new ArrayList<>();
+        collectViolations(root.resolve("core"), CORE_FORBIDDEN, violations);
+        collectCapabilityLayerViolations(root.resolve("core"), violations);
+        collectCapabilityLayerViolations(root.resolve("feature"), violations);
+        collectViolations(root.resolve("app/presentation"), APP_PRESENTATION_FORBIDDEN, violations);
+        collectViolations(root.resolve("platform"), PLATFORM_FORBIDDEN, violations);
+        assertTrue(violations.isEmpty(),
+                "Clean Architecture dependency violations:\n" + String.join("\n", violations));
+    }
+
+    @Test void featureAndCoreFilesUseCanonicalLayerPackages() throws IOException {
+        Path featureRoot = mainJavaRoot().resolve("com/dvid/dcam/feature");
+        Path coreRoot = mainJavaRoot().resolve("com/dvid/dcam/core");
+        List<String> violations = new ArrayList<>();
+        collectNonCanonicalPaths(featureRoot, "feature/", violations);
+        collectNonCanonicalPaths(coreRoot, "core/", violations);
+        assertTrue(violations.isEmpty(),
+                "Non-canonical feature/core packages:\n" + String.join("\n", violations));
+    }
+
+    @Test void featureAndCoreInterfacesAreExplicitBoundaries() throws IOException {
+        Path root = mainJavaRoot().resolve("com/dvid/dcam");
+        List<String> violations = new ArrayList<>();
+        collectMisplacedInterfaces(root.resolve("feature"), violations);
+        collectMisplacedInterfaces(root.resolve("core"), violations);
+        assertTrue(violations.isEmpty(),
+                "Interfaces must be application use cases or named application boundaries:\n"
+                        + String.join("\n", violations));
+    }
+
+    @Test void publicInterfacesDeclareCallableBehavior() throws IOException {
+        Path root = mainJavaRoot().resolve("com/dvid/dcam");
+        List<String> violations = new ArrayList<>();
+        try (Stream<Path> files = Files.walk(root)) {
+            for (Path file : files.filter(LayerDependencyTest::isJava).toList()) {
+                String source = Files.readString(file, StandardCharsets.UTF_8);
+                Matcher declaration = PUBLIC_INTERFACE_DECLARATION.matcher(source);
+                while (declaration.find()) {
+                    int bodyEnd = findMatchingBrace(source, declaration.end() - 1);
+                    String body = bodyEnd < 0 ? "" : source.substring(declaration.end(), bodyEnd);
+                    if (!INTERFACE_METHOD.matcher(body).find()) {
+                        violations.add(normalized(root.relativize(file)) + " declares empty interface "
+                                + declaration.group(1));
+                    }
+                }
+            }
+        }
+        assertTrue(violations.isEmpty(),
+                "Public interfaces must describe current callable behavior, not placeholders:\n"
+                        + String.join("\n", violations));
+    }
+
+    @Test void projectInterfaceImplementationsEndWithImpl() throws IOException {
+        Path root = mainJavaRoot().resolve("com/dvid/dcam");
+        List<String> violations = new ArrayList<>();
+        try (Stream<Path> files = Files.walk(root)) {
+            for (Path file : files.filter(LayerDependencyTest::isJava).toList()) {
+                String source = Files.readString(file, StandardCharsets.UTF_8);
+                Matcher implementation = PROJECT_INTERFACE_IMPLEMENTATION.matcher(source);
+                if (implementation.find() && !implementation.group(1).endsWith("Impl")) {
+                    violations.add(normalized(root.relativize(file)));
+                }
+            }
+        }
+        assertTrue(violations.isEmpty(),
+                "Classes implementing project interfaces must end with Impl:\n" + String.join("\n", violations));
+    }
+
+    @Test void productionCodeUsesOnlyApprovedTopLevelPackages() throws IOException {
+        Path root = mainJavaRoot().resolve("com/dvid/dcam");
+        List<String> violations = new ArrayList<>();
+        try (Stream<Path> files = Files.walk(root)) {
+            for (Path file : files.filter(LayerDependencyTest::isJava).toList()) {
+                Path relative = root.relativize(file);
+                String topLevel = relative.getName(0).toString();
+                if (!List.of("app", "core", "feature", "platform").contains(topLevel)) {
+                    violations.add(relative.toString());
+                }
+            }
+        }
+        assertTrue(violations.isEmpty(),
+                "Production classes outside app/core/feature/platform:\n" + String.join("\n", violations));
+    }
+
+    private static int findMatchingBrace(String source, int openBrace) {
+        int depth = 0;
+        for (int i = openBrace; i < source.length(); i++) {
+            char current = source.charAt(i);
+            if (current == '{') depth++;
+            else if (current == '}') {
+                depth--;
+                if (depth == 0) return i;
+            }
+        }
+        return -1;
+    }
+
+    private static void collectNonCanonicalPaths(
+            Path capabilityRoot, String prefix, List<String> violations) throws IOException {
+        try (Stream<Path> files = Files.walk(capabilityRoot)) {
+            for (Path file : files.filter(LayerDependencyTest::isJava).toList()) {
+                String relative = normalized(capabilityRoot.relativize(file));
+                if (!isCanonicalCapabilityPath(relative.split("/"))) {
+                    violations.add(prefix + relative);
+                }
+            }
+        }
+    }
+
+    private static boolean isCanonicalCapabilityPath(String[] parts) {
+        if (parts.length < 3) return false;
+        String layer = parts[1];
+        if ("domain".equals(layer)) return true;
+        if ("presentation".equals(layer)) return true;
+        if ("application".equals(layer)) {
+            if (parts.length < 4) return false;
+            if ("usecase".equals(parts[2])) return true;
+            if ("repository".equals(parts[2])) return true;
+            return "port".equals(parts[2]);
+        }
+        return false;
+    }
+
+    private static void collectCapabilityLayerViolations(
+            Path capabilityRoot, List<String> violations) throws IOException {
+        try (Stream<Path> files = Files.walk(capabilityRoot)) {
+            for (Path file : files.filter(LayerDependencyTest::isJava).toList()) {
+                String relative = normalized(capabilityRoot.relativize(file));
+                if (relative.contains("/domain/")) {
+                    collectFileViolations(file, DOMAIN_FORBIDDEN, violations);
+                } else if (relative.contains("/application/")) {
+                    collectFileViolations(file, APPLICATION_FORBIDDEN, violations);
+                }
+            }
+        }
+    }
+
+    private static void collectMisplacedInterfaces(
+            Path packageRoot, List<String> violations) throws IOException {
+        try (Stream<Path> files = Files.walk(packageRoot)) {
+            for (Path file : files.filter(LayerDependencyTest::isJava).toList()) {
+                String source = Files.readString(file, StandardCharsets.UTF_8);
+                if (!PUBLIC_INTERFACE.matcher(source).find()) continue;
+                String path = normalized(packageRoot.relativize(file));
+                boolean useCaseInterface = path.contains("/application/usecase/")
+                        && file.getFileName().toString().endsWith("UseCase.java")
+                        && !file.getFileName().toString().endsWith("UseCaseImpl.java");
+                boolean portPackage = path.contains("/application/port/");
+                boolean boundaryName = fileNameEndsWith(file,
+                        "Repository.java", "Gateway.java", "Recorder.java", "Opener.java",
+                        "Store.java", "Source.java", "Sink.java");
+                if (!useCaseInterface && (!portPackage || !boundaryName)) violations.add(path);
+            }
+        }
+    }
+
+    private static boolean fileNameEndsWith(Path file, String... suffixes) {
+        String fileName = file.getFileName().toString();
+        for (String suffix : suffixes) {
+            if (fileName.endsWith(suffix)) return true;
+        }
+        return false;
+    }
+
+    private static void collectViolations(
+            Path layer, Pattern forbidden, List<String> violations) throws IOException {
+        try (Stream<Path> files = Files.walk(layer)) {
+            for (Path file : files.filter(LayerDependencyTest::isJava).toList()) {
+                collectFileViolations(file, forbidden, violations);
+            }
+        }
+    }
+
+    private static void collectFileViolations(
+            Path file, Pattern forbidden, List<String> violations) throws IOException {
+        String source = Files.readString(file, StandardCharsets.UTF_8);
+        Matcher imports = IMPORT.matcher(source);
+        while (imports.find()) {
+            String imported = imports.group(1);
+            if (forbidden.matcher(imported).find()) {
+                violations.add(file.getFileName() + " imports " + imported);
+            }
+        }
+    }
+
+    private static boolean isJava(Path path) {
+        return path.toString().endsWith(".java");
+    }
+
+    private static String normalized(Path path) {
+        return path.toString().replace('\\', '/');
+    }
+
+    private static Path mainJavaRoot() {
+        Path moduleRoot = Path.of("src/main/java");
+        return Files.exists(moduleRoot) ? moduleRoot : Path.of("app/src/main/java");
+    }
+}

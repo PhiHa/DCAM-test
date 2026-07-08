@@ -1,0 +1,35 @@
+<resources>
+    <string name="app_name">DCAM</string>
+    <string name="camera_permission_required">Camera permission required</string>
+    <string name="media_saved">Saved %1$s</string>
+    <string name="recording_file">Recording %1$s</string>
+    <string name="capture">Capture</string>
+    <string name="settings_detail_hint">Controls update local UI state; operational persistence comes later</string>
+    <string name="files">Files</string>
+    <string name="media_root">DCAM media</string>
+    <string name="folder_up">↑ Up</string>
+    <string name="media_loading">Loading…</string>
+    <string name="media_empty">This folder is empty</string>
+    <string name="media_folder">Folder</string>
+    <string name="media_open_failed">No app can open this media file</string>
+    <string name="record_settings">Recording</string>
+    <string name="video_stream_settings">Video streams</string>
+    <string name="gps_settings">GPS</string>
+    <string name="transfer_settings">Transfer</string>
+    <string name="security_settings">Security</string>
+    <string name="network_settings">Network</string>
+    <string name="storage_settings">Storage</string>
+    <string name="device_settings">Device settings</string>
+    <string name="device_settings_short">Device</string>
+    <string name="audio_settings">Audio</string>
+    <string name="camera_settings">Camera settings</string>
+    <string name="camera_settings_short">Cameras</string>
+    <string name="about">About</string>
+    <string name="developer_mode">Developer mode</string>
+    <string name="developer_mode_unlocked">Developer mode unlocked</string>
+    <string name="language_section_title">Language</string>
+    <string name="language_system">System default</string>
+    <string name="language_english">English</string>
+    <string name="language_vietnamese">Tiếng Việt</string>
+    <string name="language_changed">Language changed</string>
+</resources>

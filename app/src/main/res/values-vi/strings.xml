@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DCAM</string>
+    <string name="camera_permission_required">Cần cấp quyền camera</string>
+    <string name="media_saved">Đã lưu %1$s</string>
+    <string name="recording_file">Đang ghi %1$s</string>
+    <string name="capture">Chụp</string>
+    <string name="settings_detail_hint">Các điều khiển chỉ cập nhật giao diện; lưu cấu hình sẽ bổ sung sau</string>
+    <string name="files">Tệp</string>
+    <string name="media_root">Media DCAM</string>
+    <string name="folder_up">↑ Lên</string>
+    <string name="media_loading">Đang tải…</string>
+    <string name="media_empty">Thư mục này đang trống</string>
+    <string name="media_folder">Thư mục</string>
+    <string name="media_open_failed">Không có ứng dụng mở được tệp media này</string>
+    <string name="record_settings">Ghi hình</string>
+    <string name="video_stream_settings">Luồng video</string>
+    <string name="gps_settings">GPS</string>
+    <string name="transfer_settings">Truyền dữ liệu</string>
+    <string name="security_settings">Bảo mật</string>
+    <string name="network_settings">Mạng</string>
+    <string name="storage_settings">Lưu trữ</string>
+    <string name="device_settings">Cài đặt thiết bị</string>
+    <string name="device_settings_short">Thiết bị</string>
+    <string name="audio_settings">Âm thanh</string>
+    <string name="camera_settings">Cài đặt camera</string>
+    <string name="camera_settings_short">Camera</string>
+    <string name="about">Thông tin</string>
+    <string name="language_section_title">Ngôn ngữ</string>
+    <string name="language_system">Theo hệ thống</string>
+    <string name="language_english">English</string>
+    <string name="language_vietnamese">Tiếng Việt</string>
+    <string name="language_changed">Đã đổi ngôn ngữ</string>
+</resources>
