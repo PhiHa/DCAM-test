@@ -1,8 +1,8 @@
 # Kiến trúc source Android DCAM
 
 DCAM dùng **feature-first Clean Architecture** kết hợp tư duy
-**Ports and Adapters / Hexagonal Architecture** trong một Gradle module Android
-`:app`.
+**Ports and Adapters / Hexagonal Architecture** trong hai Gradle modules:
+Android application `:app` và pure-Java library `:core`.
 
 Điểm quan trọng: folder `application/port` vẫn giữ tên `port` vì đó là thuật
 ngữ kiến trúc, nhưng **tên file/class không dùng hậu tố `Port`**. Tên class nên
@@ -221,5 +221,7 @@ Các khái niệm này không xung đột.
   giữ recording/capture ownership phía platform. Nếu chuyển sang vendor SDK hoặc
   recovery/process-death owner, giữ UI preview tách khỏi recording owner.
 - `DcamMediaOutput` là SPI nội bộ platform, không truyền vào feature/domain.
-- Dự án vẫn là một Gradle module; hiện tại boundary được enforce bằng test chứ
-  chưa bằng module compiler.
+- Gradle compiler enforce chiều phụ thuộc `:app` → `:core`; `:core` không thể
+  import Android, app, feature hoặc platform code.
+- Boundary bên trong `:app` giữa app/feature/platform tiếp tục được enforce bằng
+  architecture tests. Chỉ tách module tiếp khi có trigger đã được duyệt.

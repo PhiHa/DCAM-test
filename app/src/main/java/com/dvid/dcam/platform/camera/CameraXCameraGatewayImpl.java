@@ -22,6 +22,8 @@ import com.dvid.dcam.core.logging.application.port.LogSink;
 import com.dvid.dcam.feature.capture.application.port.CameraGateway;
 import com.dvid.dcam.feature.capture.application.usecase.CaptureEventUseCase;
 import com.dvid.dcam.feature.capture.domain.RecordingMode;
+import com.dvid.dcam.feature.auth.application.usecase.OperatorSessionUseCase;
+import com.dvid.dcam.feature.auth.domain.OperatorSession;
 import com.dvid.dcam.feature.settings.application.usecase.MediaEncryptionSettingsUseCase;
 import com.dvid.dcam.platform.recording.RecordingForegroundService;
 import com.dvid.dcam.platform.storage.DcamFileType;
@@ -40,6 +42,7 @@ public final class CameraXCameraGatewayImpl implements CameraGateway {
     private final LogSink log;
     private final CaptureEventUseCase captureEvents;
     private final MediaEncryptionSettingsUseCase mediaEncryptionSettings;
+    private final OperatorSessionUseCase operatorSession;
     private final ImageCapture imageCapture = new ImageCapture.Builder().build();
     private final VideoCapture<Recorder> videoCapture;
     private ListenableFuture<ProcessCameraProvider> providerFuture;
@@ -50,11 +53,13 @@ public final class CameraXCameraGatewayImpl implements CameraGateway {
                                     DcamMediaOutput mediaOutput, LogSink log,
                                     CaptureEventUseCase captureEvents,
                                     MediaEncryptionSettingsUseCase mediaEncryptionSettings,
+                                    OperatorSessionUseCase operatorSession,
                                     CameraXPreviewView previewView) {
         this.context = context;
         this.lifecycleOwner = lifecycleOwner; this.config = config; this.mediaOutput = mediaOutput; this.log = log;
         this.captureEvents = captureEvents;
         this.mediaEncryptionSettings = mediaEncryptionSettings;
+        this.operatorSession = operatorSession;
         this.previewView = previewView;
         Recorder recorder = new Recorder.Builder().setQualitySelector(QualitySelector.from(Quality.FHD)).build();
         videoCapture = VideoCapture.withOutput(recorder);
@@ -79,9 +84,12 @@ public final class CameraXCameraGatewayImpl implements CameraGateway {
     }
 
     @Override public void takePhoto() {
+        String fileUserId = activeFileUserId();
+        if (fileUserId == null) return;
         LocalDateTime at = LocalDateTime.now();
         boolean encrypt = mediaEncryptionSettings.isMediaEncryptionEnabled();
-        DcamMediaFile mediaFile = mediaOutput.mediaFile(DcamFileType.IMAGE, config, at, encrypt);
+        DcamMediaFile mediaFile = mediaOutput.mediaFile(
+                DcamFileType.IMAGE, config.getAccountUserId(), fileUserId, at, encrypt);
         ImageCapture.OutputFileOptions options = mediaOutput.imageOptions(context, mediaFile);
         imageCapture.takePicture(options, ContextCompat.getMainExecutor(context), new ImageCapture.OnImageSavedCallback() {
             @Override public void onImageSaved(ImageCapture.OutputFileResults result) {
@@ -131,9 +139,12 @@ public final class CameraXCameraGatewayImpl implements CameraGateway {
             }
             return;
         }
+        String fileUserId = activeFileUserId();
+        if (fileUserId == null) return;
         LocalDateTime at = LocalDateTime.now();
         boolean encrypt = mediaEncryptionSettings.isMediaEncryptionEnabled();
-        DcamMediaFile mediaFile = mediaOutput.mediaFile(type, config, at, encrypt);
+        DcamMediaFile mediaFile = mediaOutput.mediaFile(
+                type, config.getAccountUserId(), fileUserId, at, encrypt);
         PendingRecording pending = mediaOutput.prepareVideoRecording(context, videoCapture, mediaFile);
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED)
             pending = pending.withAudioEnabled();
@@ -186,6 +197,13 @@ public final class CameraXCameraGatewayImpl implements CameraGateway {
         log.error("Camera error: " + text, null);
         captureEvents.captureFailed("Camera", text);
         previewView.showError(text);
+    }
+
+    private String activeFileUserId() {
+        OperatorSession session = operatorSession.current();
+        if (session != null) return session.getFileUserId();
+        showError("Operator login required");
+        return null;
     }
 
     private static String message(Exception error) {

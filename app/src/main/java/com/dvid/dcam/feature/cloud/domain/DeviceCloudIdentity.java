@@ -3,19 +3,19 @@ package com.dvid.dcam.feature.cloud.domain;
 /** Cloud identity snapshot stored locally for startup and recovery decisions. */
 public final class DeviceCloudIdentity {
     private final String dcamCloudDeviceId;
-    private final String androidIdHash;
+    private final String hardwareId;
     private final String serialNumber;
     private final ProvisioningState provisioningState;
     private final String firebaseInstallationId;
 
     public DeviceCloudIdentity(
             String dcamCloudDeviceId,
-            String androidIdHash,
+            String hardwareId,
             String serialNumber,
             ProvisioningState provisioningState,
             String firebaseInstallationId) {
         this.dcamCloudDeviceId = emptyToNull(dcamCloudDeviceId);
-        this.androidIdHash = required(androidIdHash, "androidIdHash");
+        this.hardwareId = required(hardwareId, "hardwareId");
         this.serialNumber = emptyToNull(serialNumber);
         this.provisioningState = provisioningState == null
                 ? ProvisioningState.PROVISIONING_REQUIRED : provisioningState;
@@ -23,7 +23,7 @@ public final class DeviceCloudIdentity {
     }
 
     public String getDcamCloudDeviceId() { return dcamCloudDeviceId; }
-    public String getAndroidIdHash() { return androidIdHash; }
+    public String getHardwareId() { return hardwareId; }
     public String getSerialNumber() { return serialNumber; }
     public ProvisioningState getProvisioningState() { return provisioningState; }
     public String getFirebaseInstallationId() { return firebaseInstallationId; }

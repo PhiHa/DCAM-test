@@ -1,0 +1,167 @@
+# ADR - DCAM Android Dedicated Device / Device Owner / Lock Task Decision
+
+**Page ID**: 49774787  
+**Version**: 4  
+**Type**: page  
+**URL**: undefined/spaces/DVID/pages/49774787
+
+---
+
+
+# ADR - DCAM Android Dedicated Device / Device Owner / Lock Task Decision
+
+Item
+
+Information
+
+Project
+
+DCAM (Android BodyCamera Application)
+
+Document Type
+
+Architecture Decision Record
+
+Status
+
+Approved Direction
+
+Decision Date
+
+2026-07-08
+
+Last Updated
+
+2026-07-09
+
+Owner
+
+Hoàng Ngọc Quyền
+
+Technical Reviewer
+
+Tech Lead / Android Lead / Security Reviewer / QA Lead
+
+Approver
+
+Hoàng Ngọc Quyền
+
+Parent Folder
+
+4.4 - Architecture Decision Records (ADR)
+
+Related Documents
+
+DCAM Android Device Owner & Kiosk Policy Design, 10 - Android Device Operation Requirements, DCAM Android Operation Design, 03 - Android Platform & Compatibility Strategy, 09 - System Settings Requirements, DCAM Security & Encryption Design, DCAM Self Update Design, DCAM QA Test Strategy & Test Matrix, DCAM Device Provisioning Web Portal Design, DCAM Web Portal & Device API Contract, DCAM Factory Provisioning & Device Production SOP
+
+## 1. Context
+
+DCAM là ứng dụng Android BodyCamera dùng cho field operation trên các thiết bị được kiểm soát.
+
+Bộ tài liệu DCAM hiện tại đã định nghĩa device identity, Web Portal business provisioning, offline-first user/operator management, operator-authenticated recording, emergency override, runtime recovery, self update, security và QA baseline.
+
+Current identity baseline:
+
+textTuy nhiên, production deployment cũng yêu cầu bản thân Android device phải hoạt động như một dedicated/kiosk device. Full screen UI và Home/Launcher behavior không đủ để ngăn user thoát khỏi app, mở system surfaces chưa được approve, thay đổi device settings, uninstall apps hoặc làm gián đoạn recording operation.
+
+## 2. Decision
+
+DCAM production deployment hướng tới Android dedicated-device operation.
+
+textSource of truth cho detailed policy behavior là:
+
+text## 3. Important Boundary
+
+ADR này tách rõ hai provisioning concepts:
+
+Provisioning Type
+
+Meaning
+
+Source of Truth
+
+Android Enterprise / Device Owner provisioning
+
+Enroll Android device vào Device Owner / fully managed / dedicated-device mode.
+
+DCAM Android Device Owner & Kiosk Policy Design
+
+DCAM business provisioning
+
+Create/restore `dcam_cloud_device_id` và device information bằng `serial_number` và `serial_lookup/{serial_number}`. Không dùng `ANDROID_ID`, `android_id_hash` hoặc `device_lookup/{android_id_hash}` trong current production baseline.
+
+DCAM Device Provisioning Web Portal Design + DCAM Web Portal & Device API Contract
+
+Web Portal QR Flow, nếu dùng, không được hiểu lại thành Android Enterprise Device Owner enrollment.
+
+## 4. Consequences
+
+Area
+
+Consequence
+
+Requirements
+
+Android Device Operation Requirements phải bao gồm requirements cho dedicated-device, Device Owner, Lock Task và User Restrictions.
+
+Architecture
+
+Architecture Home phải reference kiosk policy design mới như authoritative source cho device policy behavior.
+
+Android Operation
+
+Startup/reboot/recovery flow phải verify policy state, apply hoặc validate restrictions và enter Lock Task Mode an toàn.
+
+Platform Compatibility
+
+Device POC phải validate Device Owner, Lock Task và User Restriction behavior trên target BodyCamera models và firmware.
+
+System Settings
+
+Remote/admin policy settings có thể request kiosk policy changes, nhưng Android phải validate và chỉ apply khi safe.
+
+Security
+
+Kiosk exit, Maintenance Mode, policy removal, identity restore và restriction changes phải auditable và protected.
+
+Self Update
+
+Update flow phải preserve Device Owner state và không làm hỏng kiosk/Lock Task policy.
+
+QA
+
+QA Test Matrix phải bao gồm dedicated-device/kiosk policy tests và serial lookup identity restore tests.
+
+## 5. Accepted Risks and Mitigations
+
+Risk
+
+Mitigation
+
+OEM-specific behavior khác nhau giữa các BodyCamera models.
+
+Validate trong DCAM Device POC & Hardware Validation Report.
+
+Device Owner không thể activate bằng normal APK install.
+
+Document Android Enterprise provisioning tách biệt với DCAM business provisioning.
+
+Lock Task có thể trap support users nếu không có exit path.
+
+Define Controlled Admin/Maintenance Mode.
+
+User Restrictions có thể block legitimate maintenance.
+
+Dùng approved restriction profile và temporary maintenance policy.
+
+Update failure có thể khiến device ở inconsistent kiosk state.
+
+Self Update phải verify policy-safe update preconditions và rollback/recovery behavior.
+
+Identity baseline drift trở lại Android ID lookup.
+
+Treat `serial_number` / `serial_lookup/{serial_number}` as current production baseline và reject `ANDROID_ID`, `android_id_hash`, `device_lookup/{android_id_hash}` trong implementation và QA.
+
+## 6. Decision Summary
+
+text

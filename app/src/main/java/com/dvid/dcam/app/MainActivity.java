@@ -3,9 +3,12 @@ package com.dvid.dcam.app;
 import android.content.Context;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.GridLayout;
 import android.widget.LinearLayout;
@@ -16,6 +19,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.lifecycle.ViewModelProvider;
 import com.dvid.dcam.R;
+import com.dvid.dcam.app.feature.DeveloperFeatureToggles;
 import com.dvid.dcam.app.navigation.MainScreen;
 import com.dvid.dcam.app.presentation.MainMenuModel;
 import com.dvid.dcam.app.presentation.MainMenuTile;
@@ -23,24 +27,24 @@ import com.dvid.dcam.app.presentation.MainUiState;
 import com.dvid.dcam.app.presentation.MainViewModel;
 import com.dvid.dcam.app.presentation.MainViewModelFactory;
 import com.dvid.dcam.core.config.domain.DcamConfig;
+import com.dvid.dcam.core.feature.domain.FeatureGate;
 import com.dvid.dcam.databinding.ActivityMainBinding;
 import com.dvid.dcam.databinding.ItemMediaEntryBinding;
 import com.dvid.dcam.databinding.ScreenCameraBinding;
+import com.dvid.dcam.databinding.ScreenDeveloperUsersBinding;
 import com.dvid.dcam.databinding.ScreenFileExplorerBinding;
+import com.dvid.dcam.databinding.ScreenLoginBinding;
 import com.dvid.dcam.databinding.ScreenMenuBinding;
 import com.dvid.dcam.databinding.ScreenSettingsDetailBinding;
+import com.dvid.dcam.feature.auth.domain.UserProvisioningRequest;
+import com.dvid.dcam.feature.auth.domain.UserSource;
 import com.dvid.dcam.feature.capture.domain.RecordingMode;
-import com.dvid.dcam.feature.device.domain.CapabilityStatus;
-import com.dvid.dcam.feature.device.domain.DeviceStatus;
 import com.dvid.dcam.feature.media.application.usecase.OpenMediaUseCase;
 import com.dvid.dcam.feature.media.domain.MediaEntry;
-import com.dvid.dcam.feature.settings.application.usecase.FeatureGateSettingsUseCase;
 import com.dvid.dcam.feature.settings.application.usecase.LanguageSettingsUseCase;
 import com.dvid.dcam.feature.settings.application.usecase.MediaEncryptionSettingsUseCase;
 import com.dvid.dcam.feature.settings.domain.AppLanguage;
-import com.dvid.dcam.feature.settings.domain.FeatureGate;
 import com.dvid.dcam.feature.settings.presentation.DemoSettingsState;
-import com.dvid.dcam.feature.settings.presentation.FeatureGateSettingsScreenModel;
 import com.dvid.dcam.feature.settings.presentation.SettingId;
 import com.dvid.dcam.feature.settings.presentation.SettingItem;
 import com.dvid.dcam.feature.settings.presentation.SettingsControlRenderer;
@@ -61,7 +65,16 @@ import java.util.Locale;
 public final class MainActivity extends ComponentActivity {
     private static final int DEV_MODE_UNLOCK_TAPS = 7;
     private static final long DEV_MODE_UNLOCK_WINDOW_MS = 5_000L;
+    private static final float RECORDING_BADGE_IDLE_ALPHA = 0.35f;
+    private static final float RECORDING_BADGE_ACTIVE_ALPHA = 1f;
     private final DateTimeFormatter clock = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private final Handler cameraClock = new Handler(Looper.getMainLooper());
+    private final Runnable cameraClockTick = new Runnable() {
+        @Override public void run() {
+            updateCameraClock();
+            cameraClock.postDelayed(this, 1_000L);
+        }
+    };
     private FrameLayout root;
     private AppComposition composition;
     private AppComposition.CaptureRuntime captureRuntime;
@@ -69,17 +82,18 @@ public final class MainActivity extends ComponentActivity {
     private HardwareButtonRouter hardwareButtons;
     private OpenMediaUseCase openMedia;
     private LanguageSettingsUseCase languageSettings;
-    private FeatureGateSettingsUseCase featureGateSettings;
+    private DeveloperFeatureToggles developerFeatureToggles;
     private MediaEncryptionSettingsUseCase mediaEncryptionSettings;
     private SettingsControlRenderer settingsRenderer;
     private DemoSettingsState demoSettings;
     private MainMenuModel menuModel;
-    private FeatureGateSettingsScreenModel featureGateSettingsModel;
     private ActivityResultLauncher<String[]> permissionLauncher;
     private DcamKioskController kioskController;
     private MainUiState latestState;
     private MainScreen renderedScreen;
     private ScreenCameraBinding cameraScreen;
+    private ScreenLoginBinding loginScreen;
+    private ScreenDeveloperUsersBinding developerUsersScreen;
     private ScreenFileExplorerBinding fileExplorerScreen;
     private ScreenMenuBinding menuScreen;
     private AppLanguage[] renderedLanguages = new AppLanguage[0];
@@ -94,12 +108,11 @@ public final class MainActivity extends ComponentActivity {
         super.onCreate(savedInstanceState);
         composition = AppComposition.create(this);
         languageSettings = composition.languageSettingsUseCase();
-        featureGateSettings = composition.featureGateSettingsUseCase();
+        developerFeatureToggles = composition.developerFeatureToggles();
         mediaEncryptionSettings = composition.mediaEncryptionSettingsUseCase();
         settingsRenderer = new SettingsControlRenderer(this);
         demoSettings = new DemoSettingsState(mediaEncryptionSettings.isMediaEncryptionEnabled());
         menuModel = new MainMenuModel();
-        featureGateSettingsModel = new FeatureGateSettingsScreenModel();
         kioskController = new DcamKioskController(this);
         kioskController.applyActiveKioskPolicy();
 
@@ -126,7 +139,10 @@ public final class MainActivity extends ComponentActivity {
         viewModel = new ViewModelProvider(
                 this, new MainViewModelFactory(
                         composition.config(), composition.initialDeviceStatus(),
-                        composition.refreshDeviceStatusUseCase(), composition.browseMediaUseCase()))
+                        composition.refreshDeviceStatusUseCase(), composition.browseMediaUseCase(),
+                        composition.authenticateOperatorUseCase(),
+                        composition.operatorSessionUseCase(),
+                        composition.manageOperatorUsersUseCase()))
                 .get(MainViewModel.class);
         viewModel.bindCaptureEvents(captureRuntime.captureEvents());
         hardwareButtons = composition.createHardwareButtonRouter(
@@ -141,6 +157,13 @@ public final class MainActivity extends ComponentActivity {
             kioskController.enterLockTaskIfAllowed(this);
         }
         if (viewModel != null) viewModel.refreshDeviceStatus();
+        cameraClock.removeCallbacks(cameraClockTick);
+        cameraClock.post(cameraClockTick);
+    }
+
+    @Override protected void onPause() {
+        cameraClock.removeCallbacks(cameraClockTick);
+        super.onPause();
     }
 
     private void render(MainUiState state) {
@@ -152,9 +175,11 @@ public final class MainActivity extends ComponentActivity {
         }
         if (renderedScreen != screen) {
             renderedScreen = screen;
-            if (screen == MainScreen.CAMERA) renderCamera();
+            if (screen == MainScreen.LOGIN) renderLogin();
+            else if (screen == MainScreen.CAMERA) renderCamera();
             else if (screen == MainScreen.MENU) renderMenu();
             else if (screen == MainScreen.FILES) renderFileExplorer();
+            else if (screen == MainScreen.DEVELOPER_USERS) renderDeveloperUsers();
             else renderSettingsDetail(screen);
         }
         updateStatus(state);
@@ -167,19 +192,32 @@ public final class MainActivity extends ComponentActivity {
         DcamConfig config = viewModel.getConfig();
         cameraScreen.accountId.setText("CAM " + config.getAccountUserId());
         cameraScreen.operatorId.setText("USER " + config.getPoliceUserId());
-        if (enabled(FeatureGate.IMAGE_CAPTURE)) {
-            cameraScreen.captureAction.setVisibility(View.VISIBLE);
-            cameraScreen.captureAction.setOnClickListener(view -> captureRuntime.photoCapture().takePhoto());
-        } else {
-            cameraScreen.captureAction.setVisibility(View.GONE);
-            cameraScreen.captureAction.setOnClickListener(null);
-        }
+        updateGpsStatusLine();
+        bindFeatureAction(
+                cameraScreen.captureAction,
+                FeatureGate.IMAGE_CAPTURE,
+                () -> captureRuntime.photoCapture().takePhoto());
         if (captureRuntime.cameraPreview().getParent() instanceof ViewGroup) {
             ((ViewGroup) captureRuntime.cameraPreview().getParent()).removeView(captureRuntime.cameraPreview());
         }
         cameraScreen.previewContainer.addView(captureRuntime.cameraPreview(), new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         root.addView(cameraScreen.getRoot());
+        updateCameraClock();
+    }
+
+    private void renderLogin() {
+        clearScreenBindings();
+        root.removeAllViews();
+        loginScreen = ScreenLoginBinding.inflate(getLayoutInflater(), root, false);
+        View.OnClickListener login = view ->
+                viewModel.loginPassword(loginScreen.password.getText().toString());
+        loginScreen.loginAction.setOnClickListener(login);
+        loginScreen.password.setOnEditorActionListener((view, actionId, event) -> {
+            login.onClick(view);
+            return true;
+        });
+        root.addView(loginScreen.getRoot());
     }
 
     private void renderMenu() {
@@ -187,7 +225,7 @@ public final class MainActivity extends ComponentActivity {
         root.removeAllViews();
         menuScreen = ScreenMenuBinding.inflate(getLayoutInflater(), root, false);
         List<View> visibleTiles = new ArrayList<>();
-        for (MainMenuTile tile : menuModel.visibleTiles(this::enabled)) {
+        for (MainMenuTile tile : menuModel.visibleTiles(this::isMenuTileVisible)) {
             View tileView = menuScreen.getRoot().findViewById(tile.getViewId());
             tileView.setVisibility(View.VISIBLE);
             tileView.setOnClickListener(view -> viewModel.show(tile.getScreen()));
@@ -227,6 +265,20 @@ public final class MainActivity extends ComponentActivity {
         root.addView(fileExplorerScreen.getRoot());
     }
 
+    private void renderDeveloperUsers() {
+        clearScreenBindings();
+        root.removeAllViews();
+        developerUsersScreen = ScreenDeveloperUsersBinding.inflate(getLayoutInflater(), root, false);
+        developerUsersScreen.saveAction.setOnClickListener(view -> viewModel.provisionUser(
+                new UserProvisioningRequest(
+                        developerUsersScreen.userId.getText().toString(),
+                        developerUsersScreen.loginName.getText().toString(),
+                        developerUsersScreen.displayName.getText().toString(),
+                        developerUsersScreen.password.getText().toString(),
+                        UserSource.DEVELOPER)));
+        root.addView(developerUsersScreen.getRoot());
+    }
+
     private void renderSettingsDetail(MainScreen screen) {
         clearScreenBindings();
         root.removeAllViews();
@@ -239,25 +291,154 @@ public final class MainActivity extends ComponentActivity {
             detail.title.setOnClickListener(view -> handleAboutSecretTap());
         }
         renderSettingsControls(screen, detail.settingsList);
+        if (screen == MainScreen.DEVELOPER_SETTINGS) {
+            Button users = new Button(this);
+            users.setText(R.string.manage_developer_users);
+            users.setOnClickListener(view -> viewModel.show(MainScreen.DEVELOPER_USERS));
+            detail.settingsList.addView(users);
+        }
         root.addView(detail.getRoot());
     }
 
     private void renderSettingsControls(MainScreen screen, LinearLayout settingsList) {
         settingsRenderer.render(
                 settingsList, settingsModel(screen),
-                this::selectSetting, this::updateNumberSetting, this::updateBooleanSetting);
+                this::selectSetting, this::updateNumberSetting, this::updateBooleanSetting,
+                this::performSettingAction);
     }
 
     private SettingsScreenModel settingsModel(MainScreen screen) {
-        if (screen == MainScreen.DEVELOPER_SETTINGS) return featureGateSettingsModel.build(this::enabled);
-        if (screen == MainScreen.RECORD_SETTINGS) return demoSettings.recording();
-        if (screen == MainScreen.STORAGE_SETTINGS) return demoSettings.storage();
-        if (screen == MainScreen.USER_SETTINGS) {
-            demoSettings.setVideoEncryptionEnabled(mediaEncryptionSettings.isMediaEncryptionEnabled());
-            return demoSettings.security();
+        if (screen == MainScreen.DEVELOPER_SETTINGS) {
+            return developerFeatureToggles.developerSettings();
         }
-        if (screen == MainScreen.DEVICE_SETTINGS) return withLanguage(demoSettings.device());
-        return demoSettings.readOnly(getResources().getStringArray(settingsItems(screen)));
+        SettingsScreenModel model;
+        if (screen == MainScreen.RECORD_SETTINGS) model = demoSettings.recording();
+        else if (screen == MainScreen.STORAGE_SETTINGS) model = demoSettings.storage();
+        else if (screen == MainScreen.USER_SETTINGS) {
+            demoSettings.setVideoEncryptionEnabled(mediaEncryptionSettings.isMediaEncryptionEnabled());
+            model = demoSettings.security();
+        }
+        else if (screen == MainScreen.DEVICE_SETTINGS) model = withLanguage(demoSettings.device());
+        else model = demoSettings.readOnly(visibleReadOnlySettings(screen));
+        return filterUnavailableSettings(screen, model);
+    }
+
+    private String[] visibleReadOnlySettings(MainScreen screen) {
+        String[] labels = getResources().getStringArray(settingsItems(screen));
+        List<String> visible = new ArrayList<>();
+        for (int i = 0; i < labels.length; i++) {
+            if (isReadOnlySettingVisible(screen, i)) visible.add(labels[i]);
+        }
+        return visible.toArray(new String[0]);
+    }
+
+    private SettingsScreenModel filterUnavailableSettings(MainScreen screen, SettingsScreenModel model) {
+        List<SettingsSection> sections = new ArrayList<>();
+        for (SettingsSection section : model.getSections()) {
+            List<SettingItem> visible = new ArrayList<>();
+            for (SettingItem item : section.getItems()) {
+                if (isSettingVisible(screen, item)) visible.add(item);
+            }
+            if (!visible.isEmpty()) sections.add(new SettingsSection(section.getTitle(), visible));
+        }
+        return new SettingsScreenModel(sections);
+    }
+
+    private boolean isSettingVisible(MainScreen screen, SettingItem item) {
+        for (FeatureGate gate : requiredGatesForSetting(screen, item)) {
+            if (!developerFeatureToggles.isEnabled(gate)) return false;
+        }
+        return true;
+    }
+
+    private boolean isReadOnlySettingVisible(MainScreen screen, int index) {
+        for (FeatureGate gate : requiredGatesForReadOnlySetting(screen, index)) {
+            if (!developerFeatureToggles.isEnabled(gate)) return false;
+        }
+        return true;
+    }
+
+    private static FeatureGate[] requiredGatesForSetting(MainScreen screen, SettingItem item) {
+        if (item.getId() == SettingId.LANGUAGE) return noGates();
+        switch (screen) {
+            case RECORD_SETTINGS:
+                return gates(FeatureGate.RECORDING_SETTINGS, FeatureGate.VIDEO_CAPTURE);
+            case STORAGE_SETTINGS:
+                return gates(FeatureGate.STORAGE_SETTINGS);
+            case USER_SETTINGS:
+                return gates(FeatureGate.SECURITY_SETTINGS);
+            case DEVICE_SETTINGS:
+                return gates(FeatureGate.DEVICE_SETTINGS);
+            default:
+                return noGates();
+        }
+    }
+
+    private static FeatureGate[] requiredGatesForReadOnlySetting(MainScreen screen, int index) {
+        switch (screen) {
+            case CAMERA_SETTINGS:
+                return index == 1 || index == 3 || index == 6
+                        ? gates(FeatureGate.CAMERA_SETTINGS, FeatureGate.IMAGE_CAPTURE)
+                        : gates(FeatureGate.CAMERA_SETTINGS);
+            case VIDEO_STREAM_SETTINGS:
+                return gates(FeatureGate.VIDEO_STREAMING);
+            case AUDIO_SETTINGS:
+                return gates(FeatureGate.AUDIO_SETTINGS, FeatureGate.AUDIO_CAPTURE);
+            case GPS_SETTINGS:
+                return gates(FeatureGate.GPS);
+            case SERVER_SETTINGS:
+                return gates(FeatureGate.CLOUD_SETTINGS);
+            case TRANSFER_SETTINGS:
+                return index < 4
+                        ? gates(FeatureGate.VIDEO_STREAMING)
+                        : gates(FeatureGate.TRANSFER);
+            case ABOUT:
+                return noGates();
+            default:
+                return noGates();
+        }
+    }
+
+    private static FeatureGate[] gates(FeatureGate... gates) {
+        return gates;
+    }
+
+    private static FeatureGate[] noGates() {
+        return new FeatureGate[0];
+    }
+
+    private static boolean hasSettings(SettingsScreenModel model) {
+        for (SettingsSection section : model.getSections()) {
+            if (!section.getItems().isEmpty()) return true;
+        }
+        return false;
+    }
+
+    private boolean isMenuTileVisible(MainScreen screen, FeatureGate gate) {
+        if (screen == MainScreen.FILES) {
+            return gate == null || developerFeatureToggles.isEnabled(gate);
+        }
+        if (isSettingsScreen(screen)) return hasSettings(settingsModel(screen));
+        return gate == null || developerFeatureToggles.isEnabled(gate);
+    }
+
+    private static boolean isSettingsScreen(MainScreen screen) {
+        switch (screen) {
+            case RECORD_SETTINGS:
+            case CAMERA_SETTINGS:
+            case VIDEO_STREAM_SETTINGS:
+            case AUDIO_SETTINGS:
+            case STORAGE_SETTINGS:
+            case GPS_SETTINGS:
+            case DEVICE_SETTINGS:
+            case USER_SETTINGS:
+            case SERVER_SETTINGS:
+            case TRANSFER_SETTINGS:
+            case ABOUT:
+                return true;
+            default:
+                return false;
+        }
     }
 
     private SettingsScreenModel withLanguage(SettingsScreenModel base) {
@@ -300,16 +481,23 @@ public final class MainActivity extends ComponentActivity {
     }
 
     private void updateBooleanSetting(SettingId id, boolean checked) {
-        FeatureGate feature = featureGateSettingsModel.featureFor(id);
-        if (feature != null) {
-            featureGateSettings.setEnabled(feature, checked);
-            composition.applyFeatureGateRuntimeChange(feature, checked);
-            return;
-        }
+        if (developerFeatureToggles.setEnabled(id, checked)) return;
         demoSettings.updateBoolean(id, checked);
         if (id == SettingId.ENCRYPT_VIDEO_FILES && mediaEncryptionSettings != null) {
             mediaEncryptionSettings.setMediaEncryptionEnabled(checked);
         }
+    }
+
+    private void performSettingAction(SettingId id) {
+        if (id == SettingId.LOGOUT) {
+            viewModel.logout();
+            return;
+        }
+        if (id == SettingId.CHANGE_OPERATOR_ID || id == SettingId.CHANGE_OPERATOR_PASSWORD) {
+            Toast.makeText(this, R.string.account_change_pending, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        throw new IllegalArgumentException("Setting " + id + " is not an action");
     }
 
     private void changeLanguage(AppLanguage language) {
@@ -344,11 +532,16 @@ public final class MainActivity extends ComponentActivity {
     }
 
     private MainScreen safeScreen(MainScreen screen) {
-        return menuModel.safeScreen(screen, this::enabled);
+        if (screen == MainScreen.LOGIN || screen == MainScreen.DEVELOPER_USERS) return screen;
+        return menuModel.safeScreen(screen, this::isMenuTileVisible);
     }
 
-    private boolean enabled(FeatureGate feature) {
-        return featureGateSettings == null || featureGateSettings.isEnabled(feature);
+    private void bindFeatureAction(View view, FeatureGate feature, Runnable action) {
+        boolean enabled = developerFeatureToggles.isEnabled(feature);
+        view.setVisibility(enabled ? View.VISIBLE : View.GONE);
+        view.setOnClickListener(enabled
+                ? ignored -> developerFeatureToggles.runIfEnabled(feature, action)
+                : null);
     }
 
     private static int settingsTitle(MainScreen screen) {
@@ -365,6 +558,7 @@ public final class MainActivity extends ComponentActivity {
             case TRANSFER_SETTINGS: return R.string.transfer_settings;
             case ABOUT: return R.string.about;
             case DEVELOPER_SETTINGS: return R.string.developer_mode;
+            case DEVELOPER_USERS: return R.string.developer_users;
             default: throw new IllegalArgumentException("No settings title for " + screen);
         }
     }
@@ -387,18 +581,30 @@ public final class MainActivity extends ComponentActivity {
     }
 
     private void updateStatus(MainUiState state) {
-        String recording = recordingText(state.getCapture().getMode());
-        String device = deviceText(state.getDeviceStatus(), enabled(FeatureGate.GPS));
         if (cameraScreen != null) {
             boolean idle = state.getCapture().getMode() == RecordingMode.IDLE;
-            cameraScreen.recordingBadge.setText(recording);
-            cameraScreen.recordingBadge.setTextColor(idle ? Color.WHITE : Color.RED);
-            String currentFile = state.getCapture().getCurrentFileName();
-            cameraScreen.fileName.setText(currentFile == null ? "" : currentFile);
-            cameraScreen.statusMessage.setText(state.getMessage() == null ? "" : state.getMessage());
-            cameraScreen.deviceStatus.setText(device);
-            cameraScreen.storageStatus.setText(storageText(state.getDeviceStatus()));
-            cameraScreen.currentTime.setText(clock.format(LocalDateTime.now()));
+            cameraScreen.recordingBadge.setAlpha(idle
+                    ? RECORDING_BADGE_IDLE_ALPHA : RECORDING_BADGE_ACTIVE_ALPHA);
+            updateGpsStatusLine();
+            if (state.getOperatorSession() != null) {
+                cameraScreen.operatorId.setText("USER " + state.getOperatorSession().getFileUserId());
+            } else {
+                cameraScreen.operatorId.setText("USER " + viewModel.getConfig().getPoliceUserId());
+            }
+            updateCameraClock();
+        }
+        if (loginScreen != null) {
+            loginScreen.loginAction.setEnabled(!state.isAuthenticationBusy());
+            loginScreen.password.setEnabled(!state.isAuthenticationBusy());
+            loginScreen.status.setText(state.isAuthenticationBusy()
+                    ? "Loading..."
+                    : state.getMessage() == null ? "" : state.getMessage());
+        }
+        if (developerUsersScreen != null) {
+            developerUsersScreen.saveAction.setEnabled(!state.isAuthenticationBusy());
+            developerUsersScreen.status.setText(state.isAuthenticationBusy()
+                    ? "Saving..."
+                    : state.getMessage() == null ? "" : state.getMessage());
         }
         if (fileExplorerScreen != null) updateFileExplorer(state);
     }
@@ -453,38 +659,43 @@ public final class MainActivity extends ComponentActivity {
         return String.format(Locale.ROOT, "%.1f GB", bytes / (1024d * 1024d * 1024d));
     }
 
-    private static String recordingText(RecordingMode mode) {
-        if (mode == RecordingMode.IDLE) return "READY";
-        return mode.name() + " \u25CF";
+    private void updateCameraClock() {
+        if (cameraScreen == null) return;
+        cameraScreen.currentTime.setText(clock.format(LocalDateTime.now()));
+        MainUiState state = latestState;
+        cameraScreen.recordingTimer.setText(recordingDurationText(state));
     }
 
-    private static String deviceText(DeviceStatus status, boolean gpsEnabled) {
-        String battery = status.getBatteryPercent() < 0 ? "BAT ?" : "BAT " + status.getBatteryPercent() + "%";
-        if (!gpsEnabled) return battery;
-        return battery + " \u00B7 GPS " + gpsText(status.getGpsStatus());
+    private static String recordingDurationText(MainUiState state) {
+        if (state == null || state.getCapture().getMode() == RecordingMode.IDLE) return "00:00:00";
+        Long startedAtMillis = state.getCapture().getStartedAtMillis();
+        if (startedAtMillis == null) return "00:00:00";
+        long elapsedMs = Math.max(0L, System.currentTimeMillis() - startedAtMillis);
+        long totalSeconds = elapsedMs / 1_000L;
+        long hours = totalSeconds / 3_600L;
+        long minutes = (totalSeconds % 3_600L) / 60L;
+        long seconds = totalSeconds % 60L;
+        return String.format(Locale.ROOT, "%02d:%02d:%02d", hours, minutes, seconds);
     }
 
-    private static String gpsText(CapabilityStatus status) {
-        switch (status) {
-            case AVAILABLE: return "ON";
-            case DISABLED: return "OFF";
-            case UNAVAILABLE: return "N/A";
-            default: return "?";
-        }
+    private static String gpsCoordinatesText() {
+        return "000.00 000.00";
     }
 
-    private static String storageText(DeviceStatus status) {
-        long bytes = status.getAvailableStorageBytes();
-        if (bytes < 0) return "FREE ?";
-        double gib = bytes / (1024d * 1024d * 1024d);
-        return String.format(Locale.ROOT, "FREE %.1f GB", gib);
+    private void updateGpsStatusLine() {
+        if (cameraScreen == null) return;
+        boolean enabled = developerFeatureToggles.isEnabled(FeatureGate.GPS);
+        cameraScreen.gpsStatus.setVisibility(enabled ? View.VISIBLE : View.GONE);
+        cameraScreen.gpsStatus.setText(enabled ? gpsCoordinatesText() : "");
     }
 
     private void navigateBack() {
         MainScreen screen = latestState == null ? MainScreen.CAMERA : latestState.getScreen();
+        if (screen == MainScreen.LOGIN) return;
         if (screen == MainScreen.CAMERA) viewModel.show(MainScreen.MENU);
         else if (screen == MainScreen.MENU) viewModel.show(MainScreen.CAMERA);
         else if (screen == MainScreen.FILES && viewModel.navigateMediaUp()) return;
+        else if (screen == MainScreen.DEVELOPER_USERS) viewModel.show(MainScreen.DEVELOPER_SETTINGS);
         else viewModel.show(MainScreen.MENU);
     }
 
@@ -499,6 +710,7 @@ public final class MainActivity extends ComponentActivity {
 
     @Override protected void onDestroy() {
         DcamLogger.i("MainActivity destroyed");
+        cameraClock.removeCallbacks(cameraClockTick);
         if (viewModel != null && captureRuntime != null) {
             viewModel.onCapturePlatformReleased(captureRuntime.captureEvents());
             viewModel.unbindCaptureEvents(captureRuntime.captureEvents());
@@ -509,6 +721,8 @@ public final class MainActivity extends ComponentActivity {
 
     private void clearScreenBindings() {
         cameraScreen = null;
+        loginScreen = null;
+        developerUsersScreen = null;
         fileExplorerScreen = null;
         menuScreen = null;
     }

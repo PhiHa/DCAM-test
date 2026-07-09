@@ -26,9 +26,9 @@ public final class RoomDeviceIdentityRepositoryImpl implements DeviceIdentityRep
             dao.saveDeviceIdentity(created);
             return toDomain(created);
         }
-        if (!same(existing.androidIdHash, deviceInfo.getHardwareId())
+        if (!same(existing.hardwareId, deviceInfo.getHardwareId())
                 || !same(existing.serialNumber, deviceInfo.getSerialNumber())) {
-            existing.androidIdHash = deviceInfo.getHardwareId();
+            existing.hardwareId = deviceInfo.getHardwareId();
             existing.serialNumber = deviceInfo.getSerialNumber();
             existing.updatedAt = System.currentTimeMillis();
             if (existing.dcamCloudDeviceId == null || existing.dcamCloudDeviceId.isBlank()) {
@@ -47,7 +47,7 @@ public final class RoomDeviceIdentityRepositoryImpl implements DeviceIdentityRep
     private static DeviceCloudIdentity toDomain(DeviceIdentityEntity entity) {
         return new DeviceCloudIdentity(
                 entity.dcamCloudDeviceId,
-                entity.androidIdHash,
+                entity.hardwareId,
                 entity.serialNumber,
                 state(entity.provisioningState),
                 entity.firebaseInstallationId);

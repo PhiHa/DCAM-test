@@ -35,7 +35,8 @@ public final class SettingsControlRenderer {
             SettingsScreenModel model,
             BiConsumer<SettingId, Integer> onSelection,
             BiConsumer<SettingId, Integer> onNumber,
-            BiConsumer<SettingId, Boolean> onBoolean) {
+            BiConsumer<SettingId, Boolean> onBoolean,
+            Consumer<SettingId> onAction) {
         for (SettingsSection section : model.getSections()) {
             section(parent, section.getTitle());
             for (SettingItem item : section.getItems()) {
@@ -59,6 +60,11 @@ public final class SettingsControlRenderer {
                     case RADIO:
                         radio(parent, item.getLabel(), item.getOptions(), item.getSelectedIndex(),
                                 selected -> onSelection.accept(item.getId(), selected));
+                        break;
+                    case ACTION:
+                        action(parent, item.getLabel(), () -> {
+                            if (onAction != null) onAction.accept(item.getId());
+                        });
                         break;
                     default:
                         throw new IllegalArgumentException("Unsupported setting type " + item.getType());
@@ -221,6 +227,20 @@ public final class SettingsControlRenderer {
             }
         });
         row.addView(group);
+        parent.addView(row);
+    }
+
+    public void action(LinearLayout parent, String label, Runnable onClick) {
+        LinearLayout row = baseRow();
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        row.setClickable(true);
+        row.setFocusable(true);
+        row.setOnClickListener(view -> {
+            if (onClick != null) onClick.run();
+        });
+        row.addView(label(label), weighted());
+        row.addView(value(">"), wrap());
         parent.addView(row);
     }
 

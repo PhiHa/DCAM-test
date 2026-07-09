@@ -41,4 +41,14 @@ public class CsonConfigStoreTest {
         assertFalse(generated.contains("file.encrypt_password"));
         assertFalse(generated.contains("file.encryption"));
     }
+
+    @Test public void repairsUnknownAccountWhenDeviceIdentityBecomesAvailable() throws Exception {
+        File file = File.createTempFile("configs", ".cson");
+        Files.writeString(file.toPath(), "[device]\naccount.user_id=\"unknown\"\nserial_number=\"\"");
+
+        DcamConfig config = new CsonConfigStore(file, "KF5OF2126040802193").load();
+
+        assertEquals("KF5OF2126040802193", config.getAccountUserId());
+        assertTrue(Files.readString(file.toPath()).contains("account.user_id=\"KF5OF2126040802193\""));
+    }
 }

@@ -1,26 +1,22 @@
 package com.dvid.dcam.app.presentation;
 
 import com.dvid.dcam.app.navigation.MainScreen;
-import com.dvid.dcam.feature.settings.domain.FeatureGate;
-import java.util.function.Predicate;
+import com.dvid.dcam.core.feature.domain.FeatureGate;
 
 /** Presentation definition for one app menu tile. */
 public final class MainMenuTile {
     private final int viewId;
     private final MainScreen screen;
-    private final FeatureGate feature;
+    private final FeatureGate optionalDeveloperGate;
 
-    MainMenuTile(int viewId, MainScreen screen, FeatureGate feature) {
+    MainMenuTile(int viewId, MainScreen screen, FeatureGate optionalDeveloperGate) {
         this.viewId = viewId;
         this.screen = screen;
-        this.feature = feature;
+        this.optionalDeveloperGate = optionalDeveloperGate;
     }
 
     public int getViewId() { return viewId; }
     public MainScreen getScreen() { return screen; }
-    public FeatureGate getFeature() { return feature; }
 
-    public boolean isVisible(Predicate<FeatureGate> isEnabled) {
-        return feature == null || isEnabled.test(feature);
-    }
+    FeatureGate getOptionalDeveloperGate() { return optionalDeveloperGate; }
 }

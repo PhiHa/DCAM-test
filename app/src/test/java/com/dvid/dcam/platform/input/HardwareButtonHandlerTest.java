@@ -5,11 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import android.view.KeyEvent;
+import com.dvid.dcam.core.feature.application.usecase.FeatureGateSettingsUseCase;
+import com.dvid.dcam.core.feature.domain.FeatureGate;
 import com.dvid.dcam.feature.capture.application.usecase.AudioRecordingUseCase;
 import com.dvid.dcam.feature.capture.application.usecase.PhotoCaptureUseCase;
 import com.dvid.dcam.feature.capture.application.usecase.VideoRecordingUseCase;
-import com.dvid.dcam.feature.settings.application.usecase.FeatureGateSettingsUseCase;
-import com.dvid.dcam.feature.settings.domain.FeatureGate;
 import java.util.EnumMap;
 import java.util.Map;
 import org.junit.jupiter.api.Test;

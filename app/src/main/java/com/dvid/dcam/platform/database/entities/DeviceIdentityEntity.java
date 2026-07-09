@@ -11,7 +11,7 @@ public final class DeviceIdentityEntity {
     public int id;
     public String dcamCloudDeviceId;
     @NonNull
-    public String androidIdHash;
+    public String hardwareId;
     public String serialNumber;
     @NonNull
     @ColumnInfo(defaultValue = "'PROVISIONING_REQUIRED'")
@@ -23,14 +23,14 @@ public final class DeviceIdentityEntity {
     public DeviceIdentityEntity(
             int id,
             String dcamCloudDeviceId,
-            @NonNull String androidIdHash,
+            @NonNull String hardwareId,
             String serialNumber,
             @NonNull String provisioningState,
             String firebaseInstallationId,
             long updatedAt) {
         this.id = id;
         this.dcamCloudDeviceId = dcamCloudDeviceId;
-        this.androidIdHash = androidIdHash;
+        this.hardwareId = hardwareId;
         this.serialNumber = serialNumber;
         this.provisioningState = provisioningState;
         this.firebaseInstallationId = firebaseInstallationId;

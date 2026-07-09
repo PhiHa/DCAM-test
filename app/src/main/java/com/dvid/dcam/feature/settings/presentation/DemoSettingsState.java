@@ -104,13 +104,18 @@ public final class DemoSettingsState {
     }
 
     public SettingsScreenModel security() {
-        return new SettingsScreenModel(List.of(new SettingsSection("Security", List.of(
-                SettingItem.checkbox(SettingId.ENCRYPT_VIDEO_FILES,
-                        "Encrypt media files", videoEncryptionEnabled),
-                SettingItem.checkbox(SettingId.PROTECT_SETTINGS_MENU,
-                        "Protect settings menu", protectSettingsMenu),
-                SettingItem.choice(SettingId.USB_ACCESS_PROTECTION,
-                        "USB access protection", USB_OPTIONS, usbAccessIndex)))));
+        return new SettingsScreenModel(List.of(
+                new SettingsSection("Operator account", List.of(
+                        SettingItem.action(SettingId.CHANGE_OPERATOR_ID, "Change ID"),
+                        SettingItem.action(SettingId.CHANGE_OPERATOR_PASSWORD, "Change password"),
+                        SettingItem.action(SettingId.LOGOUT, "Log out"))),
+                new SettingsSection("Security", List.of(
+                        SettingItem.checkbox(SettingId.ENCRYPT_VIDEO_FILES,
+                                "Encrypt media files", videoEncryptionEnabled),
+                        SettingItem.checkbox(SettingId.PROTECT_SETTINGS_MENU,
+                                "Protect settings menu", protectSettingsMenu),
+                        SettingItem.choice(SettingId.USB_ACCESS_PROTECTION,
+                                "USB access protection", USB_OPTIONS, usbAccessIndex)))));
     }
 
     public SettingsScreenModel device() {

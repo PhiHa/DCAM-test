@@ -10,7 +10,6 @@ import androidx.camera.video.MediaStoreOutputOptions;
 import androidx.camera.video.PendingRecording;
 import androidx.camera.video.Recorder;
 import androidx.camera.video.VideoCapture;
-import com.dvid.dcam.core.config.domain.DcamConfig;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -20,8 +19,13 @@ public final class DcamMediaOutputImpl implements DcamMediaOutput {
 
     public DcamMediaOutputImpl(DcamStorage storage) { this.storage = storage; }
 
-    @Override public DcamMediaFile mediaFile(DcamFileType type, DcamConfig config, LocalDateTime at, boolean encrypted) {
-        return storage.mediaFile(type, config.getAccountUserId(), config.getPoliceUserId(), at, encrypted);
+    @Override public DcamMediaFile mediaFile(
+            DcamFileType type,
+            String cameraId,
+            String fileUserId,
+            LocalDateTime at,
+            boolean encrypted) {
+        return storage.mediaFile(type, cameraId, fileUserId, at, encrypted);
     }
 
     @Override public ImageCapture.OutputFileOptions imageOptions(Context context, DcamMediaFile mediaFile) {

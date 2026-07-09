@@ -10,8 +10,8 @@ The settings home behaves like an app launcher: a three-column grid containing o
 
 - Files browses only `Video`, `IMP`, `Image`, and `Audio` inside DCAM-managed media storage and opens files through a temporary Android viewer grant.
 - Language selection is persisted locally and recreates the Activity with the localized context.
-- Security/Encryption has a gated media-encryption preference. When enabled, photo, video/SOS, and audio save flows apply local AES-256-CTR transforms and use the `_enc` filename marker.
-- Developer settings expose local project-phase feature gates. These gates are a project-control surface, not an approved operational settings feature.
+- Security/Encryption has a media-encryption preference. Hiding its settings surface does not disable the shared crypto/storage capability. When the preference is enabled, photo, video/SOS, and audio save flows apply local AES-256-CTR transforms and use the `_enc` filename marker.
+- Developer settings expose opt-in local feature gates. These gates are a project-control surface, not an approved operational settings feature and not a registry requirement for ordinary new features.
 - Other setting controls backed by `DemoSettingsState` are local UI scaffolding only.
 
 | Grid item | Detail-list contents | OEM/CSON source areas for later implementation |

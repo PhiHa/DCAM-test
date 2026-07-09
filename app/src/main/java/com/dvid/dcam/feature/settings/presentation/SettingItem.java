@@ -9,7 +9,8 @@ public final class SettingItem {
         CHECKBOX,
         CHOICE,
         SLIDER,
-        RADIO
+        RADIO,
+        ACTION
     }
 
     private final SettingId id;
@@ -70,6 +71,10 @@ public final class SettingItem {
     public static SettingItem radio(
             SettingId id, String label, List<String> options, int selectedIndex) {
         return new SettingItem(id, Type.RADIO, label, null, options, selectedIndex, false, 0, 0, 0, null);
+    }
+
+    public static SettingItem action(SettingId id, String label) {
+        return new SettingItem(id, Type.ACTION, label, null, null, 0, false, 0, 0, 0, null);
     }
 
     public SettingId getId() { return id; }

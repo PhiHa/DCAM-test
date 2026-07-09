@@ -1,8 +1,16 @@
 # Confluence source inventory
 
-Authenticated Confluence API snapshot initially read on **2026-07-03** and refreshed on **2026-07-08** (Asia/Saigon). Credentials came from the gitignored local application properties and are not stored here.
+Authenticated Confluence API snapshot initially read on **2026-07-03**, broadly refreshed on **2026-07-08**, and selectively refreshed on **2026-07-09** (Asia/Saigon). Credentials came from the gitignored local application properties and are not stored here.
 
 Confluence remains the source of truth. This file records what was checked locally and how to interpret the local digest.
+
+## July 9 targeted refresh
+
+Fully fetched/read for this refresh:
+
+- [DCAM Architecture Delivery Profile](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/50626744), Approved 1.1, page version 4, updated 2026-07-09 08:42 UTC.
+
+This page is the implementation guardrail for translating the larger target architecture into phase-scoped work. Its Phase 1 profile recommends no more than five Gradle modules (`:app`, `:core`, `:media`, `:storage`, and `:bdma-contract`), accepts a smaller initial `:app`/`:core` shape, requires package-first organization, and permits extraction only when an explicit split trigger exists.
 
 ## July 8 refresh scope
 
@@ -46,6 +54,7 @@ Metadata-only CQL check also found many additional pages changed on **2026-07-08
 | Architecture | [06 - Cloud Services, Update & Configuration Architecture](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47120459) | 21 | 2026-07-08 08:56 |
 | Architecture | [07 - Logging, Diagnostics, Performance & Security](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47185971) | 9 | 2026-07-08 02:20 |
 | Architecture | [08 - DCAM-BDMA Integration Boundary](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47153235) | 9 | 2026-07-08 02:27 |
+| Architecture | [DCAM Architecture Delivery Profile](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/50626744) | 4 | 2026-07-09 08:42 |
 | Android development | [DCAM Android Training & Architecture Onboarding](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/46825510) | 9 | 2026-07-08 07:46 |
 | Android development | [DCAM Android Development Standard](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47120580) | 10 | 2026-07-08 07:39 |
 | Governance | [DCAM Documentation Governance](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47120620) | 8 | 2026-07-08 09:57 |

@@ -9,6 +9,8 @@ import androidx.core.content.ContextCompat;
 import com.dvid.dcam.core.config.domain.DcamConfig;
 import com.dvid.dcam.core.logging.application.port.LogSink;
 import com.dvid.dcam.feature.capture.application.port.AudioRecorder;
+import com.dvid.dcam.feature.auth.application.usecase.OperatorSessionUseCase;
+import com.dvid.dcam.feature.auth.domain.OperatorSession;
 import com.dvid.dcam.feature.settings.application.usecase.MediaEncryptionSettingsUseCase;
 import com.dvid.dcam.platform.storage.DcamFileType;
 import com.dvid.dcam.platform.storage.DcamMediaFile;
@@ -22,15 +24,18 @@ public final class AndroidAudioRecorderImpl implements AudioRecorder {
     private final DcamMediaOutput mediaOutput;
     private final LogSink log;
     private final MediaEncryptionSettingsUseCase mediaEncryptionSettings;
+    private final OperatorSessionUseCase operatorSession;
     private MediaRecorder recorder;
     private DcamMediaFile outputMediaFile;
     private File outputFile;
     private boolean outputEncrypted;
 
     public AndroidAudioRecorderImpl(Context context, DcamMediaOutput mediaOutput, LogSink log,
-                                    MediaEncryptionSettingsUseCase mediaEncryptionSettings) {
+                                    MediaEncryptionSettingsUseCase mediaEncryptionSettings,
+                                    OperatorSessionUseCase operatorSession) {
         this.context = context; this.mediaOutput = mediaOutput; this.log = log;
         this.mediaEncryptionSettings = mediaEncryptionSettings;
+        this.operatorSession = operatorSession;
     }
 
     @Override public String toggle(DcamConfig config) {
@@ -69,9 +74,19 @@ public final class AndroidAudioRecorderImpl implements AudioRecorder {
         }
 
         try {
+            OperatorSession session = operatorSession.current();
+            if (session == null) {
+                log.warn("Audio start ignored: operator login required", null);
+                return null;
+            }
             LocalDateTime at = LocalDateTime.now();
             outputEncrypted = mediaEncryptionSettings.isMediaEncryptionEnabled();
-            outputMediaFile = mediaOutput.mediaFile(DcamFileType.AUDIO, config, at, outputEncrypted);
+            outputMediaFile = mediaOutput.mediaFile(
+                    DcamFileType.AUDIO,
+                    config.getAccountUserId(),
+                    session.getFileUserId(),
+                    at,
+                    outputEncrypted);
             MediaRecorder next = Build.VERSION.SDK_INT >= 31 ? new MediaRecorder(context) : new MediaRecorder();
             next.setAudioSource(MediaRecorder.AudioSource.MIC);
             next.setOutputFormat(MediaRecorder.OutputFormat.AAC_ADTS);

@@ -1,103 +1,108 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
+    android:background="#000000"
     android:paddingStart="16dp"
-    android:paddingTop="12dp"
+    android:paddingTop="18dp"
     android:paddingEnd="16dp"
-    android:paddingBottom="12dp">
+    android:paddingBottom="18dp">
 
     <LinearLayout
-        android:layout_width="match_parent"
+        android:id="@+id/recording_status"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_gravity="top|center_horizontal"
+        android:gravity="center"
         android:orientation="horizontal">
 
-        <TextView
-            android:id="@+id/account_id"
-            style="@style/DcamStatusText.Bold"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1" />
-
-        <TextView
-            android:id="@+id/operator_id"
-            style="@style/DcamStatusText.Bold"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="end" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <TextView
+        <View
             android:id="@+id/recording_badge"
-            style="@style/DcamStatusText.Bold"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1" />
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/bg_rec_dot" />
 
         <TextView
-            android:id="@+id/device_status"
-            style="@style/DcamStatusText"
-            android:layout_width="0dp"
+            android:id="@+id/recording_timer"
+            style="@style/DcamStatusText.Bold"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="end" />
+            android:includeFontPadding="false"
+            android:paddingStart="0dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="4dp"
+            android:paddingBottom="4dp"
+            android:text="00:00:00"
+            android:textSize="17sp" />
     </LinearLayout>
-
-    <TextView
-        android:id="@+id/file_name"
-        style="@style/DcamStatusText.Secondary"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
-
-    <TextView
-        android:id="@+id/status_message"
-        style="@style/DcamStatusText.Secondary"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
 
     <FrameLayout
         android:id="@+id/preview_container"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="16dp" />
+        android:layout_height="180dp"
+        android:layout_gravity="center"
+        android:layout_marginBottom="112dp" />
 
     <LinearLayout
+        android:id="@+id/bottom_status"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
+        android:layout_gravity="bottom"
+        android:gravity="bottom"
         android:orientation="horizontal">
 
-        <TextView
-            android:id="@+id/storage_status"
-            style="@style/DcamStatusText"
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1" />
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/account_id"
+                style="@style/DcamStatusText.Bold"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:maxLines="2"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp" />
+
+            <TextView
+                android:id="@+id/operator_id"
+                style="@style/DcamStatusText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:maxLines="1"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp" />
+
+            <TextView
+                android:id="@+id/current_time"
+                style="@style/DcamStatusText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:maxLines="1"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp" />
+
+            <TextView
+                android:id="@+id/gps_status"
+                style="@style/DcamStatusText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:maxLines="1"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp" />
+        </LinearLayout>
 
         <TextView
             android:id="@+id/capture_action"
             style="@style/DcamStatusText.Bold"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_width="wrap_content"
+            android:layout_height="44dp"
+            android:layout_marginStart="12dp"
             android:gravity="center"
+            android:minWidth="72dp"
             android:text="@string/capture" />
-
-        <TextView
-            android:id="@+id/current_time"
-            style="@style/DcamStatusText"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="end" />
     </LinearLayout>
-</LinearLayout>
+</FrameLayout>

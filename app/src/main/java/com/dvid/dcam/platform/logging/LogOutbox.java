@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 final class LogOutbox {
@@ -41,15 +42,15 @@ final class LogOutbox {
         this.uploadsEnabled = uploadsEnabled;
         database = AppDatabase.get(this.context);
         dao = database.pendingLogs();
-        writer.execute(() -> {
+        executeSafely(() -> {
             prune();
             if (this.uploadsEnabled) schedulePendingUploads();
             else LogUploadScheduler.cancel(this.context);
-        });
+        }, "Loggly outbox startup failed");
     }
 
-    void enqueue(String level, String payload) {
-        runAndWait(() -> {
+    boolean enqueue(String level, String payload) {
+        return runAndWait(() -> {
             dao.insert(newEvent(level, payload));
             prune();
             if (uploadsEnabled && !BuildConfig.LOGGLY_TOKEN.isBlank() && dao.pendingCount() == 1) {
@@ -160,14 +161,31 @@ final class LogOutbox {
         }
     }
 
-    private void runAndWait(Runnable action, String failureMessage) {
+    private boolean runAndWait(Runnable action, String failureMessage) {
         try {
             Future<?> saved = writer.submit(action);
             saved.get();
+            return true;
         } catch (Exception error) {
-            LogglyDiagnostics.write(context, "ERROR", failureMessage, error);
+            LogglyDiagnostics.write(context, "ERROR", failureMessage, cause(error));
             if (error instanceof InterruptedException) Thread.currentThread().interrupt();
+            return false;
         }
+    }
+
+    private void executeSafely(Runnable action, String failureMessage) {
+        writer.execute(() -> {
+            try {
+                action.run();
+            } catch (RuntimeException error) {
+                LogglyDiagnostics.write(context, "ERROR", failureMessage, error);
+            }
+        });
+    }
+
+    private static Throwable cause(Exception error) {
+        if (error instanceof ExecutionException && error.getCause() != null) return error.getCause();
+        return error;
     }
 
     private void prune() {
