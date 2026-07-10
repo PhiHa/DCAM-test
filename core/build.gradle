@@ -1,0 +1,26 @@
+plugins {
+    id 'java-library'
+}
+
+def junitVersion = '6.1.0'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+dependencies {
+    testImplementation "org.junit.jupiter:junit-jupiter:${junitVersion}"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher:${junitVersion}"
+}
+
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
+    def crashDir = rootProject.layout.buildDirectory.dir('jvm-crash').get().asFile
+    crashDir.mkdirs()
+    jvmArgs "-XX:ErrorFile=${new File(crashDir, 'hs_err_pid%p.log').absolutePath}",
+            "-XX:HeapDumpPath=${crashDir.absolutePath}"
+}

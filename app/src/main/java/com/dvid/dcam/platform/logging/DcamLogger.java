@@ -8,7 +8,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
+import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
@@ -24,6 +28,8 @@ public final class DcamLogger {
     private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
     private static final DateTimeFormatter LOG_DATE = DateTimeFormatter.ISO_LOCAL_DATE;
     private static final int LOCAL_LOG_RETENTION_DAYS = 14;
+    private static final long CRASH_FALLBACK_JOIN_MS = 2_500L;
+    private static Context appContext;
     private static File logDir;
     private static File logFile;
     private static LocalDate activeLogDate;
@@ -31,19 +37,17 @@ public final class DcamLogger {
     private static String hardwareId = "unknown";
     private static String model = "unknown";
     private static String camId = "unknown";
+    private static boolean remoteUploadsEnabled;
 
     private DcamLogger() {}
 
     public static synchronized void init(Context context, DeviceInfo deviceInfo) {
-        File root = context.getExternalFilesDir(null);
-        if (root == null) root = context.getFilesDir();
+        appContext = context.getApplicationContext();
+        File root = appContext.getExternalFilesDir(null);
+        if (root == null) root = appContext.getFilesDir();
         logDir = new File(root, "Logs");
         logDir.mkdirs();
         logFile = new File(logDir, "logs.txt");
-        if (logOutbox == null) {
-            try { logOutbox = new LogOutbox(context); }
-            catch (Exception error) { writeInternal("Loggly outbox initialization failed: " + error.getMessage()); }
-        }
         prepareLocalLog();
         hardwareId = safe(deviceInfo.getHardwareId());
         model = safe(deviceInfo.getModel());
@@ -52,10 +56,22 @@ public final class DcamLogger {
             e("Crash on " + thread.getName(), error);
             if (previous != null) previous.uncaughtException(thread, error);
         });
+        if (logOutbox == null) {
+            try {
+                logOutbox = new LogOutbox(appContext, remoteUploadsEnabled);
+            } catch (Exception error) {
+                writeInternal("Loggly outbox initialization failed: " + error.getMessage());
+            }
+        }
         i("Logger started: " + logFile.getAbsolutePath());
     }
 
     public static synchronized void setCamId(String nextCamId) { camId = safe(nextCamId); }
+
+    public static synchronized void setRemoteUploadsEnabled(boolean enabled) {
+        remoteUploadsEnabled = enabled;
+        if (logOutbox != null) logOutbox.setUploadsEnabled(enabled);
+    }
 
     public static void i(String message) { write("INFO", message, null); }
     public static void w(String message, Throwable error) { write("WARN", message, error); }
@@ -76,7 +92,51 @@ public final class DcamLogger {
             } catch (Exception ignored) {}
         }
         String payload = json(line, error, Thread.currentThread().getName(), callerClass());
-        if (logOutbox != null) logOutbox.enqueue(level, payload);
+        boolean enqueued = false;
+        if (remoteUploadsEnabled && logOutbox != null) enqueued = logOutbox.enqueue(level, payload);
+        if (isCrashEvent(level, message) && remoteUploadsEnabled && !enqueued) {
+            sendCrashFallback(payload);
+        }
+    }
+
+    private static boolean isCrashEvent(String level, String message) {
+        return "ERROR".equals(level) && message != null && message.startsWith("Crash on ");
+    }
+
+    private static void sendCrashFallback(String payload) {
+        if (BuildConfig.LOGGLY_TOKEN.isBlank()) return;
+        Thread sender = new Thread(() -> sendCrashFallbackOnWorker(payload), "loggly-crash-fallback");
+        sender.start();
+        try {
+            sender.join(CRASH_FALLBACK_JOIN_MS);
+        } catch (InterruptedException error) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private static void sendCrashFallbackOnWorker(String payload) {
+        HttpURLConnection connection = null;
+        try {
+            connection = (HttpURLConnection) new URL(
+                    "https://logs-01.loggly.com/inputs/" + BuildConfig.LOGGLY_TOKEN + "/tag/dcam/")
+                    .openConnection();
+            connection.setConnectTimeout(1_500);
+            connection.setReadTimeout(1_500);
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+            connection.setDoOutput(true);
+            byte[] body = payload.getBytes(StandardCharsets.UTF_8);
+            connection.setFixedLengthStreamingMode(body.length);
+            try (OutputStream output = connection.getOutputStream()) {
+                output.write(body);
+            }
+            int code = connection.getResponseCode();
+            if (code < 200 || code >= 300) Log.w(TAG, "Loggly crash fallback failed HTTP " + code);
+        } catch (Exception error) {
+            Log.w(TAG, "Loggly crash fallback failed", error);
+        } finally {
+            if (connection != null) connection.disconnect();
+        }
     }
 
     private static String json(String line, Throwable error, String thread, String source) {

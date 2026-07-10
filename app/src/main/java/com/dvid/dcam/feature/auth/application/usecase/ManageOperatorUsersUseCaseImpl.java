@@ -1,0 +1,73 @@
+package com.dvid.dcam.feature.auth.application.usecase;
+
+import com.dvid.dcam.feature.auth.application.port.OperatorAuthRepository;
+import com.dvid.dcam.feature.auth.domain.OperatorAccount;
+import com.dvid.dcam.feature.auth.domain.UserProvisioningRequest;
+import com.dvid.dcam.feature.auth.domain.UserProvisioningResult;
+import com.dvid.dcam.feature.auth.domain.UserSource;
+import java.util.List;
+import java.util.Locale;
+
+public final class ManageOperatorUsersUseCaseImpl implements ManageOperatorUsersUseCase {
+    public static final String DEFAULT_USER_ID = "000000";
+    public static final String DEFAULT_PASSWORD = "000000";
+
+    private final OperatorAuthRepository repository;
+
+    public ManageOperatorUsersUseCaseImpl(OperatorAuthRepository repository) {
+        this.repository = repository;
+    }
+
+    @Override
+    public void ensureDefaultUser() {
+        repository.insertIfMissing(
+                new OperatorAccount(
+                        DEFAULT_USER_ID,
+                        DEFAULT_USER_ID,
+                        "default",
+                        "Default Operator",
+                        UserSource.DEFAULT,
+                        true),
+                DEFAULT_PASSWORD);
+    }
+
+    @Override
+    public UserProvisioningResult upsert(UserProvisioningRequest request) {
+        if (request == null) return UserProvisioningResult.failure("INVALID_INPUT");
+        String userId = trim(request.getUserId());
+        String password = request.getPasswordText();
+        if (userId == null || !userId.matches("\\d{6}")) {
+            return UserProvisioningResult.failure("USER_ID_MUST_BE_SIX_DIGITS");
+        }
+        if (password == null || password.isEmpty()) {
+            return UserProvisioningResult.failure("PASSWORD_REQUIRED");
+        }
+        String loginName = normalizeOptional(request.getLoginName());
+        String displayName = trim(request.getDisplayName());
+        if (displayName == null) displayName = userId;
+        UserSource source = request.getSource() == null ? UserSource.DEVELOPER : request.getSource();
+        try {
+            repository.upsert(
+                    new OperatorAccount(userId, userId, loginName, displayName, source, true),
+                    password);
+            return UserProvisioningResult.success();
+        } catch (RuntimeException error) {
+            return UserProvisioningResult.failure("USER_OR_LOGIN_NAME_ALREADY_EXISTS");
+        }
+    }
+
+    @Override
+    public List<OperatorAccount> users() {
+        return repository.listUsers();
+    }
+
+    private static String trim(String value) {
+        if (value == null || value.trim().isEmpty()) return null;
+        return value.trim();
+    }
+
+    private static String normalizeOptional(String value) {
+        String trimmed = trim(value);
+        return trimmed == null ? null : trimmed.toLowerCase(Locale.ROOT);
+    }
+}

@@ -5,12 +5,12 @@ import android.location.LocationManager;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.StatFs;
-import android.provider.Settings;
 import com.dvid.dcam.feature.device.application.port.DeviceRepository;
 import com.dvid.dcam.feature.device.domain.CapabilityStatus;
 import com.dvid.dcam.feature.device.domain.DeviceInfo;
 import com.dvid.dcam.feature.device.domain.DeviceStatus;
 import java.io.File;
+import java.lang.reflect.Method;
 
 /** Android implementation of the device repository. */
 public final class AndroidDeviceRepositoryImpl implements DeviceRepository {
@@ -21,10 +21,10 @@ public final class AndroidDeviceRepositoryImpl implements DeviceRepository {
     }
 
     @Override public DeviceInfo readInfo() {
-        String id = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
-        if (id == null || id.isBlank()) id = "unknown";
+        String platformSerial = platformSerialNumber();
+        String hardwareId = platformSerial == null ? "unknown" : platformSerial;
         String model = Build.MANUFACTURER + " " + Build.MODEL;
-        return new DeviceInfo(id, model.trim());
+        return new DeviceInfo(hardwareId, model.trim(), platformSerial);
     }
 
     @Override public DeviceStatus readStatus() {
@@ -50,5 +50,47 @@ public final class AndroidDeviceRepositoryImpl implements DeviceRepository {
             }
         } catch (RuntimeException ignored) {}
         return new DeviceStatus(batteryPercent, availableBytes, gpsStatus);
+    }
+
+    private static String platformSerialNumber() {
+        String buildSerial = buildSerial();
+        if (buildSerial != null) return buildSerial;
+
+        for (String property : new String[] {
+                "ro.serialno",
+                "ro.boot.serialno",
+                "vendor.gsm.serial"
+        }) {
+            String serial = cleanSerial(systemProperty(property));
+            if (serial != null) return serial;
+        }
+        return null;
+    }
+
+    private static String buildSerial() {
+        try {
+            return cleanSerial(Build.getSerial());
+        } catch (RuntimeException ignored) {
+            return null;
+        }
+    }
+
+    private static String systemProperty(String name) {
+        try {
+            Class<?> systemProperties = Class.forName("android.os.SystemProperties");
+            Method get = systemProperties.getMethod("get", String.class);
+            Object value = get.invoke(null, name);
+            return value instanceof String ? (String) value : null;
+        } catch (ReflectiveOperationException | RuntimeException ignored) {
+            return null;
+        }
+    }
+
+    private static String cleanSerial(String serial) {
+        if (serial == null) return null;
+        String cleaned = serial.trim();
+        if (cleaned.isBlank() || "unknown".equalsIgnoreCase(cleaned)) return null;
+        String[] tokens = cleaned.split("\\s+");
+        return tokens.length == 0 || tokens[0].isBlank() ? null : tokens[0];
     }
 }

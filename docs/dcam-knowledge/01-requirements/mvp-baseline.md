@@ -2,7 +2,7 @@
 
 ## Status of requirements
 
-As of the 2026-07-07 refresh, `03 - Requirements` contains an **Approved 1.2 DCAM-BDMA Data Contract**, a Requirements Home, and ten functional-requirement pages. The first nine were reported as an initial/draft structure; `10 - Android Device Operation Requirements` is Approved 1.0. Non-functional Requirements remain Not Started.
+As of the 2026-07-08 refresh, `03 - Requirements` contains an **Approved 1.6 DCAM-BDMA Data Contract**, a Requirements Home, functional-requirement pages, an updated **Approved 1.8 Android Device Operation Requirements** page, **Approved 1.13 System Settings Requirements**, and updated Non-functional Requirements content. The 4.2 Technical Design folder also contains the July 8 draft/target design set. Those Technical Design pages should be read as expected design intent until implementation and review correct/complete them.
 
 The requirements below remain a consolidated orientation baseline from Product Vision, Charter, MVP Scope, Roadmap, Development Plan, Architecture, and the Data Contract. They do not replace detailed acceptance criteria, an approved Jira backlog, or the source Confluence pages.
 
@@ -29,28 +29,30 @@ The requirements below remain a consolidated orientation baseline from Product V
 - Storage availability and free space are checked.
 - The app warns, prevents, or stops unsafe recording when capacity is insufficient; the threshold/policy is TBD.
 - In-progress/temporary data must be distinguishable from finalized/completed data.
-- Data Contract 1.2 fixes the logical roots, folder names, filename family, import cleanup, and BDMA permissions. Exact physical Android paths, low-space thresholds, retention, and recovery behavior remain for detailed design.
+- Data Contract 1.6 fixes logical roots, folder names, filename family, app/contract metadata, import cleanup, BDMA permissions, identity/provisioning boundaries, and `dcam.db`/`dcam_config.cson` ownership direction. Exact physical Android paths, low-space thresholds, retention, and recovery behavior remain for detailed implementation and device validation.
 
 ### Metadata
 
-Product/architecture sources still expect per-media identity, device/user/time, optional valid GPS, source state, and compatibility information. Data Contract 1.2 adds these binding constraints:
+Product/architecture sources still expect per-media identity, device/user/time, optional valid GPS, source state, and compatibility information. Data Contract 1.6 adds these binding constraints:
 
 | Concern | Current authority/direction |
 |---|---|
 | File association | Filename contains CameraID, fixed-six-character UserID, date, and time; exact collision/unique-ID policy remains TBD |
-| Media metadata | Embedded in the media file when supported; standalone per-media JSON is not part of contract 1.2 |
+| Media metadata | Embedded in the media file when supported; standalone per-media JSON is not part of contract 1.6 |
 | Important/encrypted state | Filename suffixes `_IMP`, `_enc`, or `_IMP_enc` |
 | GPS and source lifecycle | Still require exact embedded fields, validation, and persistence design |
-| Database version | `dcam.db` needs an agreed schema-version mechanism |
+| App/contract compatibility | App package/version plus `dcam_data_contract_version`, `media_contract_version`, and `encoder_contract_version`; no `bdma_decoder_profile_id` |
+| Database version | `dcam.db` must expose schema/version metadata for BDMA compatibility checks |
 | Integrity | Optional same-basename `.md5` applies only to `.mp4`; image/audio have no MD5 sidecar |
 
-The exact embedded metadata fields/encoding and SQLite schema remain open. Implementations must not introduce a standalone media JSON contract without updating Data Contract 1.2.
+The exact embedded metadata fields/encoding and SQLite table details remain implementation/design work. Implementations must not introduce a standalone media JSON contract without updating the Data Contract.
 
 ### Device status and capability
 
 - Report or record battery, storage, and GPS availability for MVP.
 - Detect camera, microphone, GPS, storage, network, GMS, battery, and potentially USB capabilities before enabling dependent features.
 - Missing optional capability must degrade gracefully rather than crash the core flow.
+- Feature eligibility states should follow the Technical Design vocabulary when implemented: `ENABLED`, `DEGRADED`, `DISABLED_BY_POLICY`, `DISABLED_BY_PERMISSION`, `UNSUPPORTED_HARDWARE`, `UNSUPPORTED_PERFORMANCE`, `TEMPORARILY_UNAVAILABLE`, `PRUNED`, and `ERROR`.
 
 ### Logging and diagnostics
 
@@ -66,10 +68,11 @@ The exact embedded metadata fields/encoding and SQLite schema remain open. Imple
 - BDMA detects the connected device and initiates ADB discovery/read/sync.
 - BDMA imports, validates, maps, indexes, stores, and displays the data.
 - BDMA must not modify source media, embedded metadata, MD5 content, `Temp`, or `logs.txt`.
-- BDMA may update `dcam_config.cson` for device information and may read/write/update all of `dcam.db`, subject to schema, corruption, locking, and concurrent-write safeguards.
+- BDMA may update `dcam_config.cson` for device information only through an approved contract path and may write only approved `dcam.db` tables/fields, subject to schema, corruption, locking, and concurrent-write safeguards.
 - BDMA may delete successfully imported source media under the contract cleanup matrix. Missing-MD5 MP4 deletion requires confirmation for each file.
 - BDMA must not silently guess or regenerate missing metadata unless a later contract explicitly permits it.
 - Contract/schema mismatch is a shared DCAM–BDMA concern and requires version handling.
+- BDMA must not use `bdma_decoder_profile_id`; it identifies app and media compatibility through app/data/media/encoder contract metadata and its built-in compatibility table.
 
 ## Non-functional baseline
 
@@ -104,7 +107,7 @@ The MVP Scope lists these acceptance conditions:
 When sources differ or implementation has moved ahead of the documents:
 
 1. Approved Product/Requirement decision and Data Contract.
-2. Approved ADR/Technical Design.
+2. Approved ADR and finalized Technical Design.
 3. Architecture principles and Android Development Standard.
 4. Current prototype behavior.
 

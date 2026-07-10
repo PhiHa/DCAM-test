@@ -8,13 +8,24 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 public final class CsonConfigStore {
+    private static final String UNKNOWN_PLACEHOLDER = "unknown";
+
     private final File file;
     private final String defaultAccountUserId;
+    private final String defaultMediaEncryptionPassword;
 
-    public CsonConfigStore(File file) { this(file, DcamConfig.DEFAULT_ACCOUNT_USER_ID); }
+    public CsonConfigStore(File file) {
+        this(file, DcamConfig.DEFAULT_ACCOUNT_USER_ID, DcamConfig.DEFAULT_MEDIA_ENCRYPTION_PASSWORD);
+    }
+
     public CsonConfigStore(File file, String defaultAccountUserId) {
+        this(file, defaultAccountUserId, DcamConfig.DEFAULT_MEDIA_ENCRYPTION_PASSWORD);
+    }
+
+    public CsonConfigStore(File file, String defaultAccountUserId, String defaultMediaEncryptionPassword) {
         this.file = file;
         this.defaultAccountUserId = defaultAccountUserId;
+        this.defaultMediaEncryptionPassword = normalizePassword(defaultMediaEncryptionPassword);
     }
 
     public DcamConfig load() throws IOException {
@@ -22,7 +33,8 @@ public final class CsonConfigStore {
             File parent = file.getParentFile();
             if (parent != null) parent.mkdirs();
             try (FileOutputStream output = new FileOutputStream(file)) {
-                output.write(DefaultConfigs.text(defaultAccountUserId).getBytes(StandardCharsets.UTF_8));
+                output.write(DefaultConfigs.text(defaultAccountUserId, defaultMediaEncryptionPassword)
+                        .getBytes(StandardCharsets.UTF_8));
             }
         }
         String text;
@@ -37,17 +49,17 @@ public final class CsonConfigStore {
             text = new String(bytes, 0, offset, StandardCharsets.UTF_8);
         }
         String account = valueAfter(text, "account.user_id", defaultAccountUserId);
-        if (DefaultConfigs.LEGACY_SAMPLE_ACCOUNT_USER_ID.equals(account)) {
+        if (shouldRepairAccountUserId(account)) {
             account = defaultAccountUserId;
-            text = text.replace("account.user_id=\"" + DefaultConfigs.LEGACY_SAMPLE_ACCOUNT_USER_ID + "\"",
-                    "account.user_id=\"" + escape(defaultAccountUserId) + "\"");
-            try (FileOutputStream output = new FileOutputStream(file)) {
-                output.write(text.getBytes(StandardCharsets.UTF_8));
-            }
+            text = replaceValue(text, "account.user_id", account);
+            writeText(text);
         }
         String police = valueAfter(text, "police.user_id", DcamConfig.DEFAULT_POLICE_USER_ID);
-        boolean encrypted = "1".equals(valueAfter(text, "file.encryption", "0"));
-        return new DcamConfig(account, police, encrypted);
+        boolean encrypted = "1".equals(valueAfter(text, "video.file.encryption",
+                valueAfter(text, "file.encryption", "1")));
+        String password = valueAfter(text, "video.file.encrypt_password",
+                valueAfter(text, "file.encrypt_password", defaultMediaEncryptionPassword));
+        return new DcamConfig(account, police, encrypted, password);
     }
 
     private static String valueAfter(String text, String key, String fallback) {
@@ -64,7 +76,57 @@ public final class CsonConfigStore {
         return fallback;
     }
 
+    private boolean shouldRepairAccountUserId(String account) {
+        return hasUsableDefaultAccountUserId()
+                && (DefaultConfigs.LEGACY_SAMPLE_ACCOUNT_USER_ID.equals(account)
+                || UNKNOWN_PLACEHOLDER.equalsIgnoreCase(trim(account)));
+    }
+
+    private boolean hasUsableDefaultAccountUserId() {
+        String value = trim(defaultAccountUserId);
+        return !value.isEmpty() && !UNKNOWN_PLACEHOLDER.equalsIgnoreCase(value);
+    }
+
+    private static String replaceValue(String text, String key, String value) {
+        String prefix = key + "=";
+        String[] lines = text.split("\\R", -1);
+        StringBuilder out = new StringBuilder(text.length() + value.length() + key.length() + 8);
+        boolean replaced = false;
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i];
+            String trimmed = line.trim();
+            if (!replaced && trimmed.startsWith(prefix)) {
+                String leading = line.substring(0, line.indexOf(trimmed));
+                out.append(leading).append(prefix).append("\"").append(escape(value)).append("\"");
+                replaced = true;
+            } else {
+                out.append(line);
+            }
+            if (i < lines.length - 1) out.append('\n');
+        }
+        if (!replaced) {
+            if (!text.endsWith("\n") && !text.isEmpty()) out.append('\n');
+            out.append(prefix).append("\"").append(escape(value)).append("\"");
+        }
+        return out.toString();
+    }
+
+    private void writeText(String text) throws IOException {
+        try (FileOutputStream output = new FileOutputStream(file)) {
+            output.write(text.getBytes(StandardCharsets.UTF_8));
+        }
+    }
+
+    private static String trim(String text) {
+        return text == null ? "" : text.trim();
+    }
+
     private static String escape(String text) {
         return text == null ? "" : text.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+
+    private static String normalizePassword(String password) {
+        return password == null || password.trim().isEmpty()
+                ? DcamConfig.DEFAULT_MEDIA_ENCRYPTION_PASSWORD : password;
     }
 }

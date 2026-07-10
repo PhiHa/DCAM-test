@@ -9,6 +9,9 @@ import androidx.core.content.ContextCompat;
 import com.dvid.dcam.core.config.domain.DcamConfig;
 import com.dvid.dcam.core.logging.application.port.LogSink;
 import com.dvid.dcam.feature.capture.application.port.AudioRecorder;
+import com.dvid.dcam.feature.auth.application.usecase.OperatorSessionUseCase;
+import com.dvid.dcam.feature.auth.domain.OperatorSession;
+import com.dvid.dcam.feature.settings.application.usecase.MediaEncryptionSettingsUseCase;
 import com.dvid.dcam.platform.storage.DcamFileType;
 import com.dvid.dcam.platform.storage.DcamMediaFile;
 import com.dvid.dcam.platform.storage.DcamMediaOutput;
@@ -20,21 +23,50 @@ public final class AndroidAudioRecorderImpl implements AudioRecorder {
     private final Context context;
     private final DcamMediaOutput mediaOutput;
     private final LogSink log;
+    private final MediaEncryptionSettingsUseCase mediaEncryptionSettings;
+    private final OperatorSessionUseCase operatorSession;
     private MediaRecorder recorder;
     private DcamMediaFile outputMediaFile;
     private File outputFile;
+    private boolean outputEncrypted;
 
-    public AndroidAudioRecorderImpl(Context context, DcamMediaOutput mediaOutput, LogSink log) {
+    public AndroidAudioRecorderImpl(Context context, DcamMediaOutput mediaOutput, LogSink log,
+                                    MediaEncryptionSettingsUseCase mediaEncryptionSettings,
+                                    OperatorSessionUseCase operatorSession) {
         this.context = context; this.mediaOutput = mediaOutput; this.log = log;
+        this.mediaEncryptionSettings = mediaEncryptionSettings;
+        this.operatorSession = operatorSession;
     }
 
     @Override public String toggle(DcamConfig config) {
         if (recorder != null) {
-            try { recorder.stop(); } finally { recorder.release(); recorder = null; }
-            String output = outputMediaFile == null ? null : outputMediaFile.getFileName();
-            if (outputMediaFile != null) mediaOutput.publishSaved(context, outputMediaFile);
-            log.info("Audio saved: " + output);
-            return output;
+            DcamMediaFile completed = outputMediaFile;
+            boolean encrypted = outputEncrypted;
+            String output = completed == null ? null : completed.getFileName();
+            try {
+                recorder.stop();
+            } catch (RuntimeException error) {
+                log.error("Audio stop failed", error);
+                output = null;
+            } finally {
+                recorder.release();
+                recorder = null;
+                outputMediaFile = null;
+                outputFile = null;
+                outputEncrypted = false;
+            }
+            if (output == null || completed == null) return null;
+            try {
+                if (encrypted) {
+                    mediaOutput.encryptSaved(context, completed, null, config.getMediaEncryptionPassword());
+                }
+                mediaOutput.publishSaved(context, completed);
+                log.info((encrypted ? "Encrypted audio saved: " : "Audio saved: ") + output);
+                return output;
+            } catch (Exception error) {
+                log.error("Audio encryption failed: " + output, error);
+                return null;
+            }
         }
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             log.warn("Audio permission missing", null);
@@ -42,8 +74,19 @@ public final class AndroidAudioRecorderImpl implements AudioRecorder {
         }
 
         try {
+            OperatorSession session = operatorSession.current();
+            if (session == null) {
+                log.warn("Audio start ignored: operator login required", null);
+                return null;
+            }
             LocalDateTime at = LocalDateTime.now();
-            outputMediaFile = mediaOutput.mediaFile(DcamFileType.AUDIO, config, at, false);
+            outputEncrypted = mediaEncryptionSettings.isMediaEncryptionEnabled();
+            outputMediaFile = mediaOutput.mediaFile(
+                    DcamFileType.AUDIO,
+                    config.getAccountUserId(),
+                    session.getFileUserId(),
+                    at,
+                    outputEncrypted);
             MediaRecorder next = Build.VERSION.SDK_INT >= 31 ? new MediaRecorder(context) : new MediaRecorder();
             next.setAudioSource(MediaRecorder.AudioSource.MIC);
             next.setOutputFormat(MediaRecorder.OutputFormat.AAC_ADTS);
@@ -60,7 +103,7 @@ public final class AndroidAudioRecorderImpl implements AudioRecorder {
             return outputMediaFile.getFileName();
         } catch (Exception error) {
             if (recorder != null) recorder.release();
-            recorder = null; outputMediaFile = null; outputFile = null;
+            recorder = null; outputMediaFile = null; outputFile = null; outputEncrypted = false;
             log.error("Audio failed", error);
             return null;
         }

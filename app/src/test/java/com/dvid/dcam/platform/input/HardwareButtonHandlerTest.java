@@ -5,9 +5,13 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import android.view.KeyEvent;
+import com.dvid.dcam.core.feature.application.usecase.FeatureGateSettingsUseCase;
+import com.dvid.dcam.core.feature.domain.FeatureGate;
 import com.dvid.dcam.feature.capture.application.usecase.AudioRecordingUseCase;
 import com.dvid.dcam.feature.capture.application.usecase.PhotoCaptureUseCase;
 import com.dvid.dcam.feature.capture.application.usecase.VideoRecordingUseCase;
+import java.util.EnumMap;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 public class HardwareButtonHandlerTest {
@@ -51,6 +55,17 @@ public class HardwareButtonHandlerTest {
         assertFalse(router.onKeyDown(KeyEvent.KEYCODE_A, 0, 0L));
     }
 
+    @Test public void disabledCameraKeyIsConsumedWithoutTakingPhoto() {
+        FakePhotoCaptureUseCaseImpl photos = new FakePhotoCaptureUseCaseImpl();
+        FakeFeatureGateSettingsUseCaseImpl gates = new FakeFeatureGateSettingsUseCaseImpl();
+        gates.setEnabled(FeatureGate.IMAGE_CAPTURE, false);
+        HardwareButtonRouter router = new HardwareButtonRouter(
+                photos, new FakeVideoRecordingUseCaseImpl(), new FakeAudioRecordingUseCaseImpl(), gates);
+
+        assertTrue(router.onKeyDown(KeyEvent.KEYCODE_CAMERA, 0, 0L));
+        assertEquals(0, photos.photos);
+    }
+
     private static HardwareButtonRouter router(
             FakePhotoCaptureUseCaseImpl photos, FakeVideoRecordingUseCaseImpl videos) {
         return new HardwareButtonRouter(photos, videos, new FakeAudioRecordingUseCaseImpl());
@@ -76,5 +91,17 @@ public class HardwareButtonHandlerTest {
 
     private static final class FakeAudioRecordingUseCaseImpl implements AudioRecordingUseCase {
         @Override public String toggleAudio() { return null; }
+    }
+
+    private static final class FakeFeatureGateSettingsUseCaseImpl implements FeatureGateSettingsUseCase {
+        private final Map<FeatureGate, Boolean> enabled = new EnumMap<>(FeatureGate.class);
+
+        @Override public boolean isEnabled(FeatureGate feature) {
+            return enabled.getOrDefault(feature, true);
+        }
+
+        @Override public void setEnabled(FeatureGate feature, boolean enabled) {
+            this.enabled.put(feature, enabled);
+        }
     }
 }

@@ -5,6 +5,14 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import com.dvid.dcam.app.navigation.MainScreen;
 import com.dvid.dcam.core.config.domain.DcamConfig;
+import com.dvid.dcam.feature.auth.application.usecase.AuthenticateOperatorUseCase;
+import com.dvid.dcam.feature.auth.application.usecase.ManageOperatorUsersUseCase;
+import com.dvid.dcam.feature.auth.application.usecase.OperatorSessionUseCase;
+import com.dvid.dcam.feature.auth.domain.LoginCredentials;
+import com.dvid.dcam.feature.auth.domain.LoginResult;
+import com.dvid.dcam.feature.auth.domain.OperatorSession;
+import com.dvid.dcam.feature.auth.domain.UserProvisioningRequest;
+import com.dvid.dcam.feature.auth.domain.UserProvisioningResult;
 import com.dvid.dcam.feature.capture.application.usecase.CaptureEventUseCase;
 import com.dvid.dcam.feature.capture.domain.CaptureEvent;
 import com.dvid.dcam.feature.capture.domain.CaptureState;
@@ -23,13 +31,21 @@ public final class MainViewModel extends ViewModel {
     private CaptureEventUseCase captureEvents;
     private final RefreshDeviceStatusUseCase refreshDeviceStatus;
     private final BrowseMediaUseCase browseMedia;
+    private final AuthenticateOperatorUseCase authenticateOperator;
+    private final OperatorSessionUseCase operatorSession;
+    private final ManageOperatorUsersUseCase manageUsers;
     private final ExecutorService mediaIo = Executors.newSingleThreadExecutor(runnable -> {
         Thread thread = new Thread(runnable, "media-browser");
         thread.setDaemon(true);
         return thread;
     });
+    private final ExecutorService authIo = Executors.newSingleThreadExecutor(runnable -> {
+        Thread thread = new Thread(runnable, "operator-auth");
+        thread.setDaemon(true);
+        return thread;
+    });
 
-    public MainViewModel(
+    MainViewModel(
             DcamConfig config,
             DeviceStatus deviceStatus,
             RefreshDeviceStatusUseCase refreshDeviceStatus,
@@ -37,8 +53,36 @@ public final class MainViewModel extends ViewModel {
         this.config = config;
         this.refreshDeviceStatus = refreshDeviceStatus;
         this.browseMedia = browseMedia;
+        this.authenticateOperator = null;
+        this.operatorSession = null;
+        this.manageUsers = null;
         state = new MutableLiveData<>(new MainUiState(
                 MainScreen.CAMERA, new CaptureState(), deviceStatus, MediaBrowserState.root(), null));
+    }
+
+    public MainViewModel(
+            DcamConfig config,
+            DeviceStatus deviceStatus,
+            RefreshDeviceStatusUseCase refreshDeviceStatus,
+            BrowseMediaUseCase browseMedia,
+            AuthenticateOperatorUseCase authenticateOperator,
+            OperatorSessionUseCase operatorSession,
+            ManageOperatorUsersUseCase manageUsers) {
+        this.config = config;
+        this.refreshDeviceStatus = refreshDeviceStatus;
+        this.browseMedia = browseMedia;
+        this.authenticateOperator = authenticateOperator;
+        this.operatorSession = operatorSession;
+        this.manageUsers = manageUsers;
+        state = new MutableLiveData<>(new MainUiState(
+                MainScreen.LOGIN,
+                new CaptureState(),
+                deviceStatus,
+                MediaBrowserState.root(),
+                null,
+                null,
+                true));
+        initializeAuthentication();
     }
 
     public LiveData<MainUiState> state() { return state; }
@@ -65,8 +109,95 @@ public final class MainViewModel extends ViewModel {
 
     public void show(MainScreen screen) {
         MainUiState current = current();
+        if (operatorSession != null
+                && screen != MainScreen.LOGIN
+                && !operatorSession.hasActiveSession()) {
+            state.setValue(current.withAuthentication(null, false, MainScreen.LOGIN, null));
+            return;
+        }
         state.setValue(current.withScreen(screen));
         if (screen == MainScreen.FILES) openMediaFolder("");
+    }
+
+    public void loginPassword(String passwordText) {
+        login(LoginCredentials.passwordOnly(passwordText));
+    }
+
+    public void login(LoginCredentials credentials) {
+        if (authenticateOperator == null || current().isAuthenticationBusy()) return;
+        state.setValue(current().withAuthenticationBusy(true, null));
+        authIo.execute(() -> {
+            LoginResult result = authenticateOperator.execute(credentials);
+            if (result.isSuccess()) {
+                state.postValue(current().withAuthentication(
+                        result.getSession(), false, MainScreen.CAMERA, null));
+            } else {
+                state.postValue(current().withAuthentication(
+                        null, false, MainScreen.LOGIN, loginMessage(result)));
+            }
+        });
+    }
+
+    public void provisionUser(UserProvisioningRequest request) {
+        if (manageUsers == null || current().isAuthenticationBusy()) return;
+        state.setValue(current().withAuthenticationBusy(true, null));
+        authIo.execute(() -> {
+            UserProvisioningResult result = manageUsers.upsert(request);
+            String message = result.isSuccessful()
+                    ? "User saved"
+                    : provisioningMessage(result.getErrorCode());
+            state.postValue(current().withAuthenticationBusy(false, message));
+        });
+    }
+
+    public void logout() {
+        if (operatorSession == null || current().isAuthenticationBusy()) return;
+        state.setValue(current().withAuthenticationBusy(true, null));
+        authIo.execute(() -> {
+            operatorSession.logout();
+            state.postValue(current().withAuthentication(
+                    null, false, MainScreen.LOGIN, "Logged out"));
+        });
+    }
+
+    private void initializeAuthentication() {
+        authIo.execute(() -> {
+            try {
+                manageUsers.ensureDefaultUser();
+                OperatorSession restored = operatorSession.restore();
+                state.postValue(current().withAuthentication(
+                        restored,
+                        false,
+                        restored == null ? MainScreen.LOGIN : MainScreen.CAMERA,
+                        null));
+            } catch (RuntimeException error) {
+                state.postValue(current().withAuthentication(
+                        null, false, MainScreen.LOGIN, "Authentication storage unavailable"));
+            }
+        });
+    }
+
+    private static String loginMessage(LoginResult result) {
+        switch (result.getFailure()) {
+            case USERNAME_REQUIRED:
+                return "This password belongs to multiple users; username is required";
+            case INVALID_INPUT:
+                return "Enter a password";
+            case STORAGE_ERROR:
+                return "Authentication storage unavailable";
+            case INVALID_CREDENTIALS:
+            default:
+                return "Invalid password";
+        }
+    }
+
+    private static String provisioningMessage(String code) {
+        if ("USER_ID_MUST_BE_SIX_DIGITS".equals(code)) return "User ID must be exactly 6 digits";
+        if ("PASSWORD_REQUIRED".equals(code)) return "Password is required";
+        if ("USER_OR_LOGIN_NAME_ALREADY_EXISTS".equals(code)) {
+            return "User ID or login name is already assigned";
+        }
+        return "Could not save user";
     }
 
     public void openMediaFolder(String relativePath) {
@@ -132,6 +263,7 @@ public final class MainViewModel extends ViewModel {
         if (captureEvents != null) captureEvents.clearListener();
         captureEvents = null;
         mediaIo.shutdownNow();
+        authIo.shutdownNow();
         super.onCleared();
     }
 }

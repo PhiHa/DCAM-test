@@ -1,8 +1,6 @@
 package com.dvid.dcam.platform.database.migrations;
 
-import androidx.annotation.NonNull;
 import androidx.room.migration.Migration;
-import androidx.sqlite.db.SupportSQLiteDatabase;
 
 /**
  * Single app-level registry for Room database versions and migrations.
@@ -13,32 +11,16 @@ import androidx.sqlite.db.SupportSQLiteDatabase;
  *     <li>Existing install: Room runs the registered migrations in order.</li>
  * </ul>
  *
- * <p>When adding a version, keep all version constants, migration objects, and
- * the central {@link #ALL} registry together in this file.
+ * <p>The current app database has not shipped yet, so unreleased schema work is
+ * folded into version 1. Once a version ships, add future version constants,
+ * migration objects, and the central {@link #ALL} registry entry together here.
  */
 public final class AppDatabaseMigrations {
     public static final int V1_INITIAL_SCHEMA = 1;
-    public static final int V2_LOG_OUTBOX_RETRY_STATE = 2;
 
-    public static final int LATEST_VERSION = V2_LOG_OUTBOX_RETRY_STATE;
+    public static final int LATEST_VERSION = V1_INITIAL_SCHEMA;
 
-    private static final Migration V1_TO_V2 = new Migration(
-            V1_INITIAL_SCHEMA,
-            V2_LOG_OUTBOX_RETRY_STATE
-    ) {
-        @Override
-        public void migrate(@NonNull SupportSQLiteDatabase database) {
-            database.execSQL("ALTER TABLE pending_logs ADD COLUMN status TEXT NOT NULL DEFAULT 'PENDING'");
-            database.execSQL("ALTER TABLE pending_logs ADD COLUMN attemptCount INTEGER NOT NULL DEFAULT 0");
-            database.execSQL("ALTER TABLE pending_logs ADD COLUMN nextAttemptAt INTEGER NOT NULL DEFAULT 0");
-            database.execSQL("ALTER TABLE pending_logs ADD COLUMN firstFailedAt INTEGER NOT NULL DEFAULT 0");
-            database.execSQL("ALTER TABLE pending_logs ADD COLUMN lastError TEXT");
-        }
-    };
-
-    private static final Migration[] ALL = {
-            V1_TO_V2
-    };
+    private static final Migration[] ALL = {};
 
     private AppDatabaseMigrations() {
     }
@@ -52,14 +34,14 @@ public final class AppDatabaseMigrations {
      * Template for the next version:
      *
      * 1. Add:
-     *      public static final int V3_MEANINGFUL_NAME = 3;
+     *      public static final int V2_MEANINGFUL_NAME = 2;
      *
-     * 2. Point LATEST_VERSION at V3_MEANINGFUL_NAME.
+     * 2. Point LATEST_VERSION at V2_MEANINGFUL_NAME.
      *
      * 3. Add:
-     *      private static final Migration V2_TO_V3 = new Migration(
-     *              V2_LOG_OUTBOX_RETRY_STATE,
-     *              V3_MEANINGFUL_NAME
+     *      private static final Migration V1_TO_V2 = new Migration(
+     *              V1_INITIAL_SCHEMA,
+     *              V2_MEANINGFUL_NAME
      *      ) {
      *          @Override
      *          public void migrate(@NonNull SupportSQLiteDatabase database) {
@@ -67,8 +49,8 @@ public final class AppDatabaseMigrations {
      *          }
      *      };
      *
-     * 4. Append V2_TO_V3 to ALL in order.
+     * 4. Append V1_TO_V2 to ALL in order.
      *
-     * 5. Build so Room exports app/schemas/.../3.json, then add a migration test.
+     * 5. Build so Room exports app/schemas/.../2.json, then add a migration test.
      */
 }

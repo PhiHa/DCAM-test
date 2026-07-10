@@ -5,6 +5,9 @@ import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 import com.dvid.dcam.core.config.domain.DcamConfig;
 import com.dvid.dcam.feature.device.application.usecase.RefreshDeviceStatusUseCase;
+import com.dvid.dcam.feature.auth.application.usecase.AuthenticateOperatorUseCase;
+import com.dvid.dcam.feature.auth.application.usecase.ManageOperatorUsersUseCase;
+import com.dvid.dcam.feature.auth.application.usecase.OperatorSessionUseCase;
 import com.dvid.dcam.feature.device.domain.DeviceStatus;
 import com.dvid.dcam.feature.media.application.usecase.BrowseMediaUseCase;
 
@@ -13,16 +16,25 @@ public final class MainViewModelFactory implements ViewModelProvider.Factory {
     private final DeviceStatus deviceStatus;
     private final RefreshDeviceStatusUseCase refreshDeviceStatus;
     private final BrowseMediaUseCase browseMedia;
+    private final AuthenticateOperatorUseCase authenticateOperator;
+    private final OperatorSessionUseCase operatorSession;
+    private final ManageOperatorUsersUseCase manageUsers;
 
     public MainViewModelFactory(
             DcamConfig config,
             DeviceStatus deviceStatus,
             RefreshDeviceStatusUseCase refreshDeviceStatus,
-            BrowseMediaUseCase browseMedia) {
+            BrowseMediaUseCase browseMedia,
+            AuthenticateOperatorUseCase authenticateOperator,
+            OperatorSessionUseCase operatorSession,
+            ManageOperatorUsersUseCase manageUsers) {
         this.config = config;
         this.deviceStatus = deviceStatus;
         this.refreshDeviceStatus = refreshDeviceStatus;
         this.browseMedia = browseMedia;
+        this.authenticateOperator = authenticateOperator;
+        this.operatorSession = operatorSession;
+        this.manageUsers = manageUsers;
     }
 
     @NonNull
@@ -31,6 +43,7 @@ public final class MainViewModelFactory implements ViewModelProvider.Factory {
             throw new IllegalArgumentException("Unsupported ViewModel " + modelClass.getName());
         }
         return modelClass.cast(new MainViewModel(
-                config, deviceStatus, refreshDeviceStatus, browseMedia));
+                config, deviceStatus, refreshDeviceStatus, browseMedia,
+                authenticateOperator, operatorSession, manageUsers));
     }
 }

@@ -1,6 +1,7 @@
 package com.dvid.dcam.app.navigation;
 
 public enum MainScreen {
+    LOGIN,
     CAMERA,
     MENU,
     FILES,
@@ -14,5 +15,7 @@ public enum MainScreen {
     DEVICE_SETTINGS,
     AUDIO_SETTINGS,
     CAMERA_SETTINGS,
-    ABOUT
+    ABOUT,
+    DEVELOPER_SETTINGS,
+    DEVELOPER_USERS
 }

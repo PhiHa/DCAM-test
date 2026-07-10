@@ -76,7 +76,7 @@ Longer-term measures also include GPS availability, storage handling reliability
 ## Product boundary
 
 - DCAM owns Android-side capture, original media/metadata, local states, device context, and source logs.
-- BDMA owns desktop connection, pull/sync, import, validation, indexing, long-term management, display, backup, export, and reports. Contract 1.2 also permits controlled config/database write-back and post-import source cleanup; it may not modify source media, embedded metadata, MD5 content, or logs.
+- BDMA owns desktop connection, pull/sync, import, validation, indexing, long-term management, display, backup, export, and reports. Contract 1.6 also permits controlled device-info/database write-back and post-import source cleanup; it may not modify source media, embedded metadata, MD5 content, temp files, active runtime state, or logs.
 - Cloud is not required for core operation.
 - Customer Pilot / Production Candidate is narrower than full commercial production readiness.
 - Remote device management and advanced user management in Phase 2 are foundations, not full fleet management or enterprise IAM.

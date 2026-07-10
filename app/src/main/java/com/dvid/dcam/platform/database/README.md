@@ -24,7 +24,8 @@ This platform package is the app-level Room database boundary.
 1. Create the `@Entity` in `entities/` and DAO in `dao/`.
 2. Add the entity class to `AppDatabase.java`.
 3. Add the DAO accessor to `AppDatabase.java`.
-4. Add the next version and migration to `AppDatabaseMigrations.java`.
+4. If the current database version has shipped, add the next version and
+   migration to `AppDatabaseMigrations.java`.
 5. Run `./gradlew assembleDebug` and commit the new schema JSON.
 
 `AppDatabaseManifestTest` scans source files and fails if any `@Entity` class is

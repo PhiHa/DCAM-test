@@ -1,0 +1,76 @@
+# Sprint Meeting 4.3
+
+**Page ID**: 12713985  
+**Version**: 5  
+**Type**: page  
+**URL**: undefined/spaces/DVID/pages/12713985
+
+---
+
+
+##  Date
+
+ 
+
+##  Participants
+
+[DVID-S&T](https://quyendt3k4.atlassian.net/people/team/8d961dda-ffe7-46c5-859b-624513b1235b) (  )
+
+##  Goals
+
+**Done** - Tuần này team đã làm được những gì?
+
+**Reslove** - Các thành viên trong nhóm có vướng mắc gì cần tháo gỡ không?
+
+**What's next **- Tuần tới team sẽ làm gì?
+
+**Task review **- đánh giá lại các task đã hoàn thành
+
+##  Discussion topics
+
+**Topic**
+
+**Presenter**
+
+**Notes**
+
+**Done **
+
+ 
+
+Hoàn thành màn hình hiển thị danh sách device và quá trình đồng bộ.
+Hoàn thành màn hỉnh hiển thị danh sách file đã đồng bộ.
+
+|   
+
+Review thay đổi, refactor, test & merge vào develop sau mỗi commit.
+Hoàn tất rework các settings pages dang dở từ cuối tuần trước.
+Cải thiện quá trình phát hiện, validate & lưu thiết bị. Cải thiện quá trình khởi động/đóng ứng dụng, đảm bảo  kill các process adb tracking khi đóng app. Cải thiện luồng init logging, các message khi ứng dụng chưa start hoàn toàn cũng đã kèm đầy đủ thông tin định danh. Ghi lại, cập nhật nhiều log chi tiết hơn trong khi hoạt động.
+Chỉnh sửa UI thống nhất giữa các màn hình.
+
+**Reslove**
+
+ 
+
+|  
+|   
+
+Không có.
+
+**What's next**
+
+ 
+
+Hoàn thiện phần đồng bộ và sao lưu dữ liệu từ camera
+
+**Task review**
+
+ 
+
+**Story Point Estimate** tính theo dãy **fibonacci**: 1, 2, 3, 5, 8, 13,..
+
+Tối đa là **13** cho một Task, nếu task quá phức tạp thì chia task thành nhiều task nhỏ
+
+Chấm điểm dựa trên 3 trọng số: **Complexity + Time + Effort**
+
+[https://scrumpass.com/story-point-trong-jira-va-cach-estimate-story-point/](https://scrumpass.com/story-point-trong-jira-va-cach-estimate-story-point/)

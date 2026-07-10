@@ -1,8 +1,12 @@
 package com.dvid.dcam.platform.database;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.dvid.dcam.platform.database.entities.UserAuthMethodEntity;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,6 +33,19 @@ final class AppDatabaseManifestTest {
 
         assertEquals(allEntities, registeredEntities,
                 "Every @Entity must be listed in AppDatabase.entities so the fresh-install schema is explicit.");
+    }
+
+    @Test
+    void userAuthenticationSchemaCannotRegressToPlaintextPasswords() {
+        Set<String> fields = new TreeSet<>();
+        for (Field field : UserAuthMethodEntity.class.getFields()) fields.add(field.getName());
+
+        assertFalse(fields.contains("passwordText"));
+        assertTrue(fields.containsAll(Set.of(
+                "credentialAlgorithm",
+                "credentialSalt",
+                "credentialHash",
+                "credentialIterations")));
     }
 
     private static Path mainJavaRoot() {

@@ -12,4 +12,10 @@ public class DcamStorageTest {
         assertEquals("DCIM/Media/IMP/DCAM_CAM001_000000_20260619_100324_IMP_enc.mp4",
                 file.getPath().replace('\\', '/'));
     }
+
+    @Test public void buildsDeviceOnlyConfigPath() {
+        File file = new DcamStorage(new File("DCIM")).configsFile();
+
+        assertEquals("DCIM/Config/dcam_config.cson", file.getPath().replace('\\', '/'));
+    }
 }

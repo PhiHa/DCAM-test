@@ -1,0 +1,189 @@
+# DCAM Realtime AI Detection Design
+
+**Page ID**: 48595090  
+**Version**: 7  
+**Type**: page  
+**URL**: undefined/spaces/DVID/pages/48595090
+
+---
+
+
+# DCAM Realtime AI Detection Design
+
+Item
+
+Information
+
+Project
+
+DCAM
+
+Document Type
+
+Technical Design
+
+Version
+
+Draft 0.7
+
+Status
+
+Draft
+
+Owner
+
+Hoàng Ngọc Quyền
+
+Last Updated
+
+2026-07-08
+
+Related Documents
+
+DCAM Android Operation Design, DCAM Device Capability & Feature Eligibility Design, DCAM State Machine Design, DCAM Recording & Capture Design, 09 - System Settings Requirements, DCAM Security & Encryption Design
+
+## 1. Purpose
+
+Trang này định nghĩa realtime AI / realtime analytics-specific behavior cho DCAM.
+
+Trang này không duplicate shared feature state matrix, Android startup flow, RecordingController authority rule hoặc sensitive logging list. Trang này reference authoritative runtime design documents và apply các rule đó vào realtime analytics runtime.
+
+## 2. Authoritative References
+
+Topic
+
+Authoritative Document
+
+Local Use
+
+RuntimeModuleRegistry and module initialization
+
+DCAM Android Operation Design
+
+Realtime runtime chỉ được initialized thông qua Android runtime registry khi eligible.
+
+Feature state names and runtime pruning
+
+DCAM Device Capability & Feature Eligibility Design
+
+Trang này consume official feature eligibility states.
+
+Runtime transition guards
+
+DCAM State Machine Design
+
+Realtime runtime tuân theo global guard rules.
+
+RecordingController authority
+
+DCAM Recording & Capture Design
+
+Realtime events không được gọi trực tiếp recording/storage/camera.
+
+AI / realtime settings
+
+09 - System Settings Requirements
+
+Requested runtime settings lấy từ validated `dcam.db` values.
+
+Security and sensitive diagnostic data
+
+DCAM Security & Encryption Design
+
+Không duplicate sensitive data rules; apply security design.
+
+## 3. RuntimeModuleRegistry Alignment
+
+Realtime analytics là optional runtime module. Module này phải được register thông qua `RuntimeModuleRegistry` được định nghĩa trong **DCAM Android Operation Design**.
+
+Runtime Module
+
+Initialization Rule
+
+`RealtimeAnalyticsRuntime`
+
+Initialize only khi realtime feature là `ENABLED` hoặc approved `DEGRADED`.
+
+`SampleSelectionController`
+
+Initialize only với eligible realtime runtime.
+
+`CameraSampleAnalyzer`
+
+Attach only khi realtime runtime eligible và camera pipeline cho phép.
+
+`RealtimeModelRuntime`
+
+Initialize only nếu model/runtime package available, valid và capability-compatible.
+
+`AnalyticsEventRouter`
+
+Register only nếu realtime runtime có thể emit events an toàn.
+
+Nếu capability, permission, model availability, thermal/battery policy hoặc performance blocks feature, Android Operation phải prune runtime module.
+
+## 4. Event-to-RecordingController Rule
+
+Realtime analytics không được control recording trực tiếp.
+
+textRules:
+
+Rule
+
+Description
+
+AI-RULE-001
+
+Realtime analytics có thể emit detection results hoặc event candidates, không emit recording actions.
+
+AI-RULE-002
+
+Realtime analytics không được gọi trực tiếp CameraService, RecordingEngine, StorageService hoặc RecordingController trừ khi đi qua approved command/event flow.
+
+AI-RULE-003
+
+Emergency Event Manager có thể convert detection event thành emergency request.
+
+AI-RULE-004
+
+Chỉ RecordingController quyết định recording starts, marks important hoặc queues event.
+
+AI-RULE-005
+
+Realtime runtime failure không được crash hoặc block core recording.
+
+## 5. Local Scope
+
+Area
+
+Direction
+
+Sample Selection
+
+Apply local policy cho sampling/rate/input size sau khi runtime eligibility được approved.
+
+Runtime Package / Model
+
+Validate package/model availability và compatibility trước runtime start.
+
+Workload Control
+
+Throttle, degrade hoặc prune realtime workload khi unsafe.
+
+Event Creation
+
+Chỉ tạo detection result/event candidate; không tạo media.
+
+Privacy/Security
+
+Không store/log raw frames, face data hoặc sensitive analytics data trừ khi approved.
+
+## 6. Logging Direction
+
+text
+[ANALYTICS] Runtime degraded: 
+[ANALYTICS] Event candidate emitted]]>Detailed sensitive logging rules thuộc **07 - Logging & Diagnostics Requirements** và **DCAM Security & Encryption Design**.
+
+## 7. Conclusion
+
+text

@@ -29,7 +29,14 @@ public final class LogglyUploadWorker extends Worker {
 
     @NonNull @Override public Result doWork() {
         if (BuildConfig.LOGGLY_TOKEN.isBlank()) return Result.success();
-        PendingLogDao dao = AppDatabase.get(getApplicationContext()).pendingLogs();
+        PendingLogDao dao;
+        try {
+            dao = AppDatabase.get(getApplicationContext()).pendingLogs();
+        } catch (RuntimeException error) {
+            LogglyDiagnostics.write(getApplicationContext(), "ERROR",
+                    "Loggly upload could not open outbox database", error);
+            return Result.retry();
+        }
         String endpoint = "https://logs-01.loggly.com/inputs/" + BuildConfig.LOGGLY_TOKEN + "/tag/dcam/";
         int consecutiveFailures = 0;
         boolean globalBackoff = false;

@@ -39,9 +39,10 @@ final class LayerDependencyTest {
 
     @Test void dependenciesPointInwardAcrossCleanArchitectureLayers() throws IOException {
         Path root = mainJavaRoot().resolve("com/dvid/dcam");
+        Path coreRoot = coreJavaRoot().resolve("com/dvid/dcam/core");
         List<String> violations = new ArrayList<>();
-        collectViolations(root.resolve("core"), CORE_FORBIDDEN, violations);
-        collectCapabilityLayerViolations(root.resolve("core"), violations);
+        collectViolations(coreRoot, CORE_FORBIDDEN, violations);
+        collectCapabilityLayerViolations(coreRoot, violations);
         collectCapabilityLayerViolations(root.resolve("feature"), violations);
         collectViolations(root.resolve("app/presentation"), APP_PRESENTATION_FORBIDDEN, violations);
         collectViolations(root.resolve("platform"), PLATFORM_FORBIDDEN, violations);
@@ -51,7 +52,7 @@ final class LayerDependencyTest {
 
     @Test void featureAndCoreFilesUseCanonicalLayerPackages() throws IOException {
         Path featureRoot = mainJavaRoot().resolve("com/dvid/dcam/feature");
-        Path coreRoot = mainJavaRoot().resolve("com/dvid/dcam/core");
+        Path coreRoot = coreJavaRoot().resolve("com/dvid/dcam/core");
         List<String> violations = new ArrayList<>();
         collectNonCanonicalPaths(featureRoot, "feature/", violations);
         collectNonCanonicalPaths(coreRoot, "core/", violations);
@@ -63,46 +64,25 @@ final class LayerDependencyTest {
         Path root = mainJavaRoot().resolve("com/dvid/dcam");
         List<String> violations = new ArrayList<>();
         collectMisplacedInterfaces(root.resolve("feature"), violations);
-        collectMisplacedInterfaces(root.resolve("core"), violations);
+        collectMisplacedInterfaces(coreJavaRoot().resolve("com/dvid/dcam/core"), violations);
         assertTrue(violations.isEmpty(),
                 "Interfaces must be application use cases or named application boundaries:\n"
                         + String.join("\n", violations));
     }
 
     @Test void publicInterfacesDeclareCallableBehavior() throws IOException {
-        Path root = mainJavaRoot().resolve("com/dvid/dcam");
         List<String> violations = new ArrayList<>();
-        try (Stream<Path> files = Files.walk(root)) {
-            for (Path file : files.filter(LayerDependencyTest::isJava).toList()) {
-                String source = Files.readString(file, StandardCharsets.UTF_8);
-                Matcher declaration = PUBLIC_INTERFACE_DECLARATION.matcher(source);
-                while (declaration.find()) {
-                    int bodyEnd = findMatchingBrace(source, declaration.end() - 1);
-                    String body = bodyEnd < 0 ? "" : source.substring(declaration.end(), bodyEnd);
-                    if (!INTERFACE_METHOD.matcher(body).find()) {
-                        violations.add(normalized(root.relativize(file)) + " declares empty interface "
-                                + declaration.group(1));
-                    }
-                }
-            }
-        }
+        collectEmptyInterfaces(mainJavaRoot().resolve("com/dvid/dcam"), violations);
+        collectEmptyInterfaces(coreJavaRoot().resolve("com/dvid/dcam"), violations);
         assertTrue(violations.isEmpty(),
                 "Public interfaces must describe current callable behavior, not placeholders:\n"
                         + String.join("\n", violations));
     }
 
     @Test void projectInterfaceImplementationsEndWithImpl() throws IOException {
-        Path root = mainJavaRoot().resolve("com/dvid/dcam");
         List<String> violations = new ArrayList<>();
-        try (Stream<Path> files = Files.walk(root)) {
-            for (Path file : files.filter(LayerDependencyTest::isJava).toList()) {
-                String source = Files.readString(file, StandardCharsets.UTF_8);
-                Matcher implementation = PROJECT_INTERFACE_IMPLEMENTATION.matcher(source);
-                if (implementation.find() && !implementation.group(1).endsWith("Impl")) {
-                    violations.add(normalized(root.relativize(file)));
-                }
-            }
-        }
+        collectMisnamedImplementations(mainJavaRoot().resolve("com/dvid/dcam"), violations);
+        collectMisnamedImplementations(coreJavaRoot().resolve("com/dvid/dcam"), violations);
         assertTrue(violations.isEmpty(),
                 "Classes implementing project interfaces must end with Impl:\n" + String.join("\n", violations));
     }
@@ -114,13 +94,52 @@ final class LayerDependencyTest {
             for (Path file : files.filter(LayerDependencyTest::isJava).toList()) {
                 Path relative = root.relativize(file);
                 String topLevel = relative.getName(0).toString();
-                if (!List.of("app", "core", "feature", "platform").contains(topLevel)) {
+                if (!List.of("app", "feature", "platform").contains(topLevel)) {
                     violations.add(relative.toString());
+                }
+            }
+        }
+        Path coreRoot = coreJavaRoot().resolve("com/dvid/dcam");
+        try (Stream<Path> files = Files.walk(coreRoot)) {
+            for (Path file : files.filter(LayerDependencyTest::isJava).toList()) {
+                Path relative = coreRoot.relativize(file);
+                if (!"core".equals(relative.getName(0).toString())) {
+                    violations.add("core module: " + relative);
                 }
             }
         }
         assertTrue(violations.isEmpty(),
                 "Production classes outside app/core/feature/platform:\n" + String.join("\n", violations));
+    }
+
+    @Test void alwaysOnInfrastructureDoesNotDependOnDeveloperFeatureGates() throws IOException {
+        Path platform = mainJavaRoot().resolve("com/dvid/dcam/platform");
+        Pattern developerFeatureGate = Pattern.compile("^com\\.dvid\\.dcam\\.core\\.feature\\.");
+        List<String> violations = new ArrayList<>();
+        for (String capability : List.of("logging", "database", "config", "storage")) {
+            collectViolations(platform.resolve(capability), developerFeatureGate, violations);
+        }
+        assertTrue(violations.isEmpty(),
+                "Always-on infrastructure must not be controlled by developer feature gates:\n"
+                        + String.join("\n", violations));
+    }
+
+    @Test void productionIdentityDoesNotUseAndroidId() throws IOException {
+        List<String> violations = new ArrayList<>();
+        for (String forbidden : List.of(
+                "ANDROID_ID",
+                "Settings.Secure",
+                "androidIdHash",
+                "android_id_hash",
+                "getAndroidIdHash",
+                "Build.SERIAL",
+                "device_lookup")) {
+            collectSourceTextViolations(mainJavaRoot().resolve("com/dvid/dcam"), forbidden, violations);
+            collectSourceTextViolations(coreJavaRoot().resolve("com/dvid/dcam"), forbidden, violations);
+        }
+        assertTrue(violations.isEmpty(),
+                "Production identity must not use Android ID or android_id_hash:\n"
+                        + String.join("\n", violations));
     }
 
     private static int findMatchingBrace(String source, int openBrace) {
@@ -224,6 +243,49 @@ final class LayerDependencyTest {
         }
     }
 
+    private static void collectEmptyInterfaces(
+            Path root, List<String> violations) throws IOException {
+        try (Stream<Path> files = Files.walk(root)) {
+            for (Path file : files.filter(LayerDependencyTest::isJava).toList()) {
+                String source = Files.readString(file, StandardCharsets.UTF_8);
+                Matcher declaration = PUBLIC_INTERFACE_DECLARATION.matcher(source);
+                while (declaration.find()) {
+                    int bodyEnd = findMatchingBrace(source, declaration.end() - 1);
+                    String body = bodyEnd < 0 ? "" : source.substring(declaration.end(), bodyEnd);
+                    if (!INTERFACE_METHOD.matcher(body).find()) {
+                        violations.add(normalized(root.relativize(file)) + " declares empty interface "
+                                + declaration.group(1));
+                    }
+                }
+            }
+        }
+    }
+
+    private static void collectMisnamedImplementations(
+            Path root, List<String> violations) throws IOException {
+        try (Stream<Path> files = Files.walk(root)) {
+            for (Path file : files.filter(LayerDependencyTest::isJava).toList()) {
+                String source = Files.readString(file, StandardCharsets.UTF_8);
+                Matcher implementation = PROJECT_INTERFACE_IMPLEMENTATION.matcher(source);
+                if (implementation.find() && !implementation.group(1).endsWith("Impl")) {
+                    violations.add(normalized(root.relativize(file)));
+                }
+            }
+        }
+    }
+
+    private static void collectSourceTextViolations(
+            Path root, String forbidden, List<String> violations) throws IOException {
+        try (Stream<Path> files = Files.walk(root)) {
+            for (Path file : files.filter(LayerDependencyTest::isJava).toList()) {
+                String source = Files.readString(file, StandardCharsets.UTF_8);
+                if (source.contains(forbidden)) {
+                    violations.add(normalized(root.relativize(file)) + " contains " + forbidden);
+                }
+            }
+        }
+    }
+
     private static boolean isJava(Path path) {
         return path.toString().endsWith(".java");
     }
@@ -233,7 +295,17 @@ final class LayerDependencyTest {
     }
 
     private static Path mainJavaRoot() {
-        Path moduleRoot = Path.of("src/main/java");
-        return Files.exists(moduleRoot) ? moduleRoot : Path.of("app/src/main/java");
+        return existingPath(Path.of("app/src/main/java"), Path.of("src/main/java"));
+    }
+
+    private static Path coreJavaRoot() {
+        return existingPath(Path.of("core/src/main/java"), Path.of("../core/src/main/java"));
+    }
+
+    private static Path existingPath(Path... candidates) {
+        for (Path candidate : candidates) {
+            if (Files.exists(candidate)) return candidate.normalize();
+        }
+        throw new IllegalStateException("Source root not found: " + List.of(candidates));
     }
 }

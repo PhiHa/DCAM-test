@@ -1,6 +1,8 @@
 # Android development standard
 
-Source status: **Approved 1.2**, Confluence page version 5, updated 2026-07-04.
+Source status: **Approved 1.7**, Confluence page version 10, updated 2026-07-08.
+
+Delivery overlay: the [DCAM Architecture Delivery Profile](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/50626744) is **Approved 1.1**, page version 4, updated 2026-07-09. It determines which target-architecture rules are mandatory in Phase 1 and which activate only when the corresponding later-phase feature enters implementation scope.
 
 ## Target stack from the documentation
 
@@ -18,7 +20,7 @@ Source status: **Approved 1.2**, Confluence page version 5, updated 2026-07-04.
 | Dependency injection | Not mandatory; introduce only when complexity justifies it |
 | Build | Gradle |
 
-## Non-negotiable dependency rule
+## Core dependency rule
 
 ```text
 Activity/Fragment/controller
@@ -29,6 +31,8 @@ Activity/Fragment/controller
 ```
 
 Dependency direction always points inward. UI, ViewModel, and use-case code must not call camera, hardware, storage, Retrofit, Firebase, or other provider SDKs directly. Application code depends only on domain values and boundaries it owns. Platform implementations translate external behavior into those boundaries.
+
+For the MVP paths currently in scope, the delivery profile makes the recording/capture controller, camera adapter, storage boundary, database/repository boundary, BDMA Data Contract, safe logging, and explicit disabling of unsupported optional features the P0 rules. Feature-specific managers and coordinators become mandatory when their feature enters implementation scope; they are not prerequisites for the first working recording slice.
 
 `Interface Adapters` is a Clean Architecture layer name; it does not mean a folder for Java `interface` declarations. Public feature/core interfaces live only in `application/usecase` or `application/port`, and must represent a real use-case or capability boundary. The package may be named `port`, but class/file names do not use the `Port` suffix. Use capability names such as `CameraGateway`, `AudioRecorder`, `MediaOpener`, `LanguagePreferenceStore`, `ConfigurationSource`, and `LogSink`; keep `Repository` for repository contracts. Concrete implementations must end with `Impl`.
 
@@ -97,7 +101,7 @@ Training exit means each developer can build/install/debug the app, run capture 
 
 ## Architecture evolution: current decisions and future triggers
 
-Keep the current single-module, single-composition design while it remains easy to scan. Do not add abstractions only to match a future architecture diagram.
+Keep the current two-module, single-composition design while it remains easy to scan. Do not add abstractions only to match a future architecture diagram.
 
 Current ownership rules:
 
@@ -115,6 +119,8 @@ Future work must be triggered by a concrete requirement:
 | A feature gains independent loading, error, navigation, or background state | Give that feature its own presentation state/ViewModel |
 | `AppComposition` becomes difficult to scan or owns multiple independent runtime graphs | Delegate construction to feature-level composition helpers |
 | Configuration develops several cohesive groups | Introduce typed configuration sections for those real groups |
-| Package tests no longer prevent accidental coupling at team scale | Evaluate Gradle modules for compile-time boundaries |
+| A package gains independent lifecycle ownership, isolated platform/vendor/cloud dependencies, parallel-team ownership, repeated independent testing needs, dependency-cycle risk, or a stable interface with a real implementation | Evaluate extraction within the approved Phase 1 limit of five Gradle modules |
 
 Avoid a generic event bus, generic device adapter, empty vendor packages, placeholder ViewModels, or a custom scope framework without those triggers.
+
+The approved Phase 1 Gradle recommendation is `:app`, `:core`, `:media`, `:storage`, and `:bdma-contract`, while a smaller initial `:app`/`:core` structure is accepted. The repository now uses that smaller two-module structure. Keep remaining capabilities package-first and do not split another module solely because a future design page names it.

@@ -45,4 +45,10 @@ final class LogUploadScheduler {
                 .build();
         workManager.enqueueUniqueWork(RETRY_WAKE_WORK, ExistingWorkPolicy.REPLACE, request);
     }
+
+    static void cancel(Context context) {
+        WorkManager workManager = WorkManager.getInstance(context.getApplicationContext());
+        workManager.cancelUniqueWork(SEND_WORK);
+        workManager.cancelUniqueWork(RETRY_WAKE_WORK);
+    }
 }
