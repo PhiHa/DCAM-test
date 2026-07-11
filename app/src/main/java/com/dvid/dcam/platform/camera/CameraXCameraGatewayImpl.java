@@ -29,6 +29,8 @@ import com.dvid.dcam.platform.recording.RecordingForegroundService;
 import com.dvid.dcam.platform.storage.DcamFileType;
 import com.dvid.dcam.platform.storage.DcamMediaFile;
 import com.dvid.dcam.platform.storage.DcamMediaOutput;
+import com.dvid.dcam.platform.storage.CaptureStorageCheck;
+import com.dvid.dcam.platform.storage.CaptureStorageFailureClassifier;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.time.LocalDateTime;
 
@@ -86,6 +88,7 @@ public final class CameraXCameraGatewayImpl implements CameraGateway {
     @Override public void takePhoto() {
         String fileUserId = activeFileUserId();
         if (fileUserId == null) return;
+        if (!ensureStorageReady("Photo")) return;
         LocalDateTime at = LocalDateTime.now();
         boolean encrypt = mediaEncryptionSettings.isMediaEncryptionEnabled();
         DcamMediaFile mediaFile = mediaOutput.mediaFile(
@@ -98,10 +101,20 @@ public final class CameraXCameraGatewayImpl implements CameraGateway {
                         mediaOutput.encryptSaved(context, mediaFile, result.getSavedUri(),
                                 config.getMediaEncryptionPassword());
                     }
-                    mediaOutput.publishSaved(context, mediaFile);
-                    previewView.showSaved(mediaFile.getFileName());
-                    log.info((encrypt ? "Encrypted photo saved: " : "Photo saved: ") + mediaFile.getFileName());
-                    captureEvents.photoSaved(mediaFile.getFileName());
+                    mediaOutput.finalizeSaved(context, mediaFile, new DcamMediaOutput.FinalizationCallback() {
+                        @Override public void onSuccess(java.io.File finalFile) {
+                            onMain(() -> {
+                                previewView.showSaved(mediaFile.getFileName());
+                                log.info((encrypt ? "Encrypted photo finalized: " : "Photo finalized: ")
+                                        + mediaFile.getFileName());
+                                captureEvents.photoSaved(mediaFile.getFileName());
+                            });
+                        }
+
+                        @Override public void onFailure(Exception failure) {
+                            onMain(() -> reportFinalizationFailure("Photo", mediaFile, failure));
+                        }
+                    });
                 } catch (Exception error) {
                     log.error("Photo encryption failed: " + mediaFile.getFileName(), error);
                     captureEvents.captureFailed("Photo encryption", message(error));
@@ -109,6 +122,14 @@ public final class CameraXCameraGatewayImpl implements CameraGateway {
                 }
             }
             @Override public void onError(ImageCaptureException error) {
+                CaptureStorageCheck storageCheck = mediaOutput.checkCaptureReady();
+                if (!storageCheck.isReady()) {
+                    String detail = storageCheck.getReason() + "; staged image preserved if present";
+                    log.error("Photo storage failure", error);
+                    captureEvents.captureFailed("Storage", detail);
+                    previewView.showError(detail);
+                    return;
+                }
                 log.error("Photo failed", error);
                 showError(error.getMessage());
             }
@@ -141,11 +162,13 @@ public final class CameraXCameraGatewayImpl implements CameraGateway {
         }
         String fileUserId = activeFileUserId();
         if (fileUserId == null) return;
+        if (!ensureStorageReady("Recording")) return;
         LocalDateTime at = LocalDateTime.now();
         boolean encrypt = mediaEncryptionSettings.isMediaEncryptionEnabled();
         DcamMediaFile mediaFile = mediaOutput.mediaFile(
                 type, config.getAccountUserId(), fileUserId, at, encrypt);
-        PendingRecording pending = mediaOutput.prepareVideoRecording(context, videoCapture, mediaFile);
+        PendingRecording pending = mediaOutput.prepareVideoRecording(
+                context, videoCapture, mediaFile, mediaOutput.recordingFileSizeLimit());
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED)
             pending = pending.withAudioEnabled();
         activeRecording = pending.start(ContextCompat.getMainExecutor(context), event -> {
@@ -160,11 +183,23 @@ public final class CameraXCameraGatewayImpl implements CameraGateway {
             }
             else if (event instanceof VideoRecordEvent.Finalize) {
                 VideoRecordEvent.Finalize done = (VideoRecordEvent.Finalize) event;
+                // CameraX has closed this Recording. Keep the foreground indicator until
+                // publication completes, but never call stop() on the finalized handle again.
+                activeRecording = null;
                 previewView.showFinalized(done.hasError()
                         ? "VIDEO ERROR " + done.getError() : "SAVED " + mediaFile.getFileName());
                 if (done.hasError()) {
-                    log.error("Recording failed: " + mediaFile.getFileName() + " error=" + done.getError(), null);
-                    captureEvents.captureFailed("Recording", "CameraX error " + done.getError());
+                    boolean storageFailure =
+                            CaptureStorageFailureClassifier.isVideoStorageFailure(done.getError())
+                                    || !mediaOutput.checkCaptureReady().isReady();
+                    String operation = storageFailure ? "Storage" : "Recording";
+                    String detail = storageFailure
+                            ? "Storage limit reached; staged recording preserved"
+                            : "CameraX error " + done.getError();
+                    log.error(operation + " failed: " + mediaFile.getFileName()
+                            + " error=" + done.getError(), null);
+                    captureEvents.captureFailed(operation, detail);
+                    finishRecordingAttempt();
                 }
                 else {
                     try {
@@ -172,31 +207,72 @@ public final class CameraXCameraGatewayImpl implements CameraGateway {
                             mediaOutput.encryptSaved(context, mediaFile, done.getOutputResults().getOutputUri(),
                                     config.getMediaEncryptionPassword());
                         }
-                        mediaOutput.publishSaved(context, mediaFile);
-                        log.info((encrypt ? "Encrypted recording saved: " : "Recording saved: ")
-                                + mediaFile.getFileName());
-                        captureEvents.recordingCompleted(mediaFile.getFileName());
+                        mediaOutput.finalizeSaved(context, mediaFile,
+                                new DcamMediaOutput.FinalizationCallback() {
+                            @Override public void onSuccess(java.io.File finalFile) {
+                                onMain(() -> {
+                                    log.info((encrypt ? "Encrypted recording finalized: "
+                                            : "Recording finalized: ") + mediaFile.getFileName());
+                                    captureEvents.recordingCompleted(mediaFile.getFileName());
+                                    finishRecordingAttempt();
+                                });
+                            }
+
+                            @Override public void onFailure(Exception failure) {
+                                onMain(() -> {
+                                    reportFinalizationFailure("Recording", mediaFile, failure);
+                                    finishRecordingAttempt();
+                                });
+                            }
+                        });
                     } catch (Exception error) {
                         log.error("Recording encryption failed: " + mediaFile.getFileName(), error);
                         captureEvents.captureFailed("Recording encryption", message(error));
                         previewView.showError("Recording encryption failed");
+                        finishRecordingAttempt();
                     }
-                }
-                activeRecording = null;
-                RecordingForegroundService.stop(context);
-                if (pendingRecordingType != null) {
-                    DcamFileType nextType = pendingRecordingType;
-                    pendingRecordingType = null;
-                    startRecording(nextType);
                 }
             }
         });
+    }
+
+    private void reportFinalizationFailure(
+            String mediaKind, DcamMediaFile mediaFile, Exception failure) {
+        String detail = "Finalization failed; staged media preserved: " + message(failure);
+        log.error(mediaKind + " finalization failed: " + mediaFile.getFileName(), failure);
+        captureEvents.captureFailed("Finalization", detail);
+        previewView.showError(detail);
+    }
+
+    private void finishRecordingAttempt() {
+        activeRecording = null;
+        RecordingForegroundService.stop(context);
+        if (pendingRecordingType != null) {
+            DcamFileType nextType = pendingRecordingType;
+            pendingRecordingType = null;
+            startRecording(nextType);
+        }
+    }
+
+    private void onMain(Runnable action) {
+        ContextCompat.getMainExecutor(context).execute(action);
     }
 
     private void showError(String text) {
         log.error("Camera error: " + text, null);
         captureEvents.captureFailed("Camera", text);
         previewView.showError(text);
+    }
+
+    private boolean ensureStorageReady(String operation) {
+        CaptureStorageCheck check = mediaOutput.checkCaptureReady();
+        if (check.isReady()) return true;
+        String message = check.getReason() + " (available=" + check.getAvailableBytes()
+                + ", required=" + check.getRequiredBytes() + ")";
+        log.warn(operation + " rejected: " + message, null);
+        captureEvents.captureFailed("Storage", message);
+        previewView.showError(message);
+        return false;
     }
 
     private String activeFileUserId() {

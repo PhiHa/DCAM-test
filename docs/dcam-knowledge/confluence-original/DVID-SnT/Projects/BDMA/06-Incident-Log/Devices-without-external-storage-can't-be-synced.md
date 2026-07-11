@@ -3,7 +3,7 @@
 **Page ID**: 39157761  
 **Version**: 2  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/39157761
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/39157761
 
 ---
 
@@ -26,7 +26,7 @@ Date Reported
 
 Reporter
 
- 
+[Dinh Nhan](https://ducviet.atlassian.net/wiki/people/70121:52166504-9fa8-44ba-969f-16f03f3dc4d6?ref=confluence) 
 
 Severity
 
@@ -80,7 +80,7 @@ Incident resolved
 
 # Root Cause Analysis
 
-Cause: [Refactor folder security, sync & adb log &middot; DucVietTech/bdma@14592af](https://github.com/DucVietTech/bdma/commit/14592af6327c3dce318cc253542f77c58952c7cd)
+Cause: [Refactor folder security, sync & adb log · DucVietTech/bdma@14592af](https://github.com/DucVietTech/bdma/commit/14592af6327c3dce318cc253542f77c58952c7cd)
 Commit: 14592af
 Commit time: 2026-05-02
 Change: A preflight path that previously returned an empty list was changed to throw an exception.
@@ -132,15 +132,17 @@ Date
 
 Reporter
 
- 
+[Dinh Nhan](https://ducviet.atlassian.net/wiki/people/70121:52166504-9fa8-44ba-969f-16f03f3dc4d6?ref=confluence) 
+
+19 Jun 2026
 
 PM
 
- 
+[Hoàng Ngọc Quyền](https://ducviet.atlassian.net/wiki/people/712020:e466d315-3c2d-406d-b324-8f8eb35ccb48?ref=confluence) 
 
 |  
 Reviewer
 
- 
+[Hoàng Ngọc Quyền](https://ducviet.atlassian.net/wiki/people/712020:e466d315-3c2d-406d-b324-8f8eb35ccb48?ref=confluence) 
 
 |

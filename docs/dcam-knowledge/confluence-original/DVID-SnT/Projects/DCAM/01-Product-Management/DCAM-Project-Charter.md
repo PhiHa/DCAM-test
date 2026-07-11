@@ -3,7 +3,7 @@
 **Page ID**: 41156610  
 **Version**: 17  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/41156610
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/41156610
 
 ---
 
@@ -80,7 +80,16 @@ Hiện nay việc ghi nhận dữ liệu từ BodyCamera cần có một nền t
 
 DCAM sẽ đóng vai trò là **nguồn tạo dữ liệu**, trong khi BDMA đóng vai trò **quản lý và khai thác dữ liệu**.
 
-textwide760Hai sản phẩm sẽ cùng tạo thành hệ sinh thái quản lý dữ liệu BodyCamera của DVID.
+BodyCamera
+      │
+      ▼
+DCAM Android
+(Video / Image / Metadata / Logs)
+      │
+      ▼
+BDMA Desktop
+(Index / Viewer / Backup / Export / Investigation)
+Hai sản phẩm sẽ cùng tạo thành hệ sinh thái quản lý dữ liệu BodyCamera của DVID.
 
 ## 3. Project Objectives
 
@@ -780,7 +789,32 @@ Quyết định kỹ thuật quan trọng nên được lưu thành Architecture
 
 ### 13.2 Change Workflow
 
-textwide760### 13.3 Change Classification
+Requirement / Issue
+        │
+        ▼
+Create Jira Task
+        │
+        ▼
+Impact Analysis
+        │
+        ▼
+PM Review
+        │
+        ▼
+Technical Review
+        │
+        ▼
+Approval
+        │
+        ▼
+Implementation
+        │
+        ▼
+Testing
+        │
+        ▼
+Documentation Update
+### 13.3 Change Classification
 
 Type
 

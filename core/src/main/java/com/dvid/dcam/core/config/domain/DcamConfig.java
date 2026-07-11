@@ -4,6 +4,7 @@ package com.dvid.dcam.core.config.domain;
 public final class DcamConfig {
     public static final String DEFAULT_ACCOUNT_USER_ID = "000000";
     public static final String DEFAULT_POLICE_USER_ID = "000000";
+    public static final boolean DEFAULT_VIDEO_ENCRYPTED = false;
     public static final String DEFAULT_MEDIA_ENCRYPTION_PASSWORD = "123456";
 
     private final String accountUserId;
@@ -12,11 +13,13 @@ public final class DcamConfig {
     private final String mediaEncryptionPassword;
 
     public DcamConfig() {
-        this(DEFAULT_ACCOUNT_USER_ID, DEFAULT_POLICE_USER_ID, true, DEFAULT_MEDIA_ENCRYPTION_PASSWORD);
+        this(DEFAULT_ACCOUNT_USER_ID, DEFAULT_POLICE_USER_ID,
+                DEFAULT_VIDEO_ENCRYPTED, DEFAULT_MEDIA_ENCRYPTION_PASSWORD);
     }
 
     public static DcamConfig defaults(String accountUserId) {
-        return new DcamConfig(accountUserId, DEFAULT_POLICE_USER_ID, true, DEFAULT_MEDIA_ENCRYPTION_PASSWORD);
+        return new DcamConfig(accountUserId, DEFAULT_POLICE_USER_ID,
+                DEFAULT_VIDEO_ENCRYPTED, DEFAULT_MEDIA_ENCRYPTION_PASSWORD);
     }
 
     public DcamConfig(String accountUserId, String policeUserId, boolean videoEncrypted) {

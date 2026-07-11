@@ -3,7 +3,7 @@
 **Page ID**: 38371332  
 **Version**: 1  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/38371332
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/38371332
 
 ---
 
@@ -43,9 +43,17 @@ Kiểm tra trực tiếp trên PR #120 xem còn bao nhiêu comment chưa resolve
 **PR:** [#120 — Display specifications of device when connecting](https://github.com/DucVietTech/bdma/pull/120)  
 **Tác giả:** vietanh1910 (lavietanh.utc)### 🔴 Lỗi nghiêm trọng (cần fix ngay)
 
-**Logic Error — Nhầm điều kiện Battery/Storage:** Trong `buildSpecificationLines`, code dùng `info.isLowBattery()` để apply style `max-storage` cho storage icon &rarr; **sai logic**. Phải là `info.isMaxUsage()`:
+**Logic Error — Nhầm điều kiện Battery/Storage:** Trong `buildSpecificationLines`, code dùng `info.isLowBattery()` để apply style `max-storage` cho storage icon → **sai logic**. Phải là `info.isMaxUsage()`:
 
-java### 🟡 Rủi ro NullPointerException (5 chỗ)
+// SAI
+if (info != null && info.isLowBattery()) {
+    storageIcon.getStyleClass().add("max-storage");
+}
+// ĐÚNG
+if (info != null && info.isMaxUsage()) {
+    storageIcon.getStyleClass().add("max-storage");
+}
+### 🟡 Rủi ro NullPointerException (5 chỗ)
 
 Vị trí
 
@@ -53,7 +61,7 @@ Vấn đề
 
 `isConnected()`
 
-So sánh `status == DeviceStatus.CONNECTED` không null-safe &rarr; nên dùng `DeviceStatus.CONNECTED.equals(status)`
+So sánh `status == DeviceStatus.CONNECTED` không null-safe → nên dùng `DeviceStatus.CONNECTED.equals(status)`
 
 `DeviceClickHandler`
 
@@ -65,7 +73,7 @@ Không check `progress` null trước khi gọi `.total()`, `.passed()`
 
 `parseBytesToKiB()`
 
-`value` có thể null &rarr; NPE khi chia, catch `NumberFormatException` không đúng loại exception
+`value` có thể null → NPE khi chia, catch `NumberFormatException` không đúng loại exception
 
 `getDeviceSpecInfo()`
 
@@ -73,17 +81,17 @@ Gọi nhiều external service (`adbClient`, `driveLetterMapper`, `massStorageSe
 
 ### 🟡 Vấn đề Performance
 
-`refreshSpecification()` gọi `adbClient.getBatteryInfo()` **tuần tự** cho từng device &rarr; nếu nhiều thiết bị sẽ rất chậm. Reviewer đề xuất dùng `ExecutorService` để gọi song song.
+`refreshSpecification()` gọi `adbClient.getBatteryInfo()` **tuần tự** cho từng device → nếu nhiều thiết bị sẽ rất chậm. Reviewer đề xuất dùng `ExecutorService` để gọi song song.
 
 ### 🔵 Code Quality & CSS (7 comments)
 
-**CSS trùng lặp:** 5 badge classes có cùng properties, chỉ khác màu &rarr; nên tách ra class chung `.device-cell-badge`
+**CSS trùng lặp:** 5 badge classes có cùng properties, chỉ khác màu → nên tách ra class chung `.device-cell-badge`
 
-**CSS hover trùng:** `.device-card:hover` và `.device-card.connected:hover` giống nhau &rarr; gộp lại
+**CSS hover trùng:** `.device-card:hover` và `.device-card.connected:hover` giống nhau → gộp lại
 
 **Hardcoded colors:** Badge colors dùng giá trị cứng thay vì dùng semantic variables
 
-**Sai cú pháp JavaFX CSS:** `-fx-background-color: -app-bg` &rarr; phải dùng `var(--app-bg)`
+**Sai cú pháp JavaFX CSS:** `-fx-background-color: -app-bg` → phải dùng `var(--app-bg)`
 
 **Type safety:** `batteryLevel`, `storageUsePercent` lưu dạng `String` thay vì `Integer`
 

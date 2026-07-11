@@ -1,9 +1,9 @@
 # DCAM Device Provisioning Web Portal App Design
 
 **Page ID**: 50692194  
-**Version**: 2  
+**Version**: 3  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/50692194
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/50692194
 
 ---
 
@@ -24,11 +24,11 @@ Web App Design
 
 Version
 
-Draft 1.1
+Approved 1.1
 
 Status
 
-Draft
+Approved
 
 Owner
 
@@ -52,25 +52,54 @@ Web Developers, Backend Developers, Android Developers, Factory Worker, Factory 
 
 Last Updated
 
-2026-07-09
+2026-07-10
 
 Related Documents
 
-DCAM Device Provisioning Web Portal Design, DCAM Web Portal & Device API Contract, DCAM DSetup Factory Tool Design, DCAM Factory Provisioning & Device Production SOP, ADR - DCAM Device Identity Baseline: serial_number + dcam_cloud_device_id, DCAM Android Operation Design, DCAM Android Device Owner & Kiosk Policy Design, DCAM Security & Encryption Design, DCAM SQLite Database Design, DCAM Device POC & Hardware Validation Report
+DCAM Device Provisioning Web Portal Design, DCAM Device Provisioning Web Portal Implementation Design, DCAM Web Portal & Device API Contract, DCAM DSetup Factory Tool Design, DCAM Factory Provisioning & Device Production SOP, ADR - DCAM Device Identity Baseline: serial_number + dcam_cloud_device_id, DCAM Android Operation Design, DCAM Android Device Owner & Kiosk Policy Design, DCAM Security & Encryption Design, DCAM SQLite Database Design, DCAM Device POC & Hardware Validation Report
 
 ## 1. Purpose
 
 Tài liệu này mô tả **DCAM Device Provisioning Web Portal App** ở mức ứng dụng Web để dev triển khai UI, state, validation và backend integration cho factory provisioning flow.
 
-Trang cha **DCAM Device Provisioning Web Portal Design** là source of truth cho business flow. Trang này chỉ mô tả app Web cụ thể mà `Factory Worker` sử dụng trong nhà máy.
+Trang cha **DCAM Device Provisioning Web Portal Design** là source of truth cho business flow. Trang này mô tả app Web cụ thể mà `Factory Worker` sử dụng trong nhà máy.
 
-Web Portal App là một **single-purpose factory web app** với thiết kế UI rất đơn giản: chỉ có `Login` và `Workspace`.
+Web Portal App là một **single-purpose factory web app** và chỉ có hai screen:
+
+Login
+Workspace
+Sau khi login thành công, toàn bộ QR scan, device review, device information input, inline review, submit, result và error handling đều diễn ra trong `Workspace`.
 
 Important baseline:
 
-text## 2. Current App Baseline
+Web Portal App has only two screens: Login and Workspace.
+After successful login, all actions happen inside Workspace.
+Web Portal App scans the provisioning QR displayed by DCAM.
+Web Portal App does not scan serial barcode directly.
+Web Portal App does not manually collect serial_number.
+serial_number comes from the QR payload displayed by DCAM.
+serial_number is displayed as read-only inside Workspace after QR scan.
+Factory Worker cannot edit or replace serial_number.
+owner_name and manufacture_date are required for the approved implementation baseline.
+## 2. Current App Baseline
 
-text## 3. Scope
+User-facing account type = Factory Worker only.
+Factory Worker login is required before provisioning.
+After login success, Factory Worker lands on Workspace.
+Workspace is the only working screen after login.
+Factory Worker scans QR displayed on DCAM device screen inside Workspace.
+QR payload contains serial_number and device context.
+Workspace parses QR payload and shows read-only device information.
+Factory Worker enters/selects owner_name inside Workspace.
+Factory Worker uses today's manufacture_date or selects another valid date inside Workspace.
+Factory Worker reviews information inline inside Workspace and submits provisioning.
+Backend creates or restores devices/{dcam_cloud_device_id} by serial_number.
+Workspace shows provisioning result.
+Web Portal App does not set Device Owner.
+Web Portal App does not inject serial_number into Android.
+Web Portal App does not verify Lock Task/kiosk baseline.
+Web Portal App does not mark PASS, FAIL, QUARANTINED or READY_TO_SHIP.
+## 3. Scope
 
 Area
 
@@ -106,11 +135,11 @@ Read-only serial_number
 
 Owner name input
 
-`Workspace` cho phép worker nhập/chọn `owner_name` theo factory/customer flow.
+`Workspace` yêu cầu worker nhập/chọn `owner_name` theo approved factory/customer flow.
 
 Manufacture date input
 
-`Workspace` cho phép worker nhập/chọn `manufacture_date` nếu flow yêu cầu.
+`Workspace` yêu cầu `manufacture_date`; mặc định dùng ngày local hiện tại và cho phép chọn ngày hợp lệ khác.
 
 Inline submit action
 
@@ -148,7 +177,7 @@ Device review là panel/state trong `Workspace`, không phải screen riêng.
 
 Separate Confirmation screen
 
-Confirmation/review trước submit là inline area trong `Workspace`, không phải screen riêng.
+Review trước submit là inline area trong `Workspace`, không phải screen riêng.
 
 Separate Result screen
 
@@ -160,11 +189,11 @@ Web Portal App không scan barcode serial trực tiếp; serial được lấy t
 
 Manual serial entry
 
-Web Portal App không cho worker nhập `serial_number` thủ công để tránh sai lệch identity baseline.
+Web Portal App không cho worker nhập `serial_number` thủ công.
 
 DSetup operation
 
-DSetup owns ADB device detection, SD Identity File read, APK install, Device Owner setup/verify nếu required, serial injection và verify DCAM imported `serial_number`.
+DSetup owns factory tool flow đến khi DCAM xác nhận imported `serial_number` đúng expected value.
 
 Device Owner setup
 
@@ -188,7 +217,7 @@ Web Portal App không mark `PASS`, `FAIL`, `QUARANTINED` hoặc `READY_TO_SHIP`.
 
 Role management
 
-App không có nhiều role user-facing, không có permission matrix phức tạp và không có user management screen.
+App không có nhiều role user-facing, permission matrix phức tạp hoặc user management screen.
 
 Support override / rebind approval
 
@@ -206,11 +235,14 @@ Responsibility
 
 Factory Worker
 
-Login vào Web Portal App, làm việc trong `Workspace`, scan QR trên DCAM device, review thông tin thiết bị, nhập/chọn `owner_name`, nhập/chọn `manufacture_date` nếu required, submit provisioning và xem provisioning result.
+Login vào Web Portal App, làm việc trong `Workspace`, scan QR trên DCAM device, review thông tin thiết bị, nhập/chọn `owner_name`, chọn `manufacture_date`, submit provisioning và xem provisioning result.
 
 Account model baseline:
 
-textInternal backend service roles hoặc admin tools nếu có không thuộc user-facing scope của Web Portal App này.
+Only one user-facing account type exists in this app: Factory Worker.
+Factory Worker can perform the basic QR-based provisioning flow only.
+Factory Worker cannot approve override, rebind, disable, revoke, quarantine or READY_TO_SHIP decisions.
+Internal backend service roles hoặc support/admin tools nếu có không thuộc user-facing scope của Web Portal App này.
 
 ## 6. Web App Responsibilities
 
@@ -244,11 +276,11 @@ Show device review
 
 Collect owner_name
 
-`Workspace` cho phép nhập/chọn `owner_name` theo rule được Product/Factory approve.
+`Workspace` yêu cầu nhập/chọn `owner_name` theo approved Product/Factory rule.
 
 Collect manufacture_date
 
-`Workspace` cho phép nhập/chọn `manufacture_date` theo ISO date `YYYY-MM-DD` nếu required.
+`Workspace` mặc định dùng ngày local hiện tại hoặc cho phép chọn ngày khác, gửi theo ISO date `YYYY-MM-DD`.
 
 Inline review before submit
 
@@ -268,9 +300,50 @@ Prevent identity override
 
 ## 7. App Navigation Flow
 
-textApp navigation rule:
+Factory Worker opens Web Portal App
+    ↓
+Login screen is shown
+    ↓
+Factory Worker logs in
+    ↓
+If login success:
+        Workspace screen is shown
+Else:
+        Login shows safe error
+    ↓
+Inside Workspace:
+        Factory Worker scans QR displayed by DCAM device
+        ↓
+        Workspace parses QR payload
+        ↓
+        If QR payload is valid:
+                Workspace shows read-only device information
+        Else:
+                Workspace shows QR error and allows retry
+        ↓
+        Factory Worker reviews read-only device information
+        ↓
+        Factory Worker enters/selects owner_name
+        ↓
+        Workspace defaults manufacture_date to today's local factory date
+        ↓
+        Factory Worker may select another valid date
+        ↓
+        Workspace shows inline review summary
+        ↓
+        Factory Worker submits provisioning from Workspace
+        ↓
+        Workspace calls backend create/restore by serial_number
+        ↓
+        If success:
+                Workspace shows provisioning result with dcam_cloud_device_id
+        Else:
+                Workspace shows safe error / support-required message
+App navigation rule:
 
-text## 8. Screen List
+Login and Workspace are the only screens.
+All post-login provisioning UI states are Workspace states/panels, not separate screens/routes.
+## 8. Screen List
 
 Screen
 
@@ -288,7 +361,7 @@ Workspace
 
 Screen làm việc duy nhất sau login; chứa QR scan, device review, information form, inline review, submit action, result display và error/retry state.
 
-Scan QR, parse QR, review read-only `serial_number`, nhập/chọn `owner_name`, nhập/chọn `manufacture_date`, submit provisioning, xem result, retry hoặc chuyển support khi cần.
+Scan QR, parse QR, review read-only `serial_number`, nhập/chọn `owner_name`, chọn `manufacture_date`, submit provisioning, xem result, retry hoặc chuyển support khi cần.
 
 ## 9. Workspace Layout
 
@@ -304,7 +377,7 @@ Header / Session Area
 
 Hiển thị trạng thái đăng nhập và thông tin worker/session.
 
-Hiển thị worker name/code nếu có, environment nếu có, logout action nếu cần.
+Hiển thị worker name/code nếu có, environment nếu có và logout action.
 
 QR Scanner Panel
 
@@ -322,7 +395,7 @@ Device Information Panel
 
 Nhập/chọn thông tin nghiệp vụ cần gắn với device.
 
-Nhập/chọn `owner_name`, nhập/chọn `manufacture_date` nếu required.
+Nhập/chọn `owner_name`, dùng today/select another date cho `manufacture_date`.
 
 Inline Review / Submit Area
 
@@ -337,8 +410,6 @@ Hiển thị kết quả backend create/restore hoặc lỗi an toàn.
 Show success/failure, `dcam_cloud_device_id`, safe reason code, retry action hoặc support-required message.
 
 ## 10. QR Scanner Panel
-
-QR Scanner Panel là entry point chính của provisioning flow bên trong `Workspace`.
 
 Field / Element
 
@@ -408,11 +479,25 @@ QR scan không tự động provisioning; worker vẫn phải review inline và 
 
 ## 11. QR Payload Direction
 
-Exact QR schema thuộc **DCAM Web Portal & Device API Contract**. Trang này chỉ mô tả các field app cần xử lý ở mức UI/app behavior.
+Exact QR schema thuộc **DCAM Web Portal & Device API Contract**.
 
 Expected QR payload direction:
 
-text
+payload_type = DCAM_DEVICE_PROVISIONING
+payload_version
+serial_number
+device_model
+firmware_version
+app_package_name
+app_version_name
+app_version_code
+optional device_time
+optional serial_source
+optional provisioning_nonce
+optional generated_at
+optional expires_at
+optional signature
+
 Field
 
 App Behavior
@@ -451,7 +536,7 @@ App hiển thị read-only hoặc gửi backend nếu API yêu cầu.
 
 `serial_source`
 
-App hiển thị read-only nếu QR có field này, ví dụ `SD_IDENTITY_FILE` hoặc `DSETUP_INJECTED`.
+App hiển thị read-only nếu QR có field này.
 
 `provisioning_nonce`
 
@@ -485,7 +570,7 @@ Không dùng làm recovery lookup key trong current baseline.
 
 `device_lookup/{android_id_hash}`
 
-Deprecated/removed path, không thuộc current baseline.
+Deprecated/removed path.
 
 Google account credential
 
@@ -499,9 +584,11 @@ APK signing secret
 
 QR không được chứa signing secret.
 
-## 12. Device Review Panel
+Factory Wi-Fi password
 
-Sau QR scan hợp lệ, `Workspace` hiển thị Device Review Panel để worker kiểm tra thông tin trước khi nhập thông tin nghiệp vụ.
+QR không được chứa factory Wi-Fi credential.
+
+## 12. Device Review Panel
 
 Field
 
@@ -555,7 +642,7 @@ Nếu worker scan nhầm device, worker phải rescan QR đúng thiết bị tro
 
 REVIEW-003
 
-App không tự đổi hoặc normalize `serial_number` ngoài safe trim/format handling được API Contract approve.
+App không tự đổi hoặc normalize `serial_number` ngoài safe handling được API Contract approve.
 
 REVIEW-004
 
@@ -563,27 +650,21 @@ Nếu QR conflict với backend policy, App không tự xử lý conflict; backe
 
 ## 13. Device Information Panel
 
-Device Information Panel chỉ thu thập thông tin nghiệp vụ cần thiết sau khi QR đã cung cấp identity/device context.
-
 Field
 
 Behavior
 
 `owner_name`
 
-Worker nhập/chọn theo factory/customer flow; required nếu backend policy yêu cầu.
+Required; worker nhập/chọn theo approved factory/customer flow.
 
 `manufacture_date`
 
-Worker nhập/chọn theo ISO date `YYYY-MM-DD` nếu factory flow yêu cầu.
-
-Notes
-
-Optional nếu Product/Factory approve; không dùng để lưu secret.
+Required; mặc định ngày local hiện tại, có thể chọn ngày hợp lệ khác; gửi theo `YYYY-MM-DD`.
 
 `serial_number`
 
-Chỉ hiển thị read-only nếu cần context; không editable.
+Chỉ hiển thị read-only; không editable.
 
 Validation direction:
 
@@ -593,11 +674,11 @@ Description
 
 FORM-001
 
-`owner_name` phải pass rule về required/length/charset nếu rule đã được define.
+`owner_name` không được để trống và phải pass approved length/charset rule.
 
 FORM-002
 
-`manufacture_date` phải dùng ISO date `YYYY-MM-DD` nếu required.
+`manufacture_date` phải là valid ISO date `YYYY-MM-DD`.
 
 FORM-003
 
@@ -605,15 +686,13 @@ App không cho submit nếu required field thiếu.
 
 FORM-004
 
-App không cho nhập credential, token hoặc secret vào notes.
+Field không được chứa credential, token hoặc secret.
 
 FORM-005
 
-Exact validation rule thuộc API Contract hoặc Product/Factory decision.
+Exact owner validation và date policy thuộc API Contract/Product/Factory decision.
 
 ## 14. Inline Review / Submit Area
-
-`Workspace` có inline review area để worker kiểm tra lần cuối trước khi submit. Đây không phải screen riêng.
 
 Item
 
@@ -629,7 +708,7 @@ Hiển thị giá trị worker nhập/chọn.
 
 `manufacture_date`
 
-Hiển thị giá trị worker nhập/chọn nếu có.
+Hiển thị effective date và nguồn Today/Selected date.
 
 Device context
 
@@ -645,17 +724,32 @@ Gửi provisioning request tới backend.
 
 Edit form action
 
-Cho phép sửa `owner_name` hoặc `manufacture_date` trong Workspace; không sửa serial.
+Cho phép sửa `owner_name` hoặc `manufacture_date`; không sửa serial.
 
 Rescan action
 
-Hủy flow hiện tại trong Workspace và scan lại QR nếu worker chọn nhầm device.
+Hủy flow hiện tại và scan lại QR nếu worker chọn nhầm device.
 
 ## 15. Backend Integration
 
-API/path/schema chi tiết thuộc **DCAM Web Portal & Device API Contract**. App behavior ở mức logical:
+API/path/schema chi tiết thuộc **DCAM Web Portal & Device API Contract**.
 
-textRequest direction:
+Workspace submits provisioning request:
+    serial_number from QR payload
+    owner_name from workspace form
+    manufacture_date from workspace form
+    QR metadata if required by API Contract
+    worker identity/session from login
+
+Backend:
+    validates Factory Worker session
+    validates QR payload / nonce / signature if enabled
+    checks serial_lookup/{serial_number}
+    creates or restores devices/{dcam_cloud_device_id}
+    stores allowed device information
+    writes audit event
+    returns provisioning result
+Request direction:
 
 Field
 
@@ -671,7 +765,7 @@ Device Information Panel trong `Workspace`.
 
 `manufacture_date`
 
-Device Information Panel trong `Workspace` nếu required.
+Device Information Panel trong `Workspace`.
 
 `device_model`
 
@@ -695,7 +789,7 @@ QR payload nếu API Contract yêu cầu.
 
 `worker_session`
 
-Login/session context của Factory Worker.
+Firebase Authentication/session context của Factory Worker.
 
 Response direction:
 
@@ -705,15 +799,15 @@ App Behavior
 
 `result`
 
-Hiển thị success/failure trong `Workspace`.
+Hiển thị Created/Restored/failure trong `Workspace`.
 
 `dcam_cloud_device_id`
 
-Hiển thị trong `Workspace` khi provisioning thành công.
+Hiển thị khi provisioning thành công.
 
 `device_state`
 
-Hiển thị nếu backend trả về state như `ACTIVE`, `DISABLED`, `REVOKED`, `QUARANTINED`.
+Hiển thị nếu backend trả về state.
 
 `reason_code`
 
@@ -731,11 +825,11 @@ App Behavior
 
 New device created
 
-`Workspace` hiển thị success, `dcam_cloud_device_id`, `serial_number` và hướng dẫn bước tiếp theo theo Factory SOP.
+`Workspace` hiển thị success, `dcam_cloud_device_id`, `serial_number` và safe next-step message.
 
 Existing device restored
 
-`Workspace` hiển thị restored success, existing `dcam_cloud_device_id` và safe message.
+`Workspace` hiển thị restored success và existing `dcam_cloud_device_id`.
 
 Duplicate serial conflict
 
@@ -743,11 +837,11 @@ Duplicate serial conflict
 
 QR invalid
 
-`Workspace` giữ worker trong QR Scanner Panel và yêu cầu scan lại đúng QR.
+`Workspace` yêu cầu scan lại đúng QR.
 
 QR expired
 
-`Workspace` yêu cầu worker refresh QR trên DCAM device và scan lại.
+`Workspace` yêu cầu refresh QR trên DCAM device và scan lại.
 
 Unauthorized worker
 
@@ -781,7 +875,7 @@ App yêu cầu Factory Worker login lại.
 
 Camera permission denied
 
-`Workspace` hiển thị hướng dẫn cấp quyền camera hoặc dùng thiết bị/browser được factory approve.
+`Workspace` hiển thị hướng dẫn cấp quyền camera.
 
 QR unreadable
 
@@ -801,7 +895,7 @@ Missing `serial_number` in QR
 
 Invalid `serial_number` format from QR
 
-`Workspace` reject hoặc gửi backend validate theo API Contract; không cho edit serial.
+`Workspace` reject hoặc gửi backend validate; không cho edit serial.
 
 QR expired
 
@@ -813,7 +907,7 @@ Signature invalid
 
 Backend timeout
 
-`Workspace` hiển thị retry option nếu request idempotent/safe.
+`Workspace` hiển thị unknown outcome/retry option theo idempotency policy.
 
 Duplicate serial conflict
 
@@ -855,7 +949,7 @@ App không đọc/gửi/lưu `ANDROID_ID`, `android_id_hash` hoặc `device_look
 
 WEBAPP-SEC-006
 
-App không lưu credential, token, Maintenance Password Gate secret hoặc Google account secret trong local storage/logs.
+App không lưu credential, token, Maintenance Password Gate secret, Google account secret hoặc factory Wi-Fi password trong browser storage/logs.
 
 WEBAPP-SEC-007
 
@@ -877,9 +971,11 @@ WEBAPP-SEC-011
 
 Provisioning submit phải tạo backend audit event với worker identity/session.
 
-## 19. Audit Events
+WEBAPP-SEC-012
 
-Audit schema chi tiết thuộc **DCAM Web Portal & Device API Contract**. Web Portal App phải trigger hoặc truyền đủ context để backend ghi audit.
+Camera stream/image dùng để scan QR không được lưu hoặc upload.
+
+## 19. Audit Events
 
 Event
 
@@ -941,19 +1037,15 @@ Read-only từ QR; không editable; không manual input.
 
 `owner_name`
 
-Required/optional tùy factory policy; nếu required thì không được để trống.
+Required; không được để trống; phải pass approved validation.
 
 `manufacture_date`
 
-Nếu required thì phải là valid ISO date `YYYY-MM-DD`.
-
-Notes
-
-Optional nếu enabled; không được chứa secret hoặc credential.
+Required; valid ISO date `YYYY-MM-DD`; không lệch ngày do timezone conversion.
 
 Submit provisioning
 
-Chỉ enable trong `Workspace` khi QR valid và required fields hợp lệ.
+Chỉ enable trong `Workspace` khi QR valid, required fields hợp lệ và worker session active.
 
 ## 21. QA / Acceptance Checklist
 
@@ -993,21 +1085,21 @@ Worker tries to edit serial
 
 Không có UI hoặc action cho phép edit serial.
 
-Owner name missing when required
+Owner name missing
 
 `Workspace` block submit và hiển thị validation error.
 
+Manufacture date default
+
+Today được chọn mặc định và hiển thị current local date.
+
 Manufacture date invalid
 
-`Workspace` block submit và yêu cầu `YYYY-MM-DD`.
+`Workspace` block submit và yêu cầu valid `YYYY-MM-DD`.
 
 Submit provisioning success
 
-`Workspace` hiển thị `dcam_cloud_device_id` và success result.
-
-Existing serial restore
-
-`Workspace` hiển thị restored success theo backend response.
+`Workspace` hiển thị `dcam_cloud_device_id` và Created/Restored result.
 
 Duplicate serial conflict
 
@@ -1023,74 +1115,97 @@ Test fail nếu App đọc/gửi/log `ANDROID_ID` hoặc `android_id_hash`.
 
 Manual serial input search
 
-Test fail nếu UI có manual serial input trong provisioning flow.
+Test fail nếu UI có manual serial input.
 
 Barcode serial scan search
 
 Test fail nếu App có direct serial barcode scan flow.
 
-## 22. Open Questions / TBD
+## 22. Approved Implementation References and Remaining Inputs
 
 Item
 
 Status
 
-Exact Web technology stack
+Web technology stack
 
-TBD
+Approved in Implementation Design: Firebase Hosting + Web frontend.
 
-Supported browser/device for QR scan inside Workspace
+Authentication mechanism
 
-TBD
+Approved in Implementation Design: Firebase Authentication.
+
+Backend implementation
+
+Approved in Implementation Design: Firebase Cloud Functions.
+
+Backend storage
+
+Approved: Firebase Cloud Firestore.
+
+Supported browser/device for QR scan
+
+TBD / Factory + QA + Implementation validation.
 
 Camera permission fallback process
 
-TBD
+TBD / Factory + Implementation validation.
 
-Exact login mechanism for Factory Worker
+Worker account model: shared station or individual
 
-TBD / Backend + Security
-
-Whether Factory Worker account is shared station account or individual account
-
-TBD / Factory + Security
+TBD / Factory + Security.
 
 Exact QR payload schema
 
-TBD / API Contract
+TBD / API Contract.
 
-QR signature/nonce/expiration requirement
+QR signature/nonce/expiration/replay policy
 
-TBD / API Contract + Security
+TBD / API Contract + Security.
 
-Exact backend endpoint path
+Exact backend endpoint/function naming
 
-TBD / API Contract
+TBD / API Contract.
 
-Exact owner_name validation rule
+Exact owner source and validation
 
-TBD / Product + Factory
+TBD / Product + Factory + API Contract.
 
-Whether owner_name is manual input or dropdown
+Duplicate serial support process
 
-TBD / Product + Factory
+TBD / Product + Support.
 
-Whether manufacture_date is required
+Printable/downloadable receipt
 
-TBD / Factory SOP
+Not required unless Product/Factory approves later.
 
-Duplicate serial conflict message wording
+Offline provisioning queue
 
-TBD / Product + Support
-
-Whether Workspace needs printable/downloadable receipt after success
-
-TBD
-
-Whether App supports offline queue
-
-Not planned / TBD if factory network requires it
+Not planned; factory network fallback remains TBD if required.
 
 ## 23. Practical Conclusion
 
-text
+DCAM Device Provisioning Web Portal App là single-purpose factory web app.
+App chỉ có một user-facing account type: Factory Worker.
+App chỉ có hai screens: Login và Workspace.
+Factory Worker phải login trước khi vào Workspace.
+Sau login thành công, mọi thao tác provisioning đều thực hiện và hiển thị trong Workspace.
+Workspace scan QR hiển thị trên DCAM device.
+QR payload chứa serial_number và device context.
+Web Portal App không scan serial barcode trực tiếp.
+Web Portal App không cho nhập serial_number thủ công.
+serial_number là read-only sau QR scan.
+owner_name và manufacture_date là required fields trong approved implementation baseline.
+manufacture_date mặc định là ngày local hiện tại và có thể chọn ngày hợp lệ khác.
+Workspace hiển thị inline review summary và submit action.
+Backend dùng serial_number từ QR để create/restore devices/{dcam_cloud_device_id}.
+Workspace hiển thị provisioning result và dcam_cloud_device_id khi success.
+Web Portal App không set Device Owner.
+Web Portal App không inject serial_number vào Android.
+Web Portal App không verify Lock Task/kiosk baseline.
+Web Portal App không chạy recording/storage/BDMA tests.
+Web Portal App không mark PASS, FAIL, QUARANTINED hoặc READY_TO_SHIP.
+Các phần API/schema thuộc DCAM Web Portal & Device API Contract.
+Các phần implementation thuộc DCAM Device Provisioning Web Portal Implementation Design.
+Các phần DSetup/serial injection thuộc DCAM DSetup Factory Tool Design.
+Các phần factory acceptance thuộc Factory SOP / QA / Device POC.

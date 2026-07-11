@@ -3,7 +3,7 @@
 **Page ID**: 34471938  
 **Version**: 4  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/34471938
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/34471938
 
 ---
 
@@ -32,11 +32,11 @@ Major
 
 Prepared By
 
- 
+[Dinh Nhan](https://ducviet.atlassian.net/wiki/people/70121:52166504-9fa8-44ba-969f-16f03f3dc4d6?ref=confluence) 
 
 Approved By
 
- 
+[Hoàng Ngọc Quyền](https://ducviet.atlassian.net/wiki/people/712020:e466d315-3c2d-406d-b324-8f8eb35ccb48?ref=confluence) 
 
 # 🎯 Release Overview
 

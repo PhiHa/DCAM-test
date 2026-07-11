@@ -3,7 +3,7 @@
 **Page ID**: 48496699  
 **Version**: 6  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/48496699
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/48496699
 
 ---
 
@@ -110,7 +110,11 @@ Storage logs phải tuân theo logging policy.
 
 ## 3. Storage Ownership Rule
 
-textCore rules:
+Data Contract owns external file/folder/naming/checksum/import contract.
+Recording Design owns recording/capture session flow.
+SQLite Database Design owns persisted DB schema/state.
+Storage Design owns physical path resolution, temp/final mechanics, fallback, free-space checks, BDMA readiness marking and recovery scanning.
+Core rules:
 
 Rule
 
@@ -156,7 +160,7 @@ Build temp/staging/final path dựa trên Data Contract naming và session metad
 
 `TempFileManager`
 
-Create và track in-progress files d��ới Temp/staging.
+Create và track in-progress files dưới Temp/staging.
 
 `FinalizationManager`
 
@@ -214,7 +218,18 @@ Nếu unavailable, giữ original path và mark recovery reason.
 
 Validation sequence:
 
-text## 6. Storage Mode and Fallback
+Resolve logical storage mode
+    ↓
+Validate root availability
+    ↓
+Validate Temp/staging availability
+    ↓
+Validate final media folder availability
+    ↓
+Check free-space thresholds
+    ↓
+Create session temp/staging target
+## 6. Storage Mode and Fallback
 
 Mode
 
@@ -356,7 +371,20 @@ Tech Lead + QA
 
 ## 9. Finalization and Move/Rename Direction
 
-text
+Close temp/staging file
+    ↓
+Validate file exists and file size is stable
+    ↓
+Apply metadata/encryption/checksum steps if required by policy
+    ↓
+Resolve final Data Contract path
+    ↓
+Move/rename from Temp/staging to final Media folder
+    ↓
+Update media_session / finalization state in dcam.db
+    ↓
+Mark BDMA_READY only if readiness conditions pass
+
 Step
 
 Storage Responsibility
@@ -499,13 +527,28 @@ Mark recovery failed; preserve artifact cho support nếu safe.
 
 Detailed schema thuộc **DCAM SQLite Database Design**. Storage Design yêu cầu các information sau persistable khi cần:
 
-text## 13. Logging and Diagnostics
+storage_mode
+resolved_storage_root_type
+resolved_storage_root_path
+session_temp_path
+session_staging_path
+session_final_path
+file_state
+finalization_state
+bdma_readiness_state
+storage_failure_reason
+free_space_snapshot
+recovery_required
+recovery_result
+## 13. Logging and Diagnostics
 
 Storage logs phải tuân theo **07 - Logging & Diagnostics Requirements**.
 
 Required examples:
 
-text
+[STORAGE] Root resolution started
+[STORAGE] Internal root validated
+[STORAGE] External root unavailable: <reason_code>
 [STORAGE] Auto fallback selected: EXTERNAL -> INTERNAL
 [STORAGE] Temp file created
 [STORAGE] Free space warning
@@ -517,7 +560,8 @@ text
 [STORAGE] Recovery scan started
 [STORAGE] Recovery candidate found
 [STORAGE] Recovery completed
-[STORAGE] Recovery failed: ]]>Không log sensitive data hoặc raw media content.
+[STORAGE] Recovery failed: <reason_code>
+Không log sensitive data hoặc raw media content.
 
 ## 14. Open Questions / TBD
 
@@ -587,6 +631,25 @@ TBD
 
 ## 15. Practical Conclusion
 
-textKey implementation rules:
+Resolve storage root
+    ↓
+Validate physical path and free space
+    ↓
+Create Temp/staging target
+    ↓
+Keep in-progress file away from BDMA
+    ↓
+Finalize and move to Data Contract media folder
+    ↓
+Update DB state
+    ↓
+Mark BDMA_READY only when readiness conditions pass
+    ↓
+Recover safely if DB/file state is uncertain
+Key implementation rules:
 
-text
+Data Contract owns external media/file contract.
+Storage Design owns Android-side path/temp/final/fallback/recovery mechanics.
+BDMA chỉ được thấy final media.
+Không switch storage mid-file trừ khi explicitly supported và tested.
+Khi không chắc chắn, preserve file artifacts và mark recovery state.

@@ -3,7 +3,7 @@
 **Page ID**: 46170139  
 **Version**: 8  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/46170139
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/46170139
 
 ---
 
@@ -226,7 +226,17 @@ Không publish success event và UI không hiển thị trạng thái chưa đư
 
 ## Luồng chính
 
-wide760
+FileListController / MediaViewerController
+        │ gọi
+        ▼
+  FileBookmarkService  ── publishes ──► FileBookmarkToggledEvent
+        │                                   │
+        ▼                                   ▼
+  FileBookmarkRepository          @EventListener trong controllers
+        │
+        ▼
+  SQLite (file_bookmark table)
+
 UI gọi `FileBookmarkService.setBookmarked(fileId, bookmarked)`
 
 Service resolve `userId` từ `Session.getUser()`, gọi `insertIfAbsent()` hoặc `unbookmark()`.
@@ -315,7 +325,21 @@ Bookmark icon + timestamp trong detail view, DataExportService export button, Se
 
 **Migration:** `V6__add_file_bookmark_table.sql`
 
-sqlwide760### Truy vấn chính:
+CREATE TABLE file_bookmark (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id     INTEGER NOT NULL,
+    file_id     INTEGER NOT NULL,
+    created_at  TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+    updated_at  TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+    is_bookmark INTEGER NOT NULL DEFAULT 1,
+    FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
+    FOREIGN KEY (file_id) REFERENCES files(file_id) ON DELETE NO ACTION,
+    UNIQUE(user_id, file_id)
+);
+CREATE INDEX idx_file_bookmark_user_id ON file_bookmark(user_id);
+CREATE INDEX idx_file_bookmark_file_id ON file_bookmark(file_id);
+CREATE INDEX idx_file_bookmark_is_bookmark ON file_bookmark(is_bookmark);
+### Truy vấn chính:
 
 Set bookmarked (insertIfAbsent)**:** `ON CONFLICT (user_id, file_id) DO UPDATE SET is_bookmark=1, updated_at=excluded.updated_at` RETURNING *
 
@@ -323,7 +347,11 @@ Toggle (unbookmark): UPDATE `is_bookmark=0, updated_at=now` WHERE `is_bookmark=1
 
 Bookmark state trong file list: LEFT JOIN trong `FileRepository.findByFilter()`:
 
-wide760trueFilter "Bookmarked only": thêm `AND b.id IS NOT NULL`
+```
+LEFT JOIN file_bookmark b ON f.file_id = b.file_id AND b.user_id = ? AND b.is_bookmark = 1
+```
+
+Filter "Bookmarked only": thêm `AND b.id IS NOT NULL`
 
 ---
 
@@ -415,7 +443,7 @@ Không thay đổi database, không phát event gây refresh UI không cần thi
 
 Cần xác nhận bằng test
 
-Batch chứa file đã ở trạng thái đích
+Batch chứa file đã ở trạng th��i đích
 
 Không đảo trạng thái; kết quả cuối cùng đồng nhất với trạng thái được yêu cầu.
 

@@ -3,7 +3,7 @@
 **Page ID**: 47153235  
 **Version**: 9  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/47153235
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47153235
 
 ---
 
@@ -76,7 +76,9 @@ Tài liệu này không thay thế **DCAM-BDMA Data Contract**. Tài liệu này
 
 DCAM được thiết kế theo mô hình:
 
-textĐiều này có nghĩa:
+DCAM Android = Offline Data Producer + Runtime Owner
+BDMA Desktop = Active Data Consumer / Importer / Administrative Sync Manager
+Điều này có nghĩa:
 
 DCAM tạo dữ liệu trên BodyCamera.
 
@@ -100,7 +102,24 @@ DCAM **không chủ động push/upload/sync media** sang BDMA trong scope hiệ
 
 ## 3. High-Level Boundary
 
-text## 4. Integration Principle Summary
+BodyCamera Android Device
+    ↓
+DCAM Android Application
+    ├── Record / Capture / Finalize Media
+    ├── Maintain local user/operator/auth/session data in dcam.db
+    ├── Maintain dcam_config.cson
+    ├── Maintain dcam.db
+    ├── Write logs.txt
+    └── Expose BDMA-ready source data
+            ↓ ADB Boundary, BDMA initiates access
+BDMA Desktop
+    ├── Scan Internal / External Media Roots
+    ├── Read Media / MP4 MD5 / CSON / DB / Logs
+    ├── Sync user/operator data with DCAM
+    ├── Verify / Import / Store / Index
+    ├── Write-back only allowed data
+    └── Cleanup source media according to Data Contract
+## 4. Integration Principle Summary
 
 Principle
 
@@ -270,9 +289,23 @@ Detailed DB ownership và write-back rules được định nghĩa bởi **DCAM 
 
 Architecture boundary summary:
 
-textUser/operator sync boundary:
+Android owns schema and runtime invariants.
+BDMA may write only approved fields/tables.
+BDMA must check schema_version and supported versions.
+BDMA write-back must be revisioned/auditable.
+Android must detect external writes and apply/defer/reject safely.
+User/operator sync boundary:
 
-textBDMA không được write active Android runtime lifecycle fields trừ khi được Data Contract và SQLite ownership rules phê duyệt rõ ràng.
+BDMA connects through ADB
+    ↓
+BDMA reads DCAM user sync state/revision
+    ↓
+BDMA pushes approved BDMA-side user changes
+    ↓
+BDMA pulls DCAM local user changes
+    ↓
+Both sides update sync checkpoint/history
+BDMA không được write active Android runtime lifecycle fields trừ khi được Data Contract và SQLite ownership rules phê duyệt rõ ràng.
 
 ## 7. Recording and Operator Attribution Boundary
 
@@ -280,7 +313,11 @@ Normal recording/capture evidence yêu cầu active operator session trên DCAM.
 
 Emergency recording có thể dùng system operator khi chưa có operator logged in:
 
-textBoundary summary:
+```
+EMERGENCY_OVERRIDE_ADMIN
+```
+
+Boundary summary:
 
 Area
 
@@ -554,4 +591,11 @@ BDMA
 
 ## 12. Practical Conclusion
 
-textRemaining TBD items trên boundary page này là các implementation/BDMA-side open decisions thật sự, không phải các source-of-truth issues đã được resolve.
+DCAM tạo và expose local source data.
+DCAM owns active runtime/session/media state.
+BDMA reads/imports/verifies/manages data through ADB.
+BDMA syncs user/operator data with DCAM through ADB.
+Data Contract định nghĩa file/import/user-sync rules.
+SQLite Design định nghĩa DB write-back rules.
+Storage/Recording designs định nghĩa BDMA readiness và operator attribution.
+Remaining TBD items trên boundary page này là các implementation/BDMA-side open decisions thật sự, không phải các source-of-truth issues đã được resolve.

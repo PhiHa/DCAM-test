@@ -3,7 +3,7 @@
 **Page ID**: 25133058  
 **Version**: 3  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/25133058
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/25133058
 
 ---
 

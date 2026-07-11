@@ -3,7 +3,7 @@
 **Page ID**: 49840280  
 **Version**: 6  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/49840280
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/49840280
 
 ---
 
@@ -68,9 +68,21 @@ Tài liệu này là **source of truth** cho dedicated-device / kiosk policy c�
 
 Tài liệu này định nghĩa cách DCAM production deployment sử dụng hoặc tích hợp với:
 
-textCurrent baseline clarification:
+DCAM-as-DPC / local Device Owner capability if feasible
+Lock Task Mode
+User Restrictions
+Home / Launcher policy
+Admin / Maintenance Mode
+Maintenance Password Gate
+Controlled temporary kiosk exit
+Device policy recovery and validation
+Current baseline clarification:
 
-textTài liệu này không định nghĩa lại DCAM business identity provisioning. Business provisioning cho `dcam_cloud_device_id`, `serial_number`, `owner_name`, `manufacture_date` và SD Identity File recovery-cache boundary thuộc **DCAM Factory Provisioning & Device Production SOP**, **DCAM Device Provisioning Web Portal Design** và **DCAM Web Portal & Device API Contract**.
+Current device baseline: No external EMM / No Android Management API / No Managed Google Play. (per ADR - Dedicated Device / Device Owner / Lock Task Decision)
+DSetup owns factory Device Owner setup, serial recovery/scan and serial injection.
+DCAM business identity uses serial_number and dcam_cloud_device_id.
+Không dùng ANDROID_ID, android_id_hash hoặc device_lookup/{android_id_hash} trong current production baseline.
+Tài liệu này không định nghĩa lại DCAM business identity provisioning. Business provisioning cho `dcam_cloud_device_id`, `serial_number`, `owner_name`, `manufacture_date` và SD Identity File recovery-cache boundary thuộc **DCAM Factory Provisioning & Device Production SOP**, **DCAM Device Provisioning Web Portal Design** và **DCAM Web Portal & Device API Contract**.
 
 ## 2. Scope
 
@@ -180,7 +192,17 @@ DCAM QA Test Strategy & Test Matrix
 
 ## 3. Core Decision
 
-textDCAM không được chỉ dựa vào fullscreen Activity flags, immersive mode hoặc Home/Launcher behavior để kiểm soát production kiosk.
+DCAM production kiosk baseline = DCAM-controlled dedicated-device behavior.
+
+Required runtime controls:
+1. DCAM-as-DPC / local Device Owner capability if feasible on selected BodyCamera firmware.
+2. Lock Task Mode for normal field operation.
+3. Approved User Restrictions for kiosk hardening.
+4. Home/Launcher behavior if supported and required.
+5. Controlled Admin / Maintenance Mode for support.
+6. Maintenance Password Gate for Enter Maintenance Mode / Exit Kiosk temporarily.
+7. DCAM Self Update / APK update as primary update path for no-EMM baseline.
+DCAM không được chỉ dựa vào fullscreen Activity flags, immersive mode hoặc Home/Launcher behavior để kiểm soát production kiosk.
 
 ## 4. Provisioning Boundary
 
@@ -212,7 +234,12 @@ DCAM Device Provisioning Web Portal Design + DCAM Web Portal & Device API Contra
 
 Important rule:
 
-textAccepted setup directions for current baseline:
+Web Portal QR Flow không tự động làm DCAM trở thành Device Owner.
+Device Owner/DPC state phải được tạo bởi Android device policy setup/provisioning path được target BodyCamera firmware hỗ trợ.
+DSetup/ADB dpm set-device-owner là current factory baseline trong Factory SOP.
+serial_number is Hardware Identity / recovery key.
+SD Identity File is recovery cache only.
+Accepted setup directions for current baseline:
 
 Method
 
@@ -254,7 +281,9 @@ Not Allowed as Production Assumption
 
 Current production direction:
 
-text
+Baseline model = DCAM-as-DPC / local Device Owner if feasible.
+External DPC/EMM và hybrid EMM model không thuộc current device baseline.
+
 Model
 
 Current Direction
@@ -323,11 +352,36 @@ Emit safe policy events, reason codes và failure diagnostics.
 
 Boundary rule:
 
-text## 7. Startup and Policy Verification Flow
+UI không được gọi DevicePolicyManager trực tiếp.
+Tất cả device policy operations phải đi qua approved policy manager/use-case layer.
+## 7. Startup and Policy Verification Flow
 
 Android Operation owns full startup orchestration. Tài liệu này owns policy segment.
 
-textRules:
+App process starts / device boots
+    ↓
+Initialize logging
+    ↓
+DevicePolicyStateManager checks policy authority
+    ↓
+If Device Owner / DCAM DPC state is required but missing:
+        enter DEVICE_POLICY_REQUIRED or POLICY_DEGRADED
+        block normal field operation according to deployment policy
+    ↓
+KioskPolicyManager verifies approved policy profile
+    ↓
+Apply or verify User Restrictions
+    ↓
+Apply or verify Home/Launcher policy if required
+    ↓
+Set or verify Lock Task package allowlist
+    ↓
+Enter Lock Task Mode when Activity/UI lifecycle is ready and safe
+    ↓
+Continue DCAM serial_number / dcam_cloud_device_id identity flow
+    ↓
+Continue login/runtime flow
+Rules:
 
 Rule
 
@@ -605,9 +659,31 @@ Maintenance Mode là controlled mode; không phải full Android unrestricted mo
 
 Allowed purposes:
 
-textMaintenance entry is protected:
+Network setup
+Device diagnostics
+Log export
+Approved Self Update / APK update
+Optional manual Play Store update fallback if approved and GMS/Play Store exists
+Camera/storage/sensor validation
+Factory support actions
+Maintenance entry is protected:
 
-textEntry methods direction:
+Admin / Maintenance
+    ↓
+Select Enter Maintenance Mode / Exit Kiosk temporarily
+    ↓
+Validate Admin or approved Maintenance role
+    ↓
+Maintenance Password Gate
+    ↓
+Validate runtime safe state
+    ↓
+Temporarily stop Lock Task / relax only approved restrictions
+    ↓
+Open only approved Android Settings/system surface or approved maintenance app
+    ↓
+Restore kiosk policy after exit/timeout/recovery
+Entry methods direction:
 
 Method
 
@@ -689,15 +765,41 @@ System Settings owns setting requirements. Tài liệu này owns kiosk policy ap
 
 Remote/admin config có thể request:
 
-textApply rule:
+kiosk.enabled
+kiosk.lock_task_enabled
+kiosk.allowed_packages
+kiosk.lock_task_features
+kiosk.home_app_enabled
+kiosk.user_restriction_profile
+maintenance.enabled
+maintenance.exit_method
+maintenance.password_policy
+maintenance.session_timeout
+maintenance.failed_attempt_policy
+maintenance.approved_target_packages
+maintenance.approved_settings_targets
+Apply rule:
 
-textPolicy changes phải defer khi unsafe:
+Remote/admin config là requested policy.
+Android policy managers validate capability, authority và runtime guard trước khi apply.
+Maintenance credential material không được deliver dưới dạng plaintext config.
+External EMM/Android Management API policy không được assume cho current baseline.
+Policy changes phải defer khi unsafe:
 
-text## 13. Update Boundary
+recording active
+emergency active
+post-record/finalizing active
+DB/storage recovery active
+unsafe update/install state active
+policy recovery active
+## 13. Update Boundary
 
 Current update baseline (per ADR):
 
-textRules:
+Primary update path = DCAM Self Update / APK update.
+External EMM / Managed Google Play policy-driven update = not applicable (per ADR).
+Manual Google Play Store update = optional controlled maintenance fallback only if GMS/Play Store exists and approved account/process exists.
+Rules:
 
 Rule
 
@@ -739,20 +841,34 @@ Play Store fallback không được dùng để unapproved app browsing/installi
 
 Required policy events:
 
-text
-[POLICY] User restriction applied: 
-[POLICY] User restriction unsupported: 
+[POLICY] Device owner state verified
+[POLICY] Device owner state missing
+[POLICY] Lock task allowlist applied
+[POLICY] Lock task started
+[POLICY] Lock task start failed: <reason_code>
+[POLICY] User restriction applied: <restriction_code>
+[POLICY] User restriction unsupported: <restriction_code>
 [POLICY] Maintenance mode requested
 [POLICY] Maintenance gate success
-[POLICY] Maintenance gate failed: 
-[POLICY] Maintenance gate locked/cooldown: 
+[POLICY] Maintenance gate failed: <reason_code>
+[POLICY] Maintenance gate locked/cooldown: <reason_code>
 [POLICY] Maintenance mode entered
 [POLICY] Maintenance mode exited
-[POLICY] Maintenance target blocked: 
-[POLICY] Maintenance policy restore failed: 
-[POLICY] Policy restored after reboot/update]]>Forbidden log content:
+[POLICY] Maintenance target blocked: <reason_code>
+[POLICY] Maintenance policy restore failed: <reason_code>
+[POLICY] Policy restored after reboot/update
+Forbidden log content:
 
-textSecurity constraints cho credentials, identifiers và sensitive logging vẫn thuộc **DCAM Security & Encryption Design**.
+maintenance credential secret values
+credential verification inputs
+recovery secret values
+raw Android system identifier
+android_id_hash as production identity
+cloud/provisioning secret values
+private admin token values
+full sensitive config payload
+Google account credential values
+Security constraints cho credentials, identifiers và sensitive logging vẫn thuộc **DCAM Security & Encryption Design**.
 
 ## 15. Policy Runtime States
 
@@ -1004,4 +1120,20 @@ TBD
 
 ## 19. Practical Conclusion
 
-text
+DCAM production deployment là dedicated-device/kiosk deployment.
+Current device baseline per ADR: No external EMM / No Android Management API / No Managed Google Play.
+DCAM-as-DPC / local Device Owner là preferred direction nếu target firmware hỗ trợ.
+DSetup + ADB dpm set-device-owner is the current factory Device Owner setup baseline in the Factory SOP.
+Lock Task Mode là required cho normal field operation.
+User Restrictions harden device khỏi user/system escape paths.
+Home/Launcher behavior hỗ trợ kiosk UX nhưng không thay thế Lock Task Mode.
+Maintenance Mode bắt buộc cho safe support và factory operations.
+Enter Maintenance Mode / Exit Kiosk temporarily yêu cầu Maintenance Password Gate.
+Exit Kiosk temporarily chỉ là Controlled Mode.
+Full Android unrestricted mode is not supported.
+Primary update path là DCAM Self Update / APK update.
+Manual Google Play Store update chỉ là optional controlled fallback nếu GMS/Play Store tồn tại và approved process tồn tại.
+Maintenance Mode phải restore production restrictions và Lock Task sau exit/timeout/recovery.
+DCAM business identity uses serial_number and dcam_cloud_device_id.
+Do not use ANDROID_ID, android_id_hash or device_lookup/{android_id_hash} in the current production baseline.
+Device POC và QA phải validate real BodyCamera/OEM behavior trước release.

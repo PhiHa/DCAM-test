@@ -3,7 +3,7 @@
 **Page ID**: 48529463  
 **Version**: 14  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/48529463
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/48529463
 
 ---
 
@@ -66,17 +66,46 @@ DCAM Factory Provisioning & Device Production SOP, DCAM Web Portal & Device API 
 
 **DCAM SQLite Database Design** định nghĩa `dcam.db` schema direction và runtime database behavior cho settings, runtime state, media/session state, update state, capability/eligibility state, optional kiosk policy state snapshot, in-app console state, maintenance audit/session state, monitoring/tracking state, **offline user/operator management**, authentication/session state, **device identity/provisioning state**, device information mirror, app/contract metadata, remote config cache và BDMA write-back compatibility.
 
-Current baseline follows **DCAM Factory Provisioning & Device Production SOP**:
+Current baseline follows [**DCAM Factory Provisioning & Device Production SOP**](/wiki/spaces/DVID/pages/49545629/DCAM+Factory+Provisioning+Device+Production+SOP):
 
-textwide760Tài liệu này cũng định nghĩa table ownership, schema versioning, migration policy, transaction boundaries, database locking expectations, external write detection, user sync/write-back validation, provisioning recovery và database recovery behavior.
+No external EMM.
+No Android Management API.
+No Managed Google Play policy-driven update.
+Primary update path = DCAM Self Update / APK update.
+Manual Play Store update = optional controlled maintenance fallback only if approved and available.
+Maintenance Password Gate is required for controlled kiosk exit.
+File Manager and Media Viewer are read-only/view-only.
+serial_number = Hardware Identity / primary recovery key.
+dcam_cloud_device_id = Cloud Identity / primary cloud device id.
+SD Identity File = recovery cache on external SD card, not Hardware Identity.
+Do not use ANDROID_ID, android_id_hash or device_lookup/{android_id_hash} in the current production baseline.
+Tài liệu này cũng định nghĩa table ownership, schema versioning, migration policy, transaction boundaries, database locking expectations, external write detection, user sync/write-back validation, provisioning recovery và database recovery behavior.
 
 ## 2. Database Boundary
 
 `dcam.db` là runtime state boundary giữa:
 
-textwide760Important rule:
+Android runtime
+Android Device Owner / Kiosk Policy runtime snapshot when needed
+In-app console settings and visibility state
+Maintenance session/audit state
+Self Update / APK update state
+Optional manual Play Store fallback audit state
+Firebase/WebServer identity and remote config
+BDMA Desktop write-back / user sync
+Recording / Storage / Recovery
+User / Operator Authentication
+Settings / Remote Config
+Capability / Feature Eligibility
+Diagnostics / Support
+Important rule:
 
-textwide760## 3. Authoritative References
+Do not store plaintext maintenance password.
+Do not store Google account password/token.
+Do not store raw Android system identifier.
+Do not store android_id_hash as production identity/recovery lookup.
+Do not store unsupported Managed Google Play policy state as current baseline runtime state.
+## 3. Authoritative References
 
 Topic
 
@@ -170,7 +199,22 @@ BDMA và Firebase/WebServer chỉ có thể ảnh hưởng tới approved data t
 
 Core rules:
 
-textwide760## 5. Table Ownership Matrix
+Android owns schema migration.
+Android owns applied runtime state.
+Android owns active operator_session runtime state.
+Android owns active recording/media session lifecycle.
+Android owns local provisioning/apply state.
+Android owns optional local policy state snapshot if persisted.
+Android owns in-app console setting/apply state.
+Android owns maintenance session/audit state.
+Android owns Self Update state/history.
+KioskPolicyManager owns actual Android Device Owner / Lock Task / User Restrictions behavior.
+Firebase/WebServer owns cloud device record and target config revision.
+Firebase/WebServer may provide requested kiosk/update settings through remote config.
+BDMA may write approved user/operator/auth/setting/import fields only.
+BDMA must not write bdma_decoder_profile_id because DCAM does not use dynamic decoder profile.
+External writes must be detectable by Android.
+## 5. Table Ownership Matrix
 
 Table / Area
 
@@ -584,7 +628,17 @@ Android write, external read-only.
 
 Approved identity rules:
 
-textwide760### 7.1 `device_identity`
+dcam_cloud_device_id is the server/cloud primary key.
+serial_number is Hardware Identity / primary recovery key.
+serial_lookup/{serial_number} is the cloud create/restore lookup.
+SD Identity File is recovery cache on external SD card, not Hardware Identity.
+owner_name is mutable/semi-static device information.
+manufacture_date is semi-static device information using YYYY-MM-DD.
+Advertising ID must not be stored as identity key.
+Raw ANDROID_ID must not be stored or logged.
+android_id_hash must not be stored/used as production recovery lookup in the current baseline.
+bdma_decoder_profile_id must not be stored because BDMA uses built-in compatibility logic based on app/data/media/encoder contract versions.
+### 7.1 `device_identity`
 
 Field
 
@@ -694,7 +748,11 @@ Safe reason code if sync failed.
 
 Rules:
 
-textwide760### 7.3 `device_information` Optional Split
+App-private serial_number is source of truth while DCAM is running.
+SD Identity File must not override app-private serial_number in normal operation.
+If SD Identity File is missing and app-private serial exists, DCAM recreates it.
+If SD card is replaced and app-private serial exists, DCAM creates SD Identity File on the new card.
+### 7.3 `device_information` Optional Split
 
 For MVP, `owner_name` and `manufacture_date` may be stored directly in `device_identity` to keep schema simple.
 
@@ -748,7 +806,10 @@ Last restore attempt timestamp after reboot/update/maintenance.
 
 Rules:
 
-textwide760## 9. In-app Console and Maintenance State
+kiosk_policy_state is a snapshot, not the source of Android system policy truth.
+Actual Device Owner / Lock Task / User Restrictions behavior belongs to KioskPolicyManager and Kiosk Policy Design.
+Do not store maintenance credential value, enrollment secret or kiosk exit secret in this table.
+## 9. In-app Console and Maintenance State
 
 ### 9.1 `console_setting_state`
 
@@ -842,7 +903,11 @@ Last failed attempt timestamp.
 
 Rules:
 
-textwide760## 10. Self Update and Optional Play Store Fallback State
+Maintenance password value must never be stored in dcam.db.
+Maintenance password hash input must never be stored in logs/history.
+Only non-sensitive lockout/cooldown/session/audit metadata may be stored.
+Emergency override cannot satisfy Maintenance Password Gate.
+## 10. Self Update and Optional Play Store Fallback State
 
 ### 10.1 `update_state`
 
@@ -936,11 +1001,19 @@ Timestamp.
 
 Rules:
 
-textwide760## 11. Remote Config Tables
+Current baseline uses Self Update / APK update as primary update path.
+Managed Google Play / Android Management API policy-driven update is not represented as an active runtime update state for current baseline.
+Manual Play Store fallback state is stored only if fallback is enabled and used.
+Do not store Google account password/token in dcam.db.
+## 11. Remote Config Tables
 
 Remote config rule:
 
-textwide760Candidate tables:
+Publishing a server revision does not directly modify local DB/CSON.
+Android fetches, validates, caches and applies when runtime guard allows.
+Operational settings, console settings, kiosk requested-policy settings and update settings are stored in dcam.db.
+dcam_config.cson is updated only for device information fields such as serial_number, owner_name, manufacture_date, device model or firmware information.
+Candidate tables:
 
 Table
 
@@ -988,15 +1061,34 @@ User/auth change audit history.
 
 Required system operator:
 
-textwide760Session rule:
+user_id = SYSTEM_EMERGENCY_OVERRIDE
+operator_code = EMERGENCY_OVERRIDE_ADMIN
+display_name = Emergency Override Admin
+user_type = SYSTEM
+role = SYSTEM_ADMIN
+status = ACTIVE
+Session rule:
 
-textwide760## 13. Runtime State, Settings and Feature Eligibility
+Session timeout is disabled.
+Background/foreground does not end session.
+Device reboot invalidates previous active session and requires login again.
+Operator login does not override missing required production kiosk policy.
+## 13. Runtime State, Settings and Feature Eligibility
 
 `feature_eligibility_state.eligibility_state` phải dùng official state set từ **DCAM Device Capability & Feature Eligibility Design**.
 
 Allowed values:
 
-textwide760`SUPPORTED` không được dùng làm persisted `feature_eligibility_state` value.
+ENABLED
+DEGRADED
+DISABLED_BY_POLICY
+DISABLED_BY_PERMISSION
+UNSUPPORTED_HARDWARE
+UNSUPPORTED_PERFORMANCE
+TEMPORARILY_UNAVAILABLE
+PRUNED
+ERROR
+`SUPPORTED` không được dùng làm persisted `feature_eligibility_state` value.
 
 ## 14. Media Session Schema Direction
 
@@ -1004,15 +1096,52 @@ textwide760`SUPPORTED` không được dùng làm persisted `feature_eligibility
 
 Required operator attribution fields include:
 
-textwide760Important distinction:
+operator_user_id
+operator_code_snapshot
+operator_name_snapshot
+operator_badge_snapshot
+operator_session_id
+operator_auth_method
+operator_resolution_state
+Important distinction:
 
-textwide760## 15. External Write Detection and Apply Policy
+media_session.state describes Android recording/capture lifecycle.
+media_import_state describes BDMA import lifecycle.
+BDMA_READY means final media is safe for BDMA scan/import; it does not mean BDMA has imported the file.
+## 15. External Write Detection and Apply Policy
 
 BDMA write-back, remote config changes, requested kiosk policy changes, console settings and update settings phải detectable và được apply an toàn.
 
 Change types include:
 
-textwide760Apply examples:
+DEVICE_IDENTITY_RESTORED
+SERIAL_NUMBER_UPDATE
+OWNER_NAME_UPDATE
+MANUFACTURE_DATE_UPDATE
+CONTRACT_METADATA_UPDATE
+SD_IDENTITY_FILE_SYNCED
+SD_IDENTITY_FILE_SYNC_FAILED
+REMOTE_CONFIG_FETCHED
+REMOTE_CONFIG_APPLY_REQUESTED
+REMOTE_CONFIG_APPLIED
+KIOSK_POLICY_REQUESTED
+KIOSK_POLICY_APPLIED
+KIOSK_POLICY_DEFERRED
+CONSOLE_SETTING_REQUESTED
+CONSOLE_SETTING_APPLIED
+MAINTENANCE_SESSION_STARTED
+MAINTENANCE_POLICY_RESTORED
+SELF_UPDATE_REQUESTED
+SELF_UPDATE_DEFERRED
+SELF_UPDATE_VERIFIED
+PLAY_STORE_FALLBACK_USED
+USER_PROFILE_UPDATE
+USER_AUTH_METHOD_UPDATE
+USER_SYNC_CHECKPOINT
+SETTING_UPDATE
+IMPORT_STATE_UPDATE
+DEVICE_TRACKING_UPDATE
+Apply examples:
 
 Change
 
@@ -1140,7 +1269,13 @@ Reject và giữ last valid applied config.
 
 Recovery rule:
 
-textwide760## 17. Security / Backup / Logging
+When database state and file state disagree, preserve source evidence first.
+When cloud identity is missing, use serial_number and serial_lookup/{serial_number}.
+When app-private serial is missing after factory reset, DSetup must recover serial from SD Identity File or barcode scan.
+When policy snapshot is missing or stale, verify actual Android policy state before normal operation.
+When maintenance/update state is uncertain, restore kiosk policy before field operation.
+When auth/user state is uncertain, block normal recording but allow system modules and emergency override policy if configured.
+## 17. Security / Backup / Logging
 
 Area
 
@@ -1196,16 +1331,18 @@ DB recovery không được delete source media/evidence khi chưa có approved 
 
 Required example logs use safe identifiers/reason codes only:
 
-textwide760
-[CONFIG] Remote config deferred: 
+[IDENTITY] Device identity restored by serial_number
+[IDENTITY] SD Identity File sync result: <reason_code>
+[CONFIG] Remote config deferred: <reason_code>
 [POLICY] Policy snapshot updated
 [MAINTENANCE] Maintenance session started
-[MAINTENANCE] Policy restore result: 
-[UPDATE] Self update deferred: 
+[MAINTENANCE] Policy restore result: <reason_code>
+[UPDATE] Self update deferred: <reason_code>
 [UPDATE] Self update verified
 [UPDATE] Play Store fallback used
-[DB] External write detected: 
-[AUTH] Session expired by reboot]]>## 18. Open Questions / TBD
+[DB] External write detected: <change_type>
+[AUTH] Session expired by reboot
+## 18. Open Questions / TBD
 
 Item
 
@@ -1307,4 +1444,24 @@ TBD
 
 `dcam.db` là runtime database boundary, không chỉ là schema file.
 
-textwide760
+Android runtime owns schema and invariants.
+dcam_cloud_device_id được lưu locally sau identity resolution/provisioning.
+serial_number is Hardware Identity / primary recovery key.
+SD Identity File is recovery cache on external SD card, not Hardware Identity.
+App-private serial_number is source of truth while DCAM is running.
+DCAM may persist SD identity sync state, but SD file must not override app-private serial.
+owner_name / manufacture_date được mirror locally và có thể restore vào dcam_config.cson.
+app/data/media/encoder contract metadata có thể mirror locally cho BDMA/support compatibility.
+bdma_decoder_profile_id không được dùng trong DCAM DB contract.
+Do not use ANDROID_ID, android_id_hash or device_lookup/{android_id_hash} in current production baseline.
+Remote config được cached/applied through dcam.db.
+Kiosk requested-policy settings may be cached in dcam.db.
+Console settings, maintenance state and update state belong in dcam.db as non-sensitive runtime/audit state.
+Actual Device Owner / Lock Task / User Restrictions behavior is not owned by DB; it belongs to Kiosk Policy Design.
+Maintenance password, Google account password/token and raw Android ID must not be stored.
+Self Update is the primary update path for current baseline; Managed Google Play is not represented as active runtime state.
+BDMA chỉ được write approved fields/tables.
+User/operator data được sync two-way through ADB.
+Operator sessions là Android runtime-owned.
+Mọi external change phải được version-checked và detectable.
+Nếu DB/auth/identity/policy/maintenance/update state không chắc chắn, fail safe, preserve evidence và yêu cầu recovery/provisioning/login/policy verification tùy trường hợp.

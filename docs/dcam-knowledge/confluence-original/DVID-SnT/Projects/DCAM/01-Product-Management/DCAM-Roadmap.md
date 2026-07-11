@@ -1,9 +1,9 @@
 # DCAM Roadmap
 
 **Page ID**: 41615474  
-**Version**: 12  
+**Version**: 13  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/41615474
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/41615474
 
 ---
 
@@ -24,7 +24,7 @@ Product Roadmap
 
 Version
 
-Approved 1.4
+Approved 1.5
 
 Status
 
@@ -52,7 +52,7 @@ PM/BA, Product Owner, Tech Lead, Developers, QA, Stakeholders
 
 Last Updated
 
-2026-07-04
+2026-07-10
 
 Related Jira
 
@@ -60,21 +60,16 @@ None
 
 Related Documents
 
-DCAM Project Charter, DCAM Product Vision, DCAM MVP Scope, DCAM-BDMA Data Contract, DCAM 9-Month Development Plan, DCAM Documentation Governance
-
-Source Reference
-
-DCAM 9-Month Plan with Android Training, Buffer and PTT
+DCAM Project Charter, DCAM Product Vision, DCAM MVP Scope, DCAM 9-Month Development Plan, DCAM Release & Build Applicability Matrix, DCAM Requirements Home, DCAM Architecture Home, DCAM-BDMA Data Contract, DCAM Documentation Governance
 
 ## 1. Purpose
 
-Tài liệu này mô tả lộ trình phát triển của dự án DCAM.
+Tài liệu này mô tả lộ trình phát triển, milestone và deliverable của DCAM.
 
-Roadmap tập trung vào các mục tiêu chính, milestone và deliverables của từng giai đoạn, không mô tả chi tiết toàn bộ công việc theo tuần.
-
-Các kế hoạch triển khai chi tiết được quản lý trong tài liệu **DCAM 9-Month Development Plan**.
-
-**DCAM-BDMA Data Contract** hiện đã được tạo và approved, vì vậy các phase liên quan đến BDMA integration, storage, media naming, MD5, AES-256 suffix, CSON, SQLite DB, logs và cleanup behavior phải align với tài liệu này.
+Roadmap → What & When
+DCAM 9-Month Development Plan → How
+DCAM Release & Build Applicability Matrix → What is mandatory for each build
+Các phase liên quan BDMA phải tuân thủ **DCAM-BDMA Data Contract** cho storage, media naming, MD5, encrypted-media naming, CSON, SQLite DB, logs và cleanup behavior.
 
 ## 2. Roadmap Overview
 
@@ -90,319 +85,131 @@ Android Training
 
 Week 1–2
 
-Chuẩn bị năng lực Android cho đội phát triển hiện tại
+Android/BodyCamera readiness.
 
-Android readiness and camera training prototype
+Camera training prototype.
 
-Phase 1 – DCAM MVP Foundation
+Phase 1 – MVP Foundation
 
-Week 3–12 / Month 1–3
+Week 3–12
 
-Hoàn thành nền tảng DCAM: camera core, storage, contract data, logs
+Recording, capture, storage, minimal contract data and logs.
 
-DCAM MVP Internal Build 0.1
+DCAM MVP Internal Build 0.1.
 
 Phase 2 – Platform Foundation & BDMA Integration
 
-Week 13–22 / Month 4–5
+Week 13–22
 
-Triển khai BDMA integration theo Data Contract và xây dựng nền tảng Device/User sớm để giảm rework
+BDMA E2E, Device/User, identity/provisioning and basic security foundation.
 
-Secure Platform MVP Build 0.2
+Secure Platform MVP Build 0.2.
 
-Phase 3 – Advanced Communication & Customer Pilot
+Phase 3 – Advanced Communication
 
-Week 23–32 / Month 6–7
+Week 23–32
 
-Triển khai live streaming, PTT, advanced encryption và GPS route dựa trên nền tảng Device/User đã có
+Live Streaming, PTT, GPS route and advanced encryption at beta level.
 
-Advanced Communication Beta Build 0.3
+Advanced Communication Beta Build 0.3.
 
-Phase 4 – Hardening, QA & Release
+Phase 4 – Hardening & Pilot
 
-Week 33–40 / Month 8–9
+Week 33–40
 
-Ổn định sản phẩm, kiểm thử thực tế, tối ưu hiệu năng/bảo mật và chuẩn bị pilot
+Regression, performance, security and production readiness.
 
-Customer Pilot Release / Production Candidate
+Customer Pilot / Production Candidate.
 
-## 3. Phase Objectives
+## 3. Feature Roadmap
 
-### 3.1 Android Training
-
-Item
-
-Description
-
-Timeline
-
-Week 1–2
-
-Objective
-
-Trang bị kiến thức Android cần thiết cho đội phát triển trước khi bắt đầu dự án.
-
-Expected Outcome
-
-Dev có thể build/test Android camera sample trên BodyCamera và hiểu Android lifecycle, permission, storage, GPS, CameraX/Camera2.
-
-Main Deliverable
-
-Android Foundation Notes, Camera Training Prototype
-
-### 3.2 Phase 1 – DCAM MVP Foundation
-
-Item
-
-Description
-
-Timeline
-
-Week 3–12 / Month 1–3
-
-Objective
-
-Xây dựng các chức năng cốt lõi của ứng dụng DCAM.
-
-Major Features
-
-Video Recording, Image Capture, Local Storage, Data Contract Compliance, Logging, Folder Structure, Camera Framework, MVP Architecture.
-
-Main Deliverable
-
-DCAM MVP Internal Build 0.1
-
-Notes
-
-Phase này đã bao gồm 20% buffer. Storage, media naming và contract data phải align với DCAM-BDMA Data Contract.
-
-### 3.3 Phase 2 – Platform Foundation & BDMA Integration
-
-Item
-
-Description
-
-Timeline
-
-Week 13–22 / Month 4–5
-
-Objective
-
-Đảm bảo DCAM tương thích với BDMA, đồng thời xây dựng sớm nền tảng quản lý Device/User để các phase sau không phải refactor lớn.
-
-Major Features
-
-DCAM-BDMA Data Contract implementation, BDMA Ingest, CSON/SQLite integration, MD5 verification, AES-256 naming support, post-import cleanup, File Recovery, GPS per Media File, Basic Encryption, Remote Device Management, Advanced User Management.
-
-Main Deliverable
-
-Secure Platform MVP Build 0.2
-
-Notes
-
-DCAM-BDMA Data Contract đã có bản approved và là baseline chính thức cho BDMA integration. Phase này đã bao gồm 20% buffer.
-
-### 3.4 Phase 3 – Advanced Communication & Customer Pilot Preparation
-
-Item
-
-Description
-
-Timeline
-
-Week 23–32 / Month 6–7
-
-Objective
-
-Triển khai các năng lực giao tiếp/thời gian thực và các capability nâng cao dựa trên nền tảng Device/User đã hoàn thiện ở Phase 2.
-
-Major Features
-
-Live Streaming, Push-to-Talk (PTT), Full GPS Tracking Route, Advanced Encryption, streaming/PTT state logging, reconnect/timeout handling.
-
-Main Deliverable
-
-Advanced Communication Beta Build 0.3
-
-Notes
-
-PTT và Live Streaming được triển khai ở mức beta/basic implementation. Remote Device Management và Advanced User Management không còn là scope chính của Phase 3, chỉ harden hoặc mở rộng nếu cần.
-
-### 3.5 Phase 4 – Hardening, QA & Release
-
-Item
-
-Description
-
-Timeline
-
-Week 33–40 / Month 8–9
-
-Objective
-
-Ổn định sản phẩm và chuẩn bị phát hành cho khách hàng/pilot.
-
-Major Activities
-
-Regression Testing, Stability Testing, Streaming/PTT Testing, GPS Route Testing, Security Review, Data Contract Regression, Performance Optimization, Release Documentation.
-
-Main Deliverable
-
-Customer Pilot Release / Production Candidate
-
-## 4. Feature Roadmap
-
-Feature
+Feature / Area
 
 Target Phase
 
 Expected Level
 
-Android Training
-
-Training
-
-Team readiness
-
-Camera Framework Evaluation
-
-Training / Phase 1
-
-Prototype decision
-
-Video Recording
+Video Recording / Image Capture
 
 Phase 1
 
-MVP
+MVP then hardened.
 
-Image Capture
-
-Phase 1
-
-MVP
-
-Local Storage
+Local Storage / Finalization
 
 Phase 1
 
-MVP aligned with Data Contract
+MVP aligned with Data Contract.
 
-Data Contract Compliance
-
-Phase 1 / Phase 2
-
-Implementation baseline
-
-Logging
+Minimal DB / CSON / `logs.txt`
 
 Phase 1
 
-MVP
+Working Recording Slice baseline.
 
-DCAM-BDMA Data Contract
+BDMA sample import
 
-Created / Approved
+Phase 1
 
-Version 1 baseline
+Required Working Recording Slice evidence.
 
-BDMA Ingest
-
-Phase 2
-
-End-to-end demo
-
-CSON / SQLite Integration
+Full BDMA integration / write-back
 
 Phase 2
 
-Contract-based implementation
+End-to-end platform integration.
 
-MD5 Verification
-
-Phase 2
-
-Verified / Unverified import handling
-
-Post-import Cleanup
+Device identity / Web Portal provisioning
 
 Phase 2
 
-Cleanup policy implementation
-
-File Recovery
-
-Phase 2
-
-Basic recovery/status handling
-
-GPS per Media File
-
-Phase 2
-
-Basic implementation
-
-Basic Encryption
-
-Phase 2
-
-`_enc` naming and basic encryption scope
+Basic production foundation.
 
 Remote Device Management
 
 Phase 2
 
-Basic implementation
+Basic status/config foundation.
 
-Advanced User Management
+User/Auth foundation
 
 Phase 2
 
-Basic role/profile/operator/permission foundation
+Basic operator/profile/role foundation.
 
-Live Streaming
+Basic encryption
+
+Phase 2
+
+Approved Security Design scope.
+
+Kiosk / Device Owner foundation
+
+Phase 2
+
+POC-dependent.
+
+Remote Config / Self Update foundation
+
+Phase 2
+
+Activated only after recording/storage stability.
+
+Live Streaming / PTT / Full GPS Route
 
 Phase 3
 
-Beta feature
+Beta/basic implementation.
 
-Push-to-Talk (PTT)
-
-Phase 3
-
-Beta/basic implementation
-
-Full GPS Tracking Route
-
-Phase 3
-
-GPS route v1
-
-Advanced Encryption
-
-Phase 3
-
-Extended encryption scope
-
-Regression/Stability Testing
+Full regression / stability / security review
 
 Phase 4
 
-Full pilot validation
+Pilot release gate.
 
-Security Review
+Feature applicability and QA release-blocker interpretation are owned by **DCAM Release & Build Applicability Matrix**.
 
-Phase 4
-
-Release readiness
-
-Customer Pilot Release
-
-Phase 4
-
-Pilot / production candidate
-
-## 5. Milestones
+## 4. Milestones
 
 Milestone
 
@@ -410,240 +217,131 @@ Target Time
 
 Success Condition
 
-M0 – Android Training Completed
+M0 – Android Training Complete
 
-End of Week 2
+End Week 2
 
-Dev có thể build/test Android camera sample trên BodyCamera.
+Team builds/runs/debugs camera sample on BodyCamera.
 
 M1 – Camera Prototype
 
-End of Week 6
+End Week 6
 
-Video recording và image capture hoạt động được trên BodyCamera.
+Recording and capture work on selected device.
 
-M2 – DCAM MVP Internal 0.1
+M1.5 – Working Recording Slice
 
-End of Week 12
+End Week 8
 
-File, contract data và logs được tạo ổn định.
+Record/capture/finalize, write minimal DB/CSON/log and BDMA imports sample media.
+
+M2 – MVP Internal 0.1
+
+End Week 12
+
+Applicable Build 0.1 QA groups pass.
 
 M3 – DCAM-BDMA E2E Demo
 
-End of Week 16
+End Week 16
 
-BDMA có thể ingest và hiển thị dữ liệu DCAM theo Data Contract.
+BDMA ingests and displays DCAM data.
 
 M4 – Secure Platform MVP 0.2
 
-End of Week 22
+End Week 22
 
-Recovery, GPS per file, basic encryption, Remote Device Management và Advanced User Management foundation đã sẵn sàng.
+Device/User/provisioning/basic security foundation available.
 
 M5 – Advanced Communication Beta 0.3
 
-End of Week 32
+End Week 32
 
-Live streaming beta, PTT beta, GPS route v1 và advanced encryption scope đã sẵn sàng.
+Streaming/PTT/GPS route beta available.
 
 M6 – Release Candidate
 
-End of Week 39
+End Week 39
 
-Critical bugs đã được xử lý, sẵn sàng cho pilot.
+Critical blockers closed.
 
 M7 – Customer Pilot Release
 
-End of Week 40
+End Week 40
 
-Pilot build và release/test documents đã sẵn sàng.
+Pilot build and release/test documents available.
 
-## 6. 9-Month Timeline by Month
-
-Month
-
-Focus
-
-Primary Output
-
-Month 1
-
-Android training and foundation
-
-Training completed, architecture draft, camera prototype.
-
-Month 2
-
-Core MVP
-
-Recording, image capture and storage.
-
-Month 3
-
-Contract data, logging and MVP internal build
-
-Data Contract compliance, logs, MVP Build 0.1.
-
-Month 4
-
-BDMA compatibility and platform foundation
-
-Data Contract implementation, BDMA ingest, E2E demo, Device/User foundation design.
-
-Month 5
-
-Reliability, security, device and user platform
-
-Recovery, GPS per file, basic encryption, Remote Device Management, Advanced User Management.
-
-Month 6
-
-Advanced communication start
-
-Live streaming beta, PTT design/basic implementation, GPS route design.
-
-Month 7
-
-Advanced communication implementation
-
-PTT beta, streaming hardening, GPS route v1, advanced encryption.
-
-Month 8
-
-QA and hardening
-
-Regression, stability, Data Contract regression, streaming/PTT and GPS route testing.
-
-Month 9
-
-Release candidate and pilot
-
-Release Candidate, Customer Pilot Release.
-
-## 7. Roadmap Success Indicators
-
-Indicator
-
-Description
-
-DCAM MVP readiness
-
-DCAM có thể record video, capture image, save files, expose contract data và write logs trên BodyCamera.
-
-BDMA compatibility
-
-BDMA có thể ingest và hiển thị dữ liệu DCAM end-to-end theo Data Contract.
-
-Data Contract readiness
-
-Storage, media naming, MD5, AES-256 suffix, CSON, SQLite DB, logs và cleanup behavior khớp với Data Contract đã approved.
-
-Platform foundation readiness
-
-Remote Device Management và Advanced User Management foundation đã sẵn sàng trước khi advanced communication features phụ thuộc vào chúng.
-
-Security readiness
-
-Basic encryption và extended encryption sau này được implement theo scope đã thống nhất.
-
-Advanced communication readiness
-
-Live Streaming, PTT và GPS Route đạt mức beta/basic implementation.
-
-Pilot readiness
-
-Release candidate đủ ổn định để pilot với khách hàng được chọn.
-
-Documentation readiness
-
-Release notes, install guide, test checklist và test reports đã sẵn sàng.
-
-## 8. Roadmap Boundaries
+## 5. Roadmap Boundaries
 
 Area
 
 Boundary
 
-Data Contract
+Build Applicability
 
-Đã có approved baseline; implementation và testing phải align với baseline này.
+Matrix decides `Required / Conditional / Deferred / Not Applicable` for each build.
 
-Platform foundation
+Target Architecture
 
-Remote Device Management và Advanced User Management được đưa vào Phase 2 như foundation capabilities, không phải full fleet management hoặc enterprise IAM.
+A future design page does not automatically make a feature mandatory for Build 0.1.
 
-Advanced features
+Platform Foundation
 
-Được triển khai ở mức beta/basic implementation trong Phase 3, chưa phải full production-hardened platform.
+Phase 2 is foundation/basic implementation, not full fleet management or enterprise IAM.
 
-Live Streaming
+Advanced Communication
 
-Dự kiến hoạt động ở mức beta và phải được test trong các tình huống weak network/reconnect/timeout.
+Phase 3 targets beta/basic capability, not full production hardening.
 
-PTT
+Pilot
 
-Dự kiến bao gồm trigger, audio capture, transmission, state logging và error handling ở mức beta/basic.
+Pilot scope includes only capabilities explicitly activated by the Matrix.
 
-Remote Device Management
-
-Chỉ bao gồm basic status/config read-write và device health; advanced fleet management không nằm trong scope.
-
-Advanced User Management
-
-Chỉ bao gồm basic role/profile/operator/permission foundation; enterprise-grade IAM không nằm trong scope.
-
-GPS Route
-
-Ghi nhận route theo session; visualization và analytics chi tiết có thể mở rộng sau.
-
-Final Release
-
-Customer Pilot / Production Candidate, chưa phải full commercial production cho toàn bộ advanced capabilities.
-
-## 9. Related Documents
+## 6. Related Documents
 
 Document
 
 Purpose
 
-DCAM Project Charter
-
-Project authorization, scope, governance và approval baseline.
-
-DCAM 9-Month Development Plan
-
-Kế hoạch execution chi tiết với Android training, sprint strategy, buffer và delivery plan.
-
 DCAM Product Vision
 
-Product direction và long-term positioning.
+Long-term product direction.
 
 DCAM MVP Scope
 
-MVP scope và planned scope.
+MVP scope and acceptance.
+
+DCAM 9-Month Development Plan
+
+Detailed execution plan.
+
+DCAM Release & Build Applicability Matrix
+
+Active build scope and release applicability.
+
+DCAM Requirements Home
+
+Functional Requirements 01–10 navigation.
+
+DCAM Architecture Home
+
+Architecture, Technical Design and ADR navigation.
 
 DCAM-BDMA Data Contract
 
-Data contract chính thức giữa DCAM Android và BDMA Desktop.
+Android–BDMA interoperability contract.
 
-DCAM Functional Requirements
+DCAM QA Test Strategy & Test Matrix
 
-Functional requirements chi tiết.
+Test coverage and release validation.
 
-DCAM Non-functional Requirements
+DCAM Factory Provisioning & Device Production SOP
 
-Reliability, performance, security và operational requirements.
+Factory production and final acceptance.
 
-DCAM Android Architecture
+## 7. Practical Conclusion
 
-Technical architecture cho Android BodyCamera application.
-
-DCAM Release Plan
-
-Build, versioning, release và pilot process.
-
-## 10. Practical Conclusion
-
-Mục tiêu thực tế của roadmap 9 tháng là:
-
-textRoadmap này không nên được hiểu là cam kết full production cho toàn bộ advanced capabilities. Mục tiêu phù hợp hơn là có bản **Customer Pilot / Production Candidate** đủ tốt để triển khai thử nghiệm với khách hàng chọn lọc và thu thập feedback thực tế.
+Current active build = DCAM MVP Internal Build 0.1.
+Current delivery gate = Working Recording Slice.
+Roadmap defines intended stages.
+Applicability Matrix defines what is mandatory now.

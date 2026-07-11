@@ -11,6 +11,11 @@
 /local.properties
 /application-local.properties
 
+# Imported documentation containing credentials (keep local, never commit/upload)
+/docs/dcam-knowledge/confluence-original/DVID-SnT/Projects/BDMA/04-Technical-Documentation/Technical-Knowledge-Base/Building-a-JavaFX-Application-and-NSIS-Installer-Steps.md
+/docs/dcam-knowledge/confluence-original/DVID-SnT/Projects/BDMA/04-Technical-Documentation/Technical-Knowledge-Base/Developer-Mode.md
+/docs/dcam-knowledge/confluence-original/DVID-SnT/Projects/BDMA/04-Technical-Documentation/Technical-Knowledge-Base/Notes-FAQ.md
+
 # Generated local media fixtures
 /app/DCIM/
 

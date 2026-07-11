@@ -3,7 +3,7 @@
 **Page ID**: 47710534  
 **Version**: 3  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/47710534
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47710534
 
 ---
 
@@ -144,4 +144,6 @@ DCAM Security & Encryption Design
 
 Media management requirement statuses are now aligned with the approved Data Contract.
 
-text
+This page defines media management requirements.
+Data Contract defines the exact media/file contract.
+Storage and Recording designs define Android implementation mechanics.

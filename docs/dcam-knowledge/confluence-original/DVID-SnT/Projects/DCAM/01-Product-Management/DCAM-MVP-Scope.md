@@ -1,9 +1,9 @@
 # DCAM MVP Scope
 
 **Page ID**: 42532866  
-**Version**: 8  
+**Version**: 9  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/42532866
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/42532866
 
 ---
 
@@ -24,7 +24,7 @@ MVP Scope
 
 Version
 
-Approved 2.3
+Approved 2.5
 
 Status
 
@@ -52,7 +52,7 @@ PM/BA, Product Owner, Tech Lead, Developers, QA, Stakeholders
 
 Last Updated
 
-2026-07-04
+2026-07-10
 
 Related Jira
 
@@ -60,20 +60,29 @@ None
 
 Related Documents
 
-DCAM Product Vision, DCAM Project Charter, DCAM Roadmap, DCAM 9-Month Development Plan, DCAM-BDMA Data Contract, DCAM Documentation Governance
-
-Related Roadmap
-
-DCAM Roadmap
+DCAM Product Vision, DCAM Project Charter, DCAM Roadmap, DCAM 9-Month Development Plan, DCAM Release & Build Applicability Matrix, DCAM-BDMA Data Contract, DCAM Requirements Home, DCAM Architecture Home, DCAM Documentation Governance, DCAM Architecture Delivery Profile
 
 ## 1. Executive Summary
 
-MVP tập trung xây dựng ứng dụng Android trên BodyCamera có khả năng ghi video, chụp ảnh, lưu media cục bộ và expose dữ liệu để **BDMA Desktop** ingest và xử lý theo **DCAM-BDMA Data Contract**.
+MVP tập trung xây dựng ứng dụng Android trên BodyCamera có khả năng ghi video, chụp ảnh, lưu media cục bộ và expose dữ liệu để **BDMA Desktop** ingest theo **DCAM-BDMA Data Contract**.
 
-Mục tiêu của MVP không phải là hoàn thiện toàn bộ năng lực dài hạn của DCAM, mà là xác nhận luồng cốt lõi:
+Core MVP flow:
 
-textTrong MVP, các rule về storage root, folder structure, media naming, MD5, AES-256 suffix, CSON, SQLite DB, logs và BDMA cleanup behavior phải tuân theo **DCAM-BDMA Data Contract**.
+```
+Record / Capture → Save / Finalize Media → Expose Contract Data → BDMA Ingest
+```
 
+Implementation phải tuân theo:
+
+DCAM Architecture Delivery Profile
+    → giới hạn MVP architecture
+
+DCAM Release & Build Applicability Matrix
+    → xác định feature/requirement/QA nào bắt buộc cho từng build
+Current active profile:
+
+Build = DCAM MVP Internal Build 0.1
+Gate = Working Recording Slice
 ## 2. MVP Objectives
 
 Objective
@@ -82,27 +91,31 @@ Description
 
 Validate Video Recording
 
-DCAM ghi video ổn định trên BodyCamera.
+DCAM ghi video ổn định trên selected BodyCamera.
 
 Validate Image Capture
 
-DCAM chụp ảnh ổn định trên BodyCamera.
+DCAM chụp ảnh và lưu file ổn định.
 
 Validate Local Storage
 
-Media được lưu đúng cấu trúc để BDMA có thể đọc theo Data Contract.
+Temp/final media và folder structure hoạt động theo Data Contract.
 
 Validate Contract Data
 
-DCAM tạo và expose dữ liệu theo Data Contract: media file, optional `.md5`, `dcam_config.cson`, `dcam.db` và `logs.txt`.
+DCAM tạo minimal media/CSON/DB/log artifacts được Build 0.1 support.
 
 Validate BDMA Compatibility
 
-BDMA ingest dữ liệu DCAM thành công theo Data Contract.
+BDMA detect/import được sample media qua ADB.
 
 Validate Operational Stability
 
-DCAM ổn định khi GPS unavailable hoặc storage gần đầy.
+Core flow không crash khi GPS unavailable hoặc storage gần đầy.
+
+Validate Working Recording Slice
+
+APK chạy được end-to-end trước khi mở rộng platform architecture.
 
 ## 3. MVP Success Criteria
 
@@ -120,7 +133,7 @@ Image Capture Success Rate
 
 BDMA Import Success Rate
 
-100%
+100% for MVP sample flow
 
 Data Contract Compliance
 
@@ -132,145 +145,138 @@ File Corruption
 
 Application Crash
 
-Không có Critical Crash trong luồng recording/capture chính.
+Không có Critical Crash trong core recording/capture flow.
 
-## 4. Functional Scope
+Working Recording Slice
 
-Module
+Pass before optional platform expansion.
 
-Scope
+## 4. Build 0.1 Required Scope
 
-Video Recording
+Area
 
-Start/Stop recording, recording state.
+Build 0.1 Decision
 
-Image Capture
+Recording / Capture
 
-Capture image and save image.
+Required.
 
-Local Storage
+Storage / Finalization
 
-Internal/External storage behavior, Media folders, IMP folder, Temp folder and fallback behavior according to Data Contract.
+Required.
 
-Media Naming
+Media naming/folder contract
 
-File naming theo format `DCAM_XXXXXX_ZZZZZZ_YYYYMMDD_HHMMSS.<ext>`, `_IMP`, `_enc`, `_IMP_enc`.
+Required for MVP-supported files.
 
-Media Metadata
+Minimal SQLite state
 
-Metadata embedded trực tiếp trong media file nếu format hỗ trợ; không dùng media metadata JSON riêng trong contract hiện tại.
+Required.
 
-Device Config
+Minimal `dcam_config.cson`
 
-`dcam_config.cson` lưu device information only.
+Required khi Data Contract/build output cần.
 
-SQLite DB
+Sanitized `Logs/logs.txt`
 
-`dcam.db` lưu User data, Device tracking và Operational data/configuration.
+Required.
 
-Logs
+Local Operational Logging
 
-`logs.txt` phục vụ diagnostics; BDMA read-only.
+Required.
 
-Device Status
+BDMA sample detect/import
 
-Battery, storage và GPS availability.
+Required.
 
-BDMA Compatibility
+Basic Device Status
 
-ADB-based reading, MD5 verification if available, import result handling and post-import cleanup policy.
+Battery, storage and GPS availability where supported.
 
-## 5. Out of Scope
+Concurrency critical path
 
-Các chức năng sau không thuộc phạm vi MVP đầu tiên. Một số chức năng đã được ghi nhận trong Roadmap cho các phase sau.
+Required from day one.
 
-Feature
+Basic Lock Task POC
 
-Target Phase / Direction
+Conditional only when needed for device validation.
 
-Remote Device Management
+Working Recording Slice:
 
-Phase 2 - Platform Foundation & BDMA Integration; foundation/basic implementation, không thuộc MVP đầu tiên.
+Open app
+    ↓
+Check camera/storage permission
+    ↓
+Record 30s video
+    ↓
+Stop and finalize
+    ↓
+Capture sample image
+    ↓
+Write minimal DB/CSON/log output
+    ↓
+BDMA detects/imports sample media
+## 5. Deferred from Build 0.1
 
-Advanced User Management
+The following are valid target capabilities but are not Build `0.1` release blockers:
 
-Phase 2 - Platform Foundation & BDMA Integration; foundation/basic implementation, không thuộc MVP đầu tiên.
+Deferred Area
 
-Live Streaming
+Target Direction
 
-Phase 3 - Advanced Communication.
+Cloud identity / Web Portal provisioning
 
-Push-to-Talk (PTT)
+Build 0.2
 
-Phase 3 - Advanced Communication.
+Full operator authentication / user management
 
-Advanced Encryption
+Build 0.2
 
-Phase 3 - Advanced Communication; basic encryption có thể bắt đầu ở Phase 2 theo Roadmap/Development Plan.
+Full Device Owner / Kiosk Policy stack
 
-Full GPS Tracking Route
+Build 0.2+ after Device POC
 
-Phase 3 - Advanced Communication.
+Remote Config fetch/cache/apply
 
-Cloud Upload
+Build 0.2
 
-Future.
+Self Update
 
-OTA Update
+Build 0.2
 
-Future.
+Play Store fallback
 
-AI Analytics
+Conditional Build 0.2+
 
-Future.
+Full In-App Console
 
-## 6. MVP User Journey
+Build 0.2+
 
-### 6.1 Record Video Flow
+Full Feature Eligibility engine
 
-text### 6.2 Capture Image Flow
+Build 0.2+
 
-text### 6.3 BDMA Ingest Flow
+Full State Machine Coordinator
 
-text## 7. MVP Deliverables
+Build 0.2+
 
-Deliverable
+Sensor Monitoring advanced
 
-Description
+Build 0.3+
 
-APK/AAB
+Realtime AI
 
-Android MVP build chạy trên BodyCamera.
+Future / conditional
 
-Source Code
+Live Streaming / PTT / Full GPS Route
 
-DCAM MVP source code.
+Build 0.3
 
-Data Contract Compliance
+```
+Deferred features must not block Build 0.1 PR approval or Working Recording Slice acceptance.
+```
 
-Implementation tuân theo DCAM-BDMA Data Contract.
-
-Folder Structure Specification
-
-Mô tả cấu trúc lưu trữ media theo Data Contract.
-
-SQLite DB Specification
-
-Mô tả DB scope cho User data, Device tracking và Operational data.
-
-Installation Guide
-
-Hướng dẫn cài đặt MVP trên BodyCamera.
-
-Test Report
-
-Báo cáo kiểm thử MVP.
-
-Release Notes
-
-Ghi chú phát hành cho MVP build.
-
-## 8. Acceptance Criteria
+## 6. Acceptance Criteria
 
 ID
 
@@ -278,73 +284,71 @@ Criteria
 
 AC-001
 
-DCAM chạy được trên BodyCamera.
+DCAM build/run được trên selected BodyCamera/test device.
 
 AC-002
 
-Người dùng có thể ghi video.
+Người dùng ghi được video và chụp được ảnh.
 
 AC-003
 
-Người dùng có thể chụp ảnh.
+Media được finalize đúng MVP-supported Data Contract structure.
 
 AC-004
 
-Media được lưu đúng cấu trúc theo DCAM-BDMA Data Contract.
+Minimal DB/CSON/log artifacts được tạo theo Build 0.1 scope.
 
 AC-005
 
-Media file naming tuân theo Data Contract.
+`Logs/logs.txt` tồn tại, sanitized và BDMA read-only.
 
 AC-006
 
-Nếu `.md5` được tạo, BDMA verify được file media tương ứng.
+BDMA detect/import được sample media qua ADB.
 
 AC-007
 
-Nếu thiếu `.md5`, BDMA vẫn import và đánh dấu Unverified/warning.
+App không crash trong happy path và các expected fallback đã define.
 
 AC-008
 
-GPS được ghi nhận nếu thiết bị có dữ liệu hợp lệ.
+Critical camera/file/DB work không block MainThread.
 
 AC-009
 
-Logging hoạt động cho các luồng chính và ghi vào `logs.txt`.
+Working Recording Slice pass.
 
 AC-010
 
-BDMA ingest được dữ liệu DCAM qua ADB.
+Deferred feature absence không làm fail Build 0.1.
 
-AC-011
-
-BDMA xử lý cleanup đúng theo policy trong Data Contract.
-
-AC-012
-
-Ứng dụng không crash trong tình huống storage gần đầy hoặc GPS unavailable.
-
-## 9. Exit Criteria
-
-MVP được xem là hoàn thành khi các điều kiện sau đạt yêu cầu:
+## 7. Exit Criteria
 
 Condition
 
 Required
 
-Recording Pass
+Recording / Capture Pass
 
 Yes
 
-Capture Pass
+Storage / Finalization Pass
 
 Yes
 
-Data Contract Pass
+Working Recording Slice Pass
 
 Yes
 
-BDMA Pass
+MVP Data Contract Pass
+
+Yes
+
+BDMA Sample Import Pass
+
+Yes
+
+Applicable Build 0.1 QA Groups Pass
 
 Yes
 
@@ -356,7 +360,9 @@ PM & QA Approval
 
 Yes
 
-## 10. Related Documents
+QA applicability is defined by **DCAM Release & Build Applicability Matrix** and verified by **DCAM QA Test Strategy & Test Matrix**.
+
+## 8. Related Documents
 
 Document
 
@@ -364,36 +370,47 @@ Purpose
 
 DCAM Product Vision
 
-Vision
-
-DCAM Project Charter
-
-Project baseline
+Product direction.
 
 DCAM Roadmap
 
-Roadmap
+Phase and milestone direction.
 
 DCAM 9-Month Development Plan
 
-Execution plan
+Execution and sprint plan.
+
+DCAM Release & Build Applicability Matrix
+
+Active build scope and release applicability.
+
+DCAM Requirements Home
+
+Functional Requirements 01–10 navigation.
+
+DCAM Architecture Home
+
+Architecture, Technical Design and ADR navigation.
+
+DCAM Architecture Delivery Profile
+
+MVP architecture guardrails.
 
 DCAM-BDMA Data Contract
 
-Official data contract between DCAM Android and BDMA Desktop
+Android–BDMA data contract.
+
+DCAM QA Test Strategy & Test Matrix
+
+Test coverage and release validation.
 
 DCAM Android Training & Architecture Onboarding
 
-Android onboarding for Java/Desktop team
+Android onboarding.
 
-DCAM Functional Requirements
+## 9. Practical Conclusion
 
-Requirements
-
-DCAM Non-functional Requirements
-
-Quality attributes
-
-DCAM System Architecture & Technical Notes
-
-System architecture and technical notes
+MVP product direction remains Record/Capture → Storage → Contract Data → BDMA.
+Current active implementation profile is Build 0.1.
+Working Recording Slice is the current gate.
+Build applicability is owned by DCAM Release & Build Applicability Matrix.

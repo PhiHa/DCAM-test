@@ -3,7 +3,7 @@
 **Page ID**: 29032450  
 **Version**: 2  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/29032450
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/29032450
 
 ---
 
@@ -36,7 +36,7 @@ Phát hiện thiết bị kết nối/ngắt qua ADB, publish DeviceEvent
 
 DeviceValidationService
 
-Xác thực device qua whitelist, đọc cameraId từ table validated_device. 
+Xác thực device qua whitelist, đọc cameraId từ table validated_device. 
 
 3
 
@@ -278,7 +278,7 @@ setOnUserAutoCreated(listener)
 
 Callback để notify UserManagementController khi có user mới được auto-create.
 
- 
+ 
 
 # 3. Data Backup Pipeline
 
@@ -384,7 +384,7 @@ performBackup()
 
 Copy file, update DB, publish FileBackupCompletedEvent
 
- 
+ 
 
 ### 3.3.3 waitForBackupDirRecovery() – Cơ chế chờ phục hồi
 
@@ -396,13 +396,13 @@ Khi backup dir không khả dụng, worker block tại synchronized(recoveryLock
 
 StorageRestoredEvent(BACKUP)
 
-backupRecoveryDeferred=false &rarr; worker tiếp tục xử lý file hiện tại
+backupRecoveryDeferred=false → worker tiếp tục xử lý file hiện tại
 
 StorageRecoveryDeferredEvent(BACKUP)
 
-backupRecoveryDeferred=true &rarr; worker bỏ qua file, markDeferred
+backupRecoveryDeferred=true → worker bỏ qua file, markDeferred
 
- 
+ 
 
 ## 3.4 DataBackupService – Recovery & Scheduling
 
@@ -426,7 +426,7 @@ scheduledRecovery() [@Scheduled]
 
 Chạy mỗi 1 giờ, publish StorageRestoredEvent(BACKUP) để trigger re-scan nếu không có drive event thực sự.
 
- 
+ 
 
 # 4. Queue Manager & Progress Tracking
 
@@ -506,7 +506,7 @@ getAllFiles(): Admin thấy tất cả file; User chỉ thấy file có username
 
 DEFERRED status: backup bị hoãn do drive không khả dụng, có errorMessage mô tả lý do.
 
- 
+ 
 
 # 5. Storage Health Monitoring
 
@@ -568,13 +568,13 @@ Cảnh báo
 
 storage-warn
 
-75% &le; ratio < 90%
+75% ≤ ratio < 90%
 
 Nghiêm trọng
 
 storage-critical
 
-ratio &ge; 90% hoặc drive không tồn tại
+ratio ≥ 90% hoặc drive không tồn tại
 
 Không tìm thấy
 
@@ -682,7 +682,7 @@ LoginService gọi recoverPendingBackups() mỗi lần login. Scheduled recovery
 
 Backup dir không khả dụng
 
-Worker block tại recoveryLock.wait(). User có thể chọn: (1) cắm lại ổ đĩa &rarr; StorageRestoredEvent &rarr; tiếp tục; (2) hoãn &rarr; StorageRecoveryDeferredEvent &rarr; worker skip, đánh dấu DEFERRED.
+Worker block tại recoveryLock.wait(). User có thể chọn: (1) cắm lại ổ đĩa → StorageRestoredEvent → tiếp tục; (2) hoãn → StorageRecoveryDeferredEvent → worker skip, đánh dấu DEFERRED.
 
 Non-admin chỉ thấy file của mình
 

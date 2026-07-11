@@ -3,7 +3,7 @@
 **Page ID**: 49545399  
 **Version**: 7  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/49545399
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/49545399
 
 ---
 
@@ -66,7 +66,15 @@ Mục tiêu của tài liệu là biến các giả định trong architecture/d
 
 Current validation baseline:
 
-text## 2. POC Scope
+Không dùng external EMM.
+Không dùng Android Management API.
+Không dùng Managed Google Play policy-driven update.
+Tính khả thi của DCAM-as-DPC / local Device Owner phải được validate trên thiết bị thật.
+Primary update path = DCAM Self Update / APK update.
+Manual Google Play Store update chỉ là optional controlled fallback nếu có GMS/Play Store và có approved process/account.
+Chỉ hỗ trợ Controlled Maintenance Mode; không hỗ trợ full Android unrestricted mode.
+Factory SOP chỉ được approve cho một device model sau khi các POC blockers bắt buộc đã được xử lý hoặc được accept rõ ràng.
+## 2. POC Scope
 
 Area
 
@@ -822,4 +830,15 @@ Critical failures dẫn tới `QUARANTINED`.
 
 ## 12. Practical Conclusion
 
-text
+Device POC là bắt buộc trước release vì firmware/OEM behavior của BodyCamera quyết định implementation path thật.
+Current baseline không dùng external EMM, Android Management API hoặc Managed Google Play policy-driven update.
+Tính khả thi của DCAM-as-DPC / local Device Owner phải được validate.
+Lock Task, User Restrictions, Home/Launcher và recovery phải được validate trên thiết bị thật.
+Controlled Maintenance Mode không được expose full Android unrestricted mode.
+Maintenance Password Gate phải bảo vệ kiosk exit.
+Primary update path là DCAM Self Update / APK update.
+Manual Play Store update chỉ là optional fallback nếu GMS/Play Store tồn tại và có thể kiểm soát được.
+Nếu không kiểm soát được Play Store fallback thì phải disable cho production.
+BDMA ADB import/user sync phải hoạt động dưới approved restriction profile.
+Factory SOP chỉ được approve sau khi required POC gates đã closed hoặc được accept rõ ràng.
+Tất cả TBD từ POC này phải feed back vào Technical Design, QA Matrix, Factory SOP và ADR nếu cần.

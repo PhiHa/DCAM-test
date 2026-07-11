@@ -1,9 +1,9 @@
 # DCAM Non-functional Requirements
 
 **Page ID**: 48595009  
-**Version**: 11  
+**Version**: 12  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/48595009
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/48595009
 
 ---
 
@@ -24,7 +24,7 @@ Non-functional Requirements
 
 Version
 
-Approved 1.10
+Approved 1.11
 
 Status
 
@@ -52,11 +52,11 @@ PM/BA, Tech Lead, Android Developers, QA, Stakeholders, Support, BDMA Team
 
 Last Updated
 
-2026-07-08
+2026-07-09
 
 Related Documents
 
-05 - User & Device Operation Requirements, 10 - Android Device Operation Requirements, DCAM Android Device Owner & Kiosk Policy Design, ADR - DCAM Android Dedicated Device / Device Owner / Lock Task Decision, DCAM Android Operation Design, DCAM Recording & Capture Design, DCAM SQLite Database Design, DCAM Storage Design, DCAM Device Capability & Feature Eligibility Design, DCAM-BDMA Data Contract, DCAM Security & Encryption Design, 07 - Logging & Diagnostics Requirements, DCAM State Machine Design, DCAM QA Test Strategy & Test Matrix
+05 - User & Device Operation Requirements, 10 - Android Device Operation Requirements, DCAM Performance Budget & Resource Constraints, DCAM Android Device Owner & Kiosk Policy Design, ADR - DCAM Android Dedicated Device / Device Owner / Lock Task Decision, DCAM Android Operation Design, DCAM Recording & Capture Design, DCAM SQLite Database Design, DCAM Storage Design, DCAM Device Capability & Feature Eligibility Design, DCAM-BDMA Data Contract, DCAM Security & Encryption Design, 07 - Logging & Diagnostics Requirements, DCAM State Machine Design, DCAM QA Test Strategy & Test Matrix
 
 ## 1. Purpose
 
@@ -64,8 +64,12 @@ Tài liệu này ghi nhận các yêu cầu phi chức năng của DCAM.
 
 Tài liệu này không copy lại các bảng rule dùng chung. Các rule chi tiết phải nằm ở tài liệu authoritative tương ứng.
 
-Sau khi User Management và Android dedicated-device/kiosk policy được chốt, NFR cần bổ sung các quality constraints cho offline authentication, no-timeout session, reboot login requirement, emergency override auditability, BDMA/DCAM user sync, Device Owner / Lock Task reliability, User Restrictions, Maintenance Mode, policy recovery và security testability.
+Sau khi User Management và Android dedicated-device/kiosk policy được chốt, NFR cần bổ sung các quality constraints cho offline authentication, no-timeout session, reboot login requirement, emergency override auditability, BDMA/DCAM user sync, Device Owner / Lock Task reliability, User Restrictions, Maintenance Mode, policy recovery, security testability và performance measurable targets.
 
+Phân biệt trách nhiệm:
+
+NFR = quality requirement / what quality is needed.
+DCAM Performance Budget & Resource Constraints = measurable numeric targets / how fast, how much, measured where.
 ## 2. Authoritative References
 
 Topic
@@ -73,6 +77,12 @@ Topic
 Authoritative Document
 
 Local Use
+
+Measurable performance targets, resource constraints, critical finalization budget, storage I/O, free-space, ANR and stability metrics
+
+DCAM Performance Budget & Resource Constraints
+
+NFR reference numeric targets; không duplicate metric tables ở đây.
 
 User/operator requirement, login policy, emergency override
 
@@ -114,7 +124,7 @@ Storage path/temp/final/BDMA readiness/recovery
 
 DCAM Storage Design
 
-NFR yêu cầu storage reliability và không expose partial-file.
+NFR yêu cầu storage reliability, free-space safety và không expose partial-file.
 
 Feature eligibility states and runtime pruning
 
@@ -155,6 +165,10 @@ Requirement
 Stability
 
 Core operation phải ổn định trong điều kiện device/resource constraints.
+
+Performance Measurability
+
+Các yêu cầu nhanh/chậm/ổn định phải có metric đo được trong Performance Budget.
 
 Kiosk Reliability
 
@@ -210,7 +224,7 @@ Logs phải hỗ trợ Support/QA mà không expose sensitive data.
 
 Testability
 
-Capability profiles, auth/session behavior, kiosk policy behavior, fallback behavior, transaction failure, recovery và error paths phải testable.
+Capability profiles, auth/session behavior, kiosk policy behavior, fallback behavior, transaction failure, recovery, performance và error paths phải testable.
 
 ## 4. Android Dedicated-device / Kiosk NFRs
 
@@ -348,7 +362,73 @@ Login, logout, emergency override, auth method change, user sync, conflict event
 
 Security + Logging Requirements
 
-## 6. Runtime Recovery / Failure Test Matrix Direction
+## 6. Performance and Resource NFRs
+
+Detailed numeric targets thuộc **DCAM Performance Budget & Resource Constraints**. NFR chỉ định hướng chất lượng và yêu cầu đo.
+
+Area
+
+Requirement
+
+Metric Source
+
+Recording responsiveness
+
+Start/stop/capture/finalization phải có latency budget đo được.
+
+PERF-REC-*
+
+Critical finalization
+
+`BDMA_READY` phải đạt sau critical finalization path; checksum không block critical path.
+
+PERF-REC-003, PERF-REC-007
+
+Memory stability
+
+App phải có resident memory và memory leak threshold đo được.
+
+PERF-MEM-*
+
+Storage I/O
+
+Internal/external storage phải benchmark sustained write speed, move/rename latency và DB transaction duration.
+
+PERF-IO-*
+
+Storage free-space safety
+
+Recording precheck phải enforce minimum free-space budget để tránh corrupt media.
+
+PERF-STOR-*
+
+Startup/recovery responsiveness
+
+Cold boot, app restart, recovery scan và login screen display phải có budget đo được.
+
+PERF-BOOT-*
+
+ANR prevention
+
+MainThread block, State Coordinator queue latency, camera callback time, executor depth và DB busy retry phải có budget.
+
+PERF-ANR-*
+
+Long-running stability
+
+Continuous recording, app uptime, recording cycles, FD leak, app-owned thread count và DB growth phải testable.
+
+PERF-STAB-*
+
+Current baseline:
+
+Checksum is async and outside critical finalization path.
+Battery and thermal targets are deferred until Device POC.
+App-owned steady-state threads ≤ 15.
+Total process thread count must be measured during Device POC.
+CPU budget is not required for now.
+Storage capacity / free-space budget is required.
+## 7. Runtime Recovery / Failure Test Matrix Direction
 
 Detailed flows nằm trong các runtime design documents. NFR yêu cầu QA coverage cho các failure classes dưới đây.
 
@@ -442,23 +522,17 @@ Current recording không bị interrupt; new recording bị block sau safe windo
 
 SQLite + Android Operation
 
-Auth method changed while session active
-
-Apply tại safe window; chỉ require re-login nếu policy invalidates session.
-
-Security + Android Operation
-
-User sync conflict
-
-Conflict được log; áp dụng default BDMA-wins rule hoặc manual flow.
-
-Data Contract + SQLite Design
-
 External storage unavailable
 
 Stop/fail affected session an toàn; không corrupt media.
 
 Storage Design
+
+Storage full / near full
+
+Enforce free-space budget, safe stop/finalization hoặc recovery path.
+
+Storage Design + Performance Budget
 
 Final file exists but DB missing
 
@@ -490,7 +564,7 @@ Update phải deferred khi bị block bởi System Settings / State Machine / Ki
 
 Self Update + System Settings + State Machine + Kiosk Policy
 
-## 7. Security and Privacy NFRs
+## 8. Security and Privacy NFRs
 
 Area
 
@@ -522,7 +596,7 @@ BDMA phải phân biệt được real operator recording và emergency override
 
 Sensitive logging
 
-Auth/security/policy logs không được chứa sensitive auth values, maintenance credentials, enrollment secrets hoặc sensitive biometric data.
+Auth/security/policy/performance logs không được chứa sensitive auth values, maintenance credentials, enrollment secrets, raw identifiers hoặc sensitive biometric data.
 
 Data retention
 
@@ -536,51 +610,13 @@ Encryption
 
 Media/DB/encryption decisions vẫn là security-design/ADR decisions.
 
-## 8. Performance and Reliability NFRs
-
-Area
-
-Requirement
-
-Login speed
-
-Login phải responsive trên target BodyCamera; exact target TBD sau device profiling.
-
-Policy verification speed
-
-Kiosk policy verification should not delay startup beyond accepted target; exact target TBD after Device POC.
-
-Startup readiness
-
-System modules có thể start before login; login screen nên xuất hiện sau safe startup/recovery/policy checks.
-
-User sync performance
-
-User sync through ADB không được block recording/finalization hoặc critical recovery.
-
-DB transaction reliability
-
-User/auth/session/media transactions phải đủ atomic để tránh inconsistent operator attribution.
-
-Background behavior
-
-No-timeout session không được depend vào Activity instance còn sống; state phải restorable từ runtime/DB.
-
-Reboot detection
-
-Reboot/session boundary phải đủ reliable để ngăn stale session restore sau reboot.
-
-Lock Task recovery
-
-Lock Task should recover after boot/crash/update when production profile requires it.
-
-Emergency latency
-
-Emergency override không được bị delay bởi normal login screen nếu emergency trigger đang active.
-
 ## 9. Documentation Rule
 
-text## 10. Remaining TBD Items
+NFR defines quality constraints.
+Performance Budget defines measurable numeric targets.
+Authoritative technical and contract documents define detailed rules.
+Related documents should reference, not duplicate, shared rule tables.
+## 10. Remaining TBD Items
 
 Item
 
@@ -588,7 +624,7 @@ Status
 
 Exact login performance targets
 
-TBD sau real device profiling
+Use Performance Budget + Device POC validation
 
 Exact policy verification / Lock Task recovery targets
 
@@ -598,9 +634,9 @@ Exact user sync performance targets
 
 TBD sau ADB sync POC
 
-Exact lockout policy values
+Battery and thermal targets
 
-TBD / Security Review
+Deferred until Device POC
 
 User/auth/history/policy audit retention duration
 
@@ -646,6 +682,17 @@ TBD / Security Review
 
 Non-functional Requirements giữ vai trò quality baseline.
 
-textNext QA deliverable nên bao gồm runtime/auth/recovery/policy/failure test matrix dựa trên:
+DCAM authentication phải offline-first.
+DCAM production deployment phải kiosk-policy-aware.
+Device Owner / Lock Task / User Restrictions behavior must be recoverable and testable.
+Normal recording phải operator-authenticated and policy-safe.
+Emergency recording có thể dùng auditable EMERGENCY_OVERRIDE_ADMIN.
+Session không timeout và survives background/foreground.
+Device reboot yêu cầu login lại.
+BDMA/DCAM user sync phải versioned, auditable và safe for runtime.
+Performance targets phải đo theo DCAM Performance Budget & Resource Constraints.
+Next QA deliverable nên bao gồm runtime/auth/recovery/policy/failure/performance test matrix dựa trên:
 
-text
+```
+Android Operation + Kiosk Policy + Recording & Capture + SQLite Database + Storage + Security + Data Contract + Performance Budget
+```

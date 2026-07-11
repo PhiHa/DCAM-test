@@ -3,7 +3,7 @@
 **Page ID**: 36929582  
 **Version**: 1  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/36929582
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/36929582
 
 ---
 
@@ -30,7 +30,7 @@ Phi gặp vướng ở Restore và đặt tên/label. Việt Anh gặp vấn đ�
 
 Kế hoạch chung
 
-Hoàn tất review &rarr; test các hạng mục; tuần tới refactor BodyCam Service, chuẩn bị Release Week 2; dọn gọn code đầu tuần.
+Hoàn tất review → test các hạng mục; tuần tới refactor BodyCam Service, chuẩn bị Release Week 2; dọn gọn code đầu tuần.
 
 ## 2. Tổng kết công việc tuần qua
 

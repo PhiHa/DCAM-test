@@ -3,7 +3,7 @@
 **Page ID**: 48529439  
 **Version**: 9  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/48529439
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/48529439
 
 ---
 
@@ -68,7 +68,9 @@ Tài liệu này mô tả technical design cho **Self Update / APK update** củ
 
 Current baseline:
 
-textTài liệu này không định nghĩa lại AutoUpdate preconditions. Full condition list thuộc **09 - System Settings Requirements**.
+Current device baseline: No external EMM / No Android Management API / No Managed Google Play. (per ADR - Dedicated Device / Device Owner / Lock Task Decision)
+Primary update path = DCAM Self Update / APK update.
+Tài liệu này không định nghĩa lại AutoUpdate preconditions. Full condition list thuộc **09 - System Settings Requirements**.
 
 Tài liệu này cũng không own Device Owner / Lock Task / User Restrictions policy. Policy-safe update constraints thuộc **DCAM Android Device Owner & Kiosk Policy Design**.
 
@@ -138,13 +140,71 @@ APK identity, integrity, trusted source, signature and policy-safe update securi
 
 ## 3. Design Decision
 
-textSelf Update không được interrupt field operation. Exact safety preconditions được reference từ **09 - System Settings Requirements**.
+Primary current update path:
+1. DCAM checks version manifest from approved artifact provider.
+2. DCAM downloads APK artifact when newer approved version exists.
+3. DCAM validates package identity, signature, checksum, version and compatibility.
+4. DCAM installs through approved Android/package policy path only when runtime guard is safe.
+5. DCAM verifies update result and restores kiosk policy.
+
+Optional fallback:
+Manual Google Play Store update may be used only from Controlled Maintenance Mode
+if the device has GMS/Play Store and an approved maintenance/factory Google account/process exists.
+
+Not applicable for current baseline (per ADR):
+Managed Google Play / Android Management API / External EMM-driven update.
+Self Update không được interrupt field operation. Exact safety preconditions được reference từ **09 - System Settings Requirements**.
 
 ## 4. Self Update Flow
 
-textManual Play Store fallback is separate:
+Scheduled/manual update check
+    ↓
+Confirm current device baseline uses DCAM Self Update path
+    ↓
+Load version manifest from approved artifact provider
+    ↓
+If newer approved version exists
+    ↓
+Check AutoUpdate preconditions from System Settings
+    ↓
+Check Android Operation mode and State Machine guard
+    ↓
+Check Kiosk Policy state is safe for update
+    ↓
+Check storage/network/power/package constraints
+    ↓
+Download APK
+    ↓
+Validate APK package identity, signature, checksum, version and compatibility
+    ↓
+Install according to approved Android/device policy path
+    ↓
+After restart/resume, verify app version
+    ↓
+Verify Device Owner/DPC state and re-enter Lock Task if required
+    ↓
+Report/audit update result
+Else
+    ↓
+Continue current version
+Manual Play Store fallback is separate:
 
-text## 5. Update Source Priority
+Admin / Maintenance
+    ↓
+Maintenance Password Gate
+    ↓
+Controlled Mode
+    ↓
+Open Google Play Store only if approved and available
+    ↓
+Update DCAM/approved apps only
+    ↓
+Return to DCAM
+    ↓
+Verify update result where applicable
+    ↓
+Restore kiosk policy
+## 5. Update Source Priority
 
 Priority
 
@@ -600,7 +660,13 @@ Policy restore failed; enter policy recovery/degraded state.
 
 Forbidden log content:
 
-text## 13. QA / POC Requirements
+Google account password/token
+maintenance password/credential
+APK signing private key or secret
+cloud token
+full sensitive config payload
+raw Android identifier
+## 13. QA / POC Requirements
 
 Test Area
 
@@ -670,4 +736,15 @@ Device POC + Product/Security decision.
 
 ## 15. Practical Conclusion
 
-text
+Self Update owns the primary update path. Current device baseline per ADR: No external EMM / No Android Management API / No Managed Google Play.
+Manual Google Play Store update is optional controlled maintenance fallback only if GMS/Play Store exists and approved maintenance/factory account exists.
+APK file, version manifest, checksum, signature, package identity, device compatibility and source validation are approved directions.
+Only exact schema, algorithms, install mechanics and rollout/rollback details remain TBD.
+System Settings owns full AutoUpdate precondition list.
+Android Operation owns app operating modes and runtime orchestration.
+State Machine owns update priority and guard behavior.
+Cloud Architecture owns provider boundary.
+Kiosk Policy Design owns Device Owner / Lock Task / User Restrictions constraints.
+In-App Console Design owns Controlled Mode / Maintenance Password Gate UX.
+Security Design owns package/update/account credential security constraints.
+Self Update must preserve Device Owner/DPC policy, Lock Task recovery and User Restrictions baseline.

@@ -3,7 +3,7 @@
 **Page ID**: 36536321  
 **Version**: 10  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/36536321
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/36536321
 
 ---
 
@@ -26,4 +26,4 @@ DCAM Project Home
 
 Trang điều hướng chính cho toàn bộ tài liệu DCAM.
 
-Open
+[Open](/wiki/spaces/DVID/pages/41648280/DCAM+Project+Home)

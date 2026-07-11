@@ -3,7 +3,7 @@
 **Page ID**: 32735234  
 **Version**: 1  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/32735234
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/32735234
 
 ---
 

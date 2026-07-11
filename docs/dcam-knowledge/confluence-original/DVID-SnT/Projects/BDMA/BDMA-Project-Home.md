@@ -3,7 +3,7 @@
 **Page ID**: 42696706  
 **Version**: 3  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/42696706
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/42696706
 
 ---
 
@@ -58,7 +58,73 @@ Những tài liệu nào cần được ưu tiên cập nhật hoặc chuẩn h�
 
 Cấu trúc hiện tại trên Confluence:
 
-textwide760## 3. Core Links
+BDMA
+├── BDMA Project Home
+├── 01 - Product Management
+│   ├── PRD Template Standard
+│   ├── Project Kickoff - DVID
+│   ├── Project plan
+│   ├── BDMA Product Vision
+│   └── Feature Specifications
+│       └── Device Management Tab Specification
+│
+├── 02 - Sprint Operations
+│   ├── Sprint Planning Meeting Template
+│   ├── Sprint Meeting 4.1
+│   ├── Sprint Planning 4.2
+│   ├── Sprint Meeting 4.2
+│   ├── Sub Meeting 1
+│   ├── Sprint Meeting 4.3
+│   ├── Sprint Meeting 4.4
+│   ├── Sprint Planning 5.1
+│   ├── Sprint Meeting 5.1
+│   ├── Sprint Planning 5.2
+│   ├── Sprint Meeting 5.2
+│   ├── Sprint Planning 5.3
+│   ├── Weekly Meeting 5.3
+│   ├── Sprint Planning 5.4
+│   ├── Weekly Team Meeting 5.4
+│   ├── Weekly Team Meeting 6.1
+│   ├── Weekly Team Meeting 2026-06-13
+│   └── Weekly Team Meeting 2026-06-20
+│
+├── 03 - KPI Reports
+│   ├── Sprint 2 Report
+│   └── Báo cáo đánh giá BDMA-124 & PR #120
+│
+├── 04 - Technical Documentation
+│   ├── BDMA System Architecture
+│   └── Technical Knowledge Base
+│       ├── AES-256 File Decryption Development Guideline
+│       ├── Building a JavaFX Application and NSIS Installer Steps
+│       ├── Developer Mode
+│       ├── Device Connection and Disconnection Process
+│       ├── Overall flow of sync data from device
+│       ├── Overall flow of backup data
+│       ├── Module Media Viewer
+│       ├── UI Design
+│       ├── Encryption & Apply SQL Patch
+│       ├── Process CI/CD
+│       ├── Version update feature
+│       ├── Module Sync & Backup
+│       ├── Module Restore
+│       └── Notes | FAQ
+│
+├── 05 - Release Management
+│   ├── Release Notes Template
+│   ├── BDMA v1.0.102
+│   ├── BDMA v1.0.116
+│   └── BDMA v1.0.127
+│
+├── 06 - Incident Log
+│   ├── Incident Log Template
+│   ├── Validation failed devices still got showed on list
+│   ├── Devices without external storage can't be synced
+│   └── Installer false-positive app running detection
+│
+└── 07 - Decision Log
+    └── Decision Log Template
+## 3. Core Links
 
 Area
 
@@ -82,7 +148,7 @@ Product Management
 
 Created
 
-Open
+[Open](/wiki/spaces/DVID/pages/25165827/01+-+Product+Management)
 
 Product Management
 
@@ -90,7 +156,7 @@ BDMA Product Vision
 
 Created
 
-Open
+[Open](/wiki/spaces/DVID/pages/25264240/BDMA+Product+Vision)
 
 Product Management
 
@@ -98,7 +164,7 @@ Project Kickoff - DVID
 
 Created
 
-Open
+[Open](/wiki/spaces/DVID/pages/1507541/Project+Kickoff+-+DVID)
 
 Product Management
 
@@ -106,7 +172,7 @@ Project plan
 
 Created
 
-Open
+[Open](/wiki/spaces/DVID/pages/1507517/Project+plan)
 
 Product Management
 
@@ -122,7 +188,7 @@ Device Management Tab Specification
 
 Created
 
-Open
+[Open](/wiki/spaces/DVID/pages/33357826/Device+Management+Tab+Specification)
 
 Sprint Operations
 
@@ -130,7 +196,7 @@ Sprint Operations
 
 Created
 
-Open
+[Open](/wiki/spaces/DVID/pages/25264129/02+-+Sprint+Operations)
 
 KPI Reports
 
@@ -138,7 +204,7 @@ KPI Reports
 
 Created
 
-Open
+[Open](/wiki/spaces/DVID/pages/25133098/03+-+KPI+Reports)
 
 Technical Documentation
 
@@ -146,7 +212,7 @@ Technical Documentation
 
 Created
 
-Open
+[Open](/wiki/spaces/DVID/pages/25198614/04+-+Technical+Documentation)
 
 Technical Documentation
 
@@ -154,7 +220,7 @@ BDMA System Architecture
 
 Created
 
-Open
+[Open](/wiki/spaces/DVID/pages/25264261/BDMA+System+Architecture)
 
 Technical Documentation
 
@@ -170,7 +236,7 @@ Release Management
 
 Created
 
-Open
+[Open](/wiki/spaces/DVID/pages/25165847/05+-+Release+Management)
 
 Incident Log
 
@@ -178,7 +244,7 @@ Incident Log
 
 Created
 
-Open
+[Open](/wiki/spaces/DVID/pages/25133078/06+-+Incident+Log)
 
 Decision Log
 
@@ -186,7 +252,7 @@ Decision Log
 
 Created
 
-Open
+[Open](/wiki/spaces/DVID/pages/25264149/07+-+Decision+Log)
 
 ## 4. Recommended Reading Order
 
@@ -420,7 +486,49 @@ Giúp truy vết lỗi, version và nguyên nhân tốt hơn.
 
 Cấu trúc mục tiêu nên tiếp tục giữ theo mô hình hiện tại:
 
-textwide760## 9. Documentation Maintenance Rules
+BDMA
+├── BDMA Project Home
+├── 01 - Product Management
+│   ├── BDMA Product Vision
+│   ├── BDMA Project Charter
+│   ├── BDMA Roadmap
+│   ├── PRD Template Standard
+│   └── Feature Specifications
+│
+├── 02 - Sprint Operations
+│   ├── Sprint Planning Meeting Template
+│   ├── Sprint Planning Pages
+│   ├── Weekly Team Meetings
+│   └── Sprint Reports / Sprint Reviews
+│
+├── 03 - KPI Reports
+│   ├── Sprint Reports
+│   └── Task / PR Evaluation Reports
+│
+├── 04 - Technical Documentation
+│   ├── BDMA System Architecture
+│   ├── Technical Knowledge Base
+│   ├── Module Documents
+│   ├── CI/CD Documents
+│   └── ADR / Technical Decisions
+│
+├── 05 - Release Management
+│   ├── Release Notes Template
+│   ├── Release Notes by Version
+│   ├── Installation / Build Notes
+│   └── Known Issues
+│
+├── 06 - Incident Log
+│   ├── Incident Log Template
+│   ├── Production / Pilot Incidents
+│   └── Root Cause / Resolution Notes
+│
+└── 07 - Decision Log
+    ├── Decision Log Template
+    ├── Product Decisions
+    ├── Technical Decisions
+    └── Scope / Release Decisions
+## 9. Documentation Maintenance Rules
 
 Rule
 

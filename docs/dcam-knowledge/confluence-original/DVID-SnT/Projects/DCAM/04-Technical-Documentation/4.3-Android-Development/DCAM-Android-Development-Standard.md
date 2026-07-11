@@ -1,9 +1,9 @@
 # DCAM Android Development Standard
 
 **Page ID**: 47120580  
-**Version**: 11  
+**Version**: 13  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/47120580
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47120580
 
 ---
 
@@ -24,7 +24,7 @@ Project-specific Android Development Standard
 
 Version
 
-Approved 1.8
+Approved 1.10
 
 Status
 
@@ -56,7 +56,7 @@ Last Updated
 
 Related Documents
 
-DCAM Architecture Home, 04 - Device Configuration Requirements, 05 - User & Device Operation Requirements, 09 - System Settings Requirements, 10 - Android Device Operation Requirements, 06 - Cloud Services, Update & Configuration Architecture, DCAM Android Device Owner & Kiosk Policy Design, ADR - DCAM Android Dedicated Device / Device Owner / Lock Task Decision, DCAM Android Operation Design, DCAM Recording & Capture Design, DCAM Storage Design, DCAM SQLite Database Design, DCAM Security & Encryption Design, DCAM State Machine Design, DCAM-BDMA Data Contract, DCAM Android Training & Architecture Onboarding, 04 - Application & Module Architecture, DCAM Documentation Governance
+DCAM Architecture Home, DCAM Architecture Delivery Profile, DCAM Concurrency & Threading Model Design, 04 - Device Configuration Requirements, 05 - User & Device Operation Requirements, 09 - System Settings Requirements, 10 - Android Device Operation Requirements, 06 - Cloud Services, Update & Configuration Architecture, DCAM Android Device Owner & Kiosk Policy Design, ADR - DCAM Android Dedicated Device / Device Owner / Lock Task Decision, DCAM Android Operation Design, DCAM Recording & Capture Design, DCAM Storage Design, DCAM SQLite Database Design, DCAM Security & Encryption Design, DCAM State Machine Design, DCAM-BDMA Data Contract, DCAM Android Training & Architecture Onboarding, 04 - Application & Module Architecture, DCAM Documentation Governance
 
 ## 1. Purpose
 
@@ -70,15 +70,85 @@ Tách business logic khỏi Android SDK, hardware SDK, cloud SDK, device policy 
 
 Giúp code dễ review, test, debug và bảo trì.
 
-Đảm bảo implementation bám sát các runtime design mới: Android Operation, Android Device Owner & Kiosk Policy, Recording & Capture, Storage, SQLite Database, Security, Device Identity, Remote Config và User Management.
+Đảm bảo implementation bám sát các runtime design mới: Android Operation, Android Device Owner & Kiosk Policy, Recording & Capture, Storage, SQLite Database, Security, Device Identity, Remote Config, User Management và Concurrency & Threading Model.
 
+Áp dụng đúng **DCAM Architecture Delivery Profile** để phân biệt MVP implementation rule với full production rule.
+
+Core clarification:
+
+This standard defines the full direction.
+MVP implementation must apply only MVP P0 rules and feature-specific rules for features actually in scope.
+Do not block Working Recording Slice with future feature checklists.
+Threading/concurrency implementation must follow DCAM Concurrency & Threading Model Design.
 ## 2. Standard Application Architecture
 
 DCAM Android phải đi theo hướng kiến trúc sau:
 
-textRule quan trọng:
+Activity / Fragment
+        ↓
+ViewModel
+        ↓
+UseCase / Interactor
+        ↓
+Domain Controller / Repository
+        ↓
+Service Interface
+        ↓
+Platform Adapter
+        ↓
+Android SDK / DevicePolicyManager / Hardware SDK / File System / SQLite / Cloud-WebServer Provider
+Rule quan trọng:
 
-text## 3. Runtime Implementation References
+UI và ViewModel không được gọi trực tiếp Android hardware SDK,
+vendor SDK, DevicePolicyManager, file system, SQLite runtime tables,
+identity provider, credential/auth storage hoặc cloud/webserver SDK.
+MVP interpretation:
+
+Keep the same dependency direction.
+But do not create every future service/interface before it has near-term usage.
+No abstraction without at least one real implementation.
+## 3. Architecture Delivery Profile Rule
+
+Implementation phải theo đúng **DCAM Architecture Delivery Profile**.
+
+Profile
+
+Required Standard
+
+MVP / Phase 1
+
+Apply MVP P0 rules only; focus Recording/Capture/Storage/BDMA/minimal DB/config/log.
+
+Phase 2
+
+Add rules for Device/User foundation, kiosk baseline, remote config foundation, self update foundation when those features enter scope.
+
+Phase 3+
+
+Add rules for Live Streaming, PTT, GPS route, sensor monitoring, AI and advanced features.
+
+Production Hardening
+
+Apply full production checklist and feature-specific checklist.
+
+Working Recording Slice gate:
+
+Open app
+    ↓
+Check camera/storage permission
+    ↓
+Record 30s video
+    ↓
+Stop
+    ↓
+Finalize file
+    ↓
+Write minimal DB/config/log output
+    ↓
+BDMA detects/imports sample media
+No new architecture layer/module may be added before this slice is demoable, unless it directly blocks recording, storage, BDMA ingest, device POC or release safety.
+
+## 4. Runtime Implementation References
 
 Sau khi các runtime design chính đã được mở rộng, implementation phải bám theo các runtime owner sau.
 
@@ -88,11 +158,23 @@ Main Implementation Owner
 
 Authoritative Design
 
+MVP Status
+
+Concurrency/threading, execution lanes, State Coordinator, MainThread boundary, Camera callback contract, File I/O and DB executor boundary
+
+`StateCoordinator`, `RecordingCommandExecutor`, `CameraExecutor`, `FileIoExecutor`, `DbExecutor`, `MainHandler`
+
+DCAM Concurrency & Threading Model Design
+
+MVP Required
+
 App startup, identity restore, provisioning state, kiosk policy verification, login screen, session lifecycle, foreground service, permission lifecycle, module registry, safe mode
 
 `AppRuntimeOrchestrator`, `DeviceIdentityManager`, `ProvisioningManager`, `KioskPolicyManager`, `OperatorSessionManager`, `RuntimeModuleRegistry`, `ForegroundServiceHost`, `RecoveryManager`
 
 DCAM Android Operation Design
+
+MVP uses minimal `AppRuntimeBootstrap`; full orchestrator Phase 2+
 
 Android Device Owner / DPC policy, Lock Task, User Restrictions, Home/Launcher policy, Maintenance Mode
 
@@ -100,11 +182,15 @@ Android Device Owner / DPC policy, Lock Task, User Restrictions, Home/Launcher p
 
 DCAM Android Device Owner & Kiosk Policy Design
 
+MVP Lock Task POC only if required; full stack Phase 2+
+
 Device identity and serial/config file behavior
 
 `DeviceIdentityManager`, `DeviceConfigRepository`, `CsonConfigStore`
 
 04 - Device Configuration Requirements
+
+MVP minimal local serial/config only
 
 WebServer/Firebase identity and Web Portal provisioning provider boundary
 
@@ -112,11 +198,15 @@ WebServer/Firebase identity and Web Portal provisioning provider boundary
 
 06 - Cloud Services, Update & Configuration Architecture
 
+Phase 2+
+
 Remote config cache/apply behavior
 
 `RemoteConfigRepository`, `SettingsRepository`, `ConfigApplyCoordinator`
 
 09 - System Settings Requirements + SQLite Database Design
+
+Phase 2+
 
 User/operator management and login policy
 
@@ -124,11 +214,15 @@ User/operator management and login policy
 
 05 - User & Device Operation Requirements
 
+Phase 2+ unless MVP explicitly enables auth
+
 Recording/capture session lifecycle, operator gate and emergency evidence flow
 
 `RecordingController`
 
 DCAM Recording & Capture Design
+
+MVP Required with MVP-supported guards
 
 Android-side storage mechanics, temp/final move, storage recovery and BDMA readiness
 
@@ -136,11 +230,15 @@ Android-side storage mechanics, temp/final move, storage recovery and BDMA readi
 
 DCAM Storage Design
 
+MVP Required
+
 SQLite schema, transaction, identity/config cache tables, user/auth/session tables, write-back, external change detection and DB recovery
 
-`DatabaseService`, `DeviceIdentityRepository`, `RemoteConfigRepository`, `UserRepository`, `OperatorSessionRepository`, `MediaSessionRepository`, `SettingsRepository`, `BdmaWriteBackRepository`
+`DatabaseService`, repositories
 
 DCAM SQLite Database Design
+
+MVP minimal DB; full DB Phase 2+
 
 Device identity security, credential/auth security, provisioning security, kiosk policy security, emergency override auditability and encryption direction
 
@@ -148,19 +246,25 @@ Device identity security, credential/auth security, provisioning security, kiosk
 
 DCAM Security & Encryption Design
 
+MVP safe logging/basic protection; full security Phase 2+
+
 Feature eligibility and runtime pruning
 
 `DeviceCapabilityManager`, `FeatureEligibilityEvaluator`
 
 DCAM Device Capability & Feature Eligibility Design
 
+Phase 2+ / MVP simple checks
+
 Cross-runtime guard rules
 
 `StateMachineCoordinator`
 
-DCAM State Machine Design
+DCAM State Machine Design + DCAM Concurrency & Threading Model Design
 
-## 4. Service Interface Rule
+Phase 2+ / MVP local recording-storage state
+
+## 5. Service Interface Rule
 
 Mọi external/platform capability phải được truy cập thông qua Service Interface.
 
@@ -172,11 +276,47 @@ Responsibility
 
 Runtime Design Reference
 
+MVP Status
+
+`StateCoordinator` / `RecordingCommandExecutor`
+
+Serialize command/event/state transition cho recording/capture/finalization và Safe Window Guard.
+
+Concurrency & Threading Model Design
+
+MVP Required
+
+`CameraExecutor` / `CameraHandlerThread`
+
+Isolate camera SDK operation và callback mapping.
+
+Concurrency & Threading Model Design + Recording & Capture Design
+
+MVP Required
+
+`FileIoExecutor`
+
+Isolate temp/final/checksum/log/CSON file operation.
+
+Concurrency & Threading Model Design + Storage Design
+
+MVP Required
+
+`DbExecutor`
+
+Isolate SQLite read/write/transaction boundary.
+
+Concurrency & Threading Model Design + SQLite Database Design
+
+MVP Required
+
 `DevicePolicyStateService` / `DevicePolicyStateManager`
 
 Detect Device Owner / approved DPC state and policy authority.
 
 Kiosk Policy Design + Android Operation
+
+Phase 2+
 
 `KioskPolicyService` / `KioskPolicyManager`
 
@@ -184,11 +324,15 @@ Apply/verify production kiosk profile.
 
 Kiosk Policy Design
 
+Phase 2+
+
 `LockTaskService` / `LockTaskController`
 
 Verify allowlist, start/stop/recover Lock Task Mode.
 
 Kiosk Policy Design
+
+MVP conditional POC / Phase 2+ full
 
 `UserRestrictionService` / `UserRestrictionPolicyManager`
 
@@ -196,11 +340,7 @@ Apply/verify/remove approved User Restrictions.
 
 Kiosk Policy Design
 
-`HomeAppPolicyService` / `HomeAppPolicyManager`
-
-Configure/verify preferred Home/Launcher policy.
-
-Kiosk Policy Design
+Phase 2+
 
 `MaintenanceModeService` / `MaintenanceModeController`
 
@@ -208,11 +348,15 @@ Enter/exit authorized Maintenance Mode.
 
 Kiosk Policy Design + Security Design
 
+Phase 2+
+
 `DeviceIdentityService` / `DeviceIdentityManager`
 
 Resolve local identity, restore cloud identity by `serial_number` / `serial_lookup/{serial_number}`, manage SD Identity File sync state and provisioning state.
 
 Android Operation + Cloud Architecture + SQLite Design
+
+MVP local minimal / Phase 2+ full
 
 `ProvisioningService` / `ProvisioningManager`
 
@@ -220,17 +364,15 @@ Quản lý provisioning-required state, QR display data, polling và provisionin
 
 Android Operation + Cloud Architecture
 
+Phase 2+
+
 `RemoteConfigService` / `RemoteConfigProvider`
 
 Fetch effective config theo `dcam_cloud_device_id`.
 
 Cloud Architecture + System Settings
 
-`RemoteConfigRepository`
-
-Cache target/pending/applied config state trong DB.
-
-SQLite Database Design
+Phase 2+
 
 `ConfigApplyCoordinator`
 
@@ -238,11 +380,15 @@ Validate và apply/defer config theo runtime guard.
 
 System Settings + State Machine Design
 
+Phase 2+
+
 `DeviceConfigStore` / `CsonConfigStore`
 
 Read/write `dcam_config.cson` chỉ cho device information.
 
 Device Configuration Requirements + Data Contract
+
+MVP Required if CSON is generated
 
 `CameraService`
 
@@ -250,11 +396,15 @@ Camera open/close/preview/recording adapter.
 
 Recording & Capture Design
 
+MVP Required
+
 `RecordingController`
 
 Owner quyết định authoritative cho recording session.
 
 Recording & Capture Design
+
+MVP Required
 
 `OperatorSessionService` / `OperatorSessionManager`
 
@@ -262,17 +412,15 @@ Create/restore/invalidate/read active operator session.
 
 Android Operation + SQLite Database Design
 
+Phase 2+ unless MVP auth enabled
+
 `AuthMethodService` / `AuthMethodManager`
 
 Dispatch Password, pattern, face, QR và NFC auth method.
 
 Security & Encryption Design
 
-`UserRepository`
-
-Truy cập user/operator profile và sync data qua DB boundary.
-
-SQLite Database Design
+Phase 2+
 
 `StorageService`
 
@@ -280,17 +428,15 @@ Quản lý storage root/temp/final/recovery mechanics.
 
 Storage Design
 
+MVP Required
+
 `DatabaseService`
 
 Boundary cho SQLite transaction, query và migration.
 
 SQLite Database Design
 
-`PermissionService`
-
-Detect permission state và map affected-feature.
-
-Android Operation Design
+MVP Required minimal
 
 `DeviceCapabilityService`
 
@@ -298,11 +444,15 @@ Detect hardware/platform/performance/policy capability.
 
 Device Capability Design
 
+MVP simple checks / Phase 2+ full
+
 `LocationService`
 
 GPS/location adapter.
 
 Sensor & Location Monitoring Design
+
+MVP availability/basic / Phase 3 route
 
 `RealtimeAnalyticsService`
 
@@ -310,11 +460,15 @@ Realtime analytics runtime adapter.
 
 Realtime AI Detection Design
 
+Phase 3+ / Future
+
 `UpdateService`
 
 Thực thi Play Store / Self Update.
 
 Self Update Design
+
+Phase 2+
 
 `LogService`
 
@@ -322,11 +476,15 @@ Ghi local diagnostics logging.
 
 Logging Requirements
 
+MVP Required
+
 `SecurityService`
 
 Xử lý credential, identity, encryption/signature/key-related functions.
 
 Security & Encryption Design
+
+Phase 2+ full
 
 `FileIntegrityService`
 
@@ -334,9 +492,11 @@ Checksum/hash/validation theo Data Contract.
 
 Storage Design / Data Contract
 
+MVP if `.md5` supported
+
 Not allowed:
 
-text DevicePolicyManager
+Activity -> DevicePolicyManager
 ViewModel -> DevicePolicyManager
 UI -> startLockTask/stopLockTask directly
 UI -> setLockTaskPackages/addUserRestriction/clearUserRestriction directly
@@ -347,16 +507,104 @@ ViewModel -> credential table / auth storage
 UseCase -> Android file path manipulation
 UseCase -> original Android system identifier logging
 UseCase -> auth values in logs
+Camera callback -> SQLiteDatabase
+Camera callback -> UI update directly
+Camera callback -> runtime state mutation directly
 Sensor Runtime -> Camera SDK
 Realtime AI Runtime -> StorageService final media write
-BDMA helper -> active operator_session lifecycle fields
-BDMA helper -> active media_session lifecycle fields without approved contract
-RecordingController bypassing OperatorSessionProvider for normal recording
-Remote config code writing operational settings or kiosk settings into dcam_config.cson]]>Allowed direction:
+BDMA helper -> active operator_session lifecycle fields without approved contract
+RecordingController bypassing OperatorSessionProvider for normal recording when auth is enabled
+Remote config code writing operational settings or kiosk settings into dcam_config.cson
+Allowed direction:
 
-text## 5. Device Owner / Kiosk Implementation Rule
+UI/ViewModel
+    ↓
+UseCase
+    ↓
+Domain Controller / Repository
+    ↓
+Service Interface
+    ↓
+Adapter Implementation
+## 6. MVP P0 Implementation Rules
 
-Implementation phải tuân thủ **DCAM Android Device Owner & Kiosk Policy Design**.
+MVP PRs must satisfy these rules. These are mandatory even before full platform architecture starts.
+
+Rule ID
+
+Rule
+
+MVP-DEV-001
+
+UI/ViewModel must not call Camera SDK, SQLite, physical file path operations or Android policy APIs directly.
+
+MVP-DEV-002
+
+Recording and capture commands must go through `RecordingController` or equivalent MVP controller.
+
+MVP-DEV-003
+
+Camera SDK calls must go through `CameraService` or equivalent adapter.
+
+MVP-DEV-004
+
+Temp/final media write must go through `StorageService` or equivalent storage boundary.
+
+MVP-DEV-005
+
+DB writes must go through `DatabaseService` or repository boundary.
+
+MVP-DEV-006
+
+BDMA output must follow DCAM-BDMA Data Contract for MVP-supported files/fields.
+
+MVP-DEV-007
+
+Logs must not include credentials, secrets, tokens, raw sensitive identifiers or sensitive media data.
+
+MVP-DEV-008
+
+Unsupported optional features must be disabled clearly; do not fake support through UI-only hiding.
+
+MVP-DEV-009
+
+Gradle/module split must follow Architecture Delivery Profile split trigger.
+
+MVP-DEV-010
+
+Every sprint must keep the APK runnable unless the sprint task explicitly fixes a blocker.
+
+MVP-DEV-011
+
+MainThread must not run long camera/file/DB work or wait synchronously for background result.
+
+MVP-DEV-012
+
+Camera callback must emit event only; it must not write DB, update UI or mutate runtime state directly.
+
+MVP-DEV-013
+
+Recording state must be mutated only through single-threaded command/state coordinator.
+
+MVP-DEV-014
+
+File finalization must run through `FileIoExecutor` or equivalent boundary.
+
+MVP-DEV-015
+
+DB writes must run through `DbExecutor` or equivalent Room/raw SQLite executor boundary.
+
+MVP-DEV-016
+
+`BDMA_READY` must be marked only after final file and DB transaction both succeed.
+
+## 7. Feature-specific Implementation Rules
+
+Full rules below become mandatory only when the corresponding feature is in implementation scope.
+
+### 7.1 Device Owner / Kiosk Implementation Rule
+
+Implementation phải tuân thủ **DCAM Android Device Owner & Kiosk Policy Design** when kiosk/Device Owner implementation starts.
 
 Rule
 
@@ -402,9 +650,13 @@ DEV-KIOSK-010
 
 Update flow must verify policy-safe state and restore Lock Task after restart if required.
 
-## 6. Device Identity / Provisioning Implementation Rule
+DEV-KIOSK-011
 
-Implementation phải tuân thủ approved identity và provisioning design.
+Policy/config/update apply must pass Safe Window Guard from Concurrency & Threading Model.
+
+### 7.2 Device Identity / Provisioning Implementation Rule
+
+Implementation phải tuân thủ approved identity và provisioning design when identity/provisioning implementation is in scope.
 
 Rule
 
@@ -462,7 +714,7 @@ DEV-ID-013
 
 `ANDROID_ID`, `android_id_hash` và `device_lookup/{android_id_hash}` không được dùng trong current production identity/recovery baseline.
 
-## 7. Remote Config Implementation Rule
+### 7.3 Remote Config Implementation Rule
 
 Remote config identity/fetch/cache/apply baseline và initial setting groups đã được approved. Exact field-level payload schema và field names vẫn TBD cho implementation/API design.
 
@@ -514,9 +766,13 @@ DEV-CONFIG-011
 
 Kiosk remote config is requested policy; actual apply belongs to policy managers.
 
-## 8. User/Auth Implementation Rule
+DEV-CONFIG-012
 
-Implementation phải tuân thủ offline-first user management design.
+Network callback must not apply config directly; it must emit result to State Coordinator / apply coordinator.
+
+### 7.4 User/Auth Implementation Rule
+
+Implementation phải tuân thủ offline-first user management design when auth/user management is in scope.
 
 Rule
 
@@ -566,11 +822,20 @@ DEV-AUTH-011
 
 Operator login must not override missing required Device Owner / kiosk policy in production profile.
 
-## 9. Recording Implementation Rule
+DEV-AUTH-012
 
-Implementation phải tuân thủ **RecordingController authority**.
+BDMA user disable/change must not interrupt active recording; apply through safe window rule.
 
-textRules:
+### 7.5 Recording Implementation Rule
+
+Implementation phải tuân thủ **RecordingController authority** và **Concurrency & Threading Model**.
+
+UI / Sensor / Realtime AI / Emergency Event Manager
+        ↓ command or event
+RecordingController / State Coordinator
+        ↓ state-machine + policy guard + operator-auth guard
+CameraService + StorageService + DatabaseService
+For MVP, only MVP-supported guards are required. Full policy/auth/emergency guards become mandatory when those features enter scope.
 
 Rule
 
@@ -590,29 +855,37 @@ Camera SDK calls phải đi qua `CameraService`/adapter.
 
 DEV-REC-004
 
-Final media write/finalization phải đi qua `StorageService`.
+Final media write/finalization phải đi qua `StorageService` and `FileIoExecutor` boundary.
 
 DEV-REC-005
 
-DB state changes phải đi qua repository/`DatabaseService` transaction boundary.
+DB state changes phải đi qua repository/`DatabaseService` transaction boundary and `DbExecutor`.
 
 DEV-REC-006
 
-Normal recording phải fail fast với `OPERATOR_AUTH_REQUIRED` nếu không có active operator session.
+Normal recording phải fail fast với `OPERATOR_AUTH_REQUIRED` nếu auth is enabled and không có active operator session.
 
 DEV-REC-007
 
-Emergency recording phải persist emergency override attribution nếu chưa có operator logged in.
+Emergency recording phải persist emergency override attribution nếu emergency override is in scope.
 
 DEV-REC-008
 
-Media session phải persist operator snapshot tại recording/capture start.
+Media session phải persist operator snapshot tại recording/capture start when auth/operator model is in scope.
 
 DEV-REC-009
 
-Production policy-required failure must block/defer normal recording before camera start.
+Production policy-required failure must block/defer normal recording before camera start when production kiosk policy is in scope.
 
-## 10. Storage and Database Implementation Rule
+DEV-REC-010
+
+Camera callback must emit event only; state transition must happen on State Coordinator.
+
+DEV-REC-011
+
+`BDMA_READY` must be marked only after final file and DB transaction both succeed.
+
+## 8. Storage and Database Implementation Rule
 
 Storage và DB code phải tuân thủ runtime design boundaries tương ứng.
 
@@ -626,7 +899,7 @@ ViewModel/UseCase không được build physical paths trực tiếp. Dùng `Sto
 
 Temp/final handling
 
-Chỉ Storage layer xử lý temp/staging/final file movement.
+Chỉ Storage layer xử lý temp/staging/final file movement. File I/O lớn chạy trên `FileIoExecutor`.
 
 CSON handling
 
@@ -638,11 +911,15 @@ Chỉ set sau khi Storage + DB readiness conditions pass.
 
 DB write
 
-Dùng repositories và transaction helpers; tránh raw SQL rải rác trong app.
+Dùng repositories và transaction helpers; tránh raw SQL rải rác trong app. DB write chạy trên `DbExecutor`.
+
+DB transaction
+
+Không chứa file move/checksum/network/camera wait; transaction phải ngắn.
 
 Identity/provisioning DB write
 
-Dùng `DeviceIdentityRepository` / `ProvisioningRepository` và transaction helpers.
+Dùng `DeviceIdentityRepository` / `ProvisioningRepository` và transaction helpers when identity/provisioning is in scope.
 
 Kiosk policy state DB write
 
@@ -650,11 +927,11 @@ Nếu persisted, dùng approved policy repository/table boundary; không write a
 
 Remote config DB write
 
-Dùng `RemoteConfigRepository` và setting repositories.
+Dùng `RemoteConfigRepository` và setting repositories when remote config is in scope.
 
 User/auth/session DB write
 
-Dùng `UserRepository`, `AuthMethodRepository`, `OperatorSessionRepository` và transaction helpers.
+Dùng `UserRepository`, `AuthMethodRepository`, `OperatorSessionRepository` và transaction helpers when auth is in scope.
 
 BDMA write-back
 
@@ -668,7 +945,7 @@ Recovery
 
 RecoveryManager / StorageRecoveryScanner / DB recovery code phải preserve evidence-like files khi chưa chắc chắn.
 
-## 11. Credential, Identity, Policy and Logging Standard
+## 9. Credential, Identity, Policy and Logging Standard
 
 Area
 
@@ -706,6 +983,10 @@ Config logs
 
 Log revision/result/reason code; không dump sensitive config content.
 
+Threading logs
+
+Log command/event/state transition/defer/timeout bằng safe reason code.
+
 Sensitive values
 
 Không log credentials, tokens, biometric samples, encryption keys, original Android system identifier, maintenance credential, enrollment secret hoặc sensitive media data.
@@ -722,11 +1003,50 @@ Crash/debug logs
 
 Không dump DB rows chứa auth/identity/policy-sensitive data.
 
-## 12. Threading Standard
+## 10. Threading Standard
+
+Authoritative threading rules nằm trong **DCAM Concurrency & Threading Model Design**. Section này chỉ tóm tắt baseline implementation.
+
+Java-first
+ExecutorService / HandlerThread
+Single-threaded State Coordinator
+Camera callback emits event only
+DB writes through DbExecutor only
+File finalization through FileIoExecutor only
+Policy/config/update apply only in Safe Window
+MainThread only for UI
 
 Task Type
 
 Standard Threading
+
+UI render / lifecycle light work
+
+MainThread only.
+
+Recording command/state transition
+
+Single-threaded `RecordingCommandExecutor` / `StateCoordinator`.
+
+Camera open/close/start/stop
+
+Dedicated `CameraExecutor` hoặc SDK-required `HandlerThread`.
+
+Camera callback
+
+Chỉ emit event về `StateCoordinator`; không DB write/update UI/mutate state trực tiếp.
+
+File read/write/move/checksum
+
+`FileIoExecutor` hoặc dedicated IO executor.
+
+Finalization pipeline
+
+File operation trên `FileIoExecutor`, DB transaction ngắn trên `DbExecutor`, result quay về `StateCoordinator`.
+
+SQLite operations
+
+`DbExecutor` / Room executor / controlled SQLite executor.
 
 Device policy check/apply
 
@@ -740,25 +1060,9 @@ User Restrictions apply/remove
 
 Policy manager serialized execution; defer if runtime guard unsafe.
 
-Camera open/close/start/stop
-
-Dedicated HandlerThread hoặc SDK-required serialized executor.
-
-Vendor SDK command
-
-Adapter-owned serialized thread trừ khi SDK quy định khác.
-
-File read/write/move/checksum
-
-ExecutorService hoặc dedicated IO executor.
-
 CSON read/write
 
 IO executor; dùng safe temp/write/replace pattern khi cần.
-
-SQLite operations
-
-DB executor / Room executor / controlled SQLite executor.
 
 Identity lookup / remote config fetch
 
@@ -770,11 +1074,11 @@ Background worker; không được block UI.
 
 Remote config validation/apply
 
-Background executor + main-thread UI result only.
+Background executor + State Coordinator / ConfigApplyCoordinator + main-thread UI result only.
 
 User sync through ADB / DB write-back apply
 
-Background executor; không được block UI hoặc recording/finalization.
+Background executor + `DbExecutor`; không được block UI hoặc recording/finalization.
 
 Auth method validation
 
@@ -792,11 +1096,22 @@ UI update
 
 Main thread qua ViewModel/LiveData.
 
-## 13. Error Handling Standard
+For MVP, mandatory threading focus is camera, file IO, SQLite, single-threaded recording state and UI responsiveness. Other rows apply when the related feature is in scope.
+
+## 11. Error Handling Standard
 
 Errors phải được map theo từng layer.
 
-textCommon categories:
+SDK Exception / DevicePolicy Exception / SQLite Exception / IO Exception / Network Exception / Auth Exception / Timeout
+        ↓
+Adapter/ServiceError
+        ↓
+DomainResult
+        ↓
+ViewModel UI State
+        ↓
+User-friendly message + diagnostic log
+Common categories:
 
 Category
 
@@ -842,6 +1157,10 @@ Database Error
 
 DB locked/corrupted/migration failed.
 
+Threading Error
+
+Camera timeout, DB busy timeout, finalization timeout, executor rejected task, unsafe state mutation attempt.
+
 User Sync Error
 
 Conflict, unsupported schema, invalid write-back data.
@@ -854,7 +1173,95 @@ Runtime Error
 
 Service killed, process death, safe mode.
 
-## 14. Pull Request Review Checklist
+## 12. Pull Request Review Checklist
+
+### 12.1 MVP PR Checklist
+
+Use this checklist for Phase 1 / Working Recording Slice PRs.
+
+Check
+
+Required
+
+APK remains runnable or PR explicitly fixes a blocker.
+
+Yes
+
+UI/ViewModel does not call Camera SDK, file system path operations, SQLite or DevicePolicyManager directly.
+
+Yes
+
+Recording/capture goes through `RecordingController` or approved MVP equivalent.
+
+Yes
+
+Camera SDK calls go through `CameraService` or approved adapter.
+
+Yes
+
+Camera callback only emits event; it does not write DB, update UI or mutate state directly.
+
+Yes
+
+Recording state mutation happens only on single-threaded coordinator.
+
+Yes
+
+Storage/temp/final handling goes through `StorageService` or approved storage boundary.
+
+Yes
+
+File finalization runs through `FileIoExecutor` or equivalent boundary.
+
+Yes
+
+DB writes go through `DatabaseService` / repository boundary and `DbExecutor`.
+
+Yes
+
+DB transaction does not contain file move/checksum/network/camera wait.
+
+Yes
+
+`BDMA_READY` is marked only after final file and DB update succeed.
+
+Yes
+
+BDMA output follows MVP-supported DCAM-BDMA Data Contract.
+
+Yes
+
+Logs exist for important recording/capture/storage/BDMA/threading success/error paths.
+
+Yes
+
+Sensitive data is not logged.
+
+Yes
+
+No unused future abstraction/module is added without a real implementation and near-term usage.
+
+Yes
+
+Optional/deferred features are clearly disabled or out of scope.
+
+Yes
+
+Long-running camera/file/DB work does not block UI thread.
+
+Yes
+
+Raw SDK/DB/IO errors are mapped before reaching UI.
+
+Yes
+
+Code links to Jira issue where applicable.
+
+Recommended
+
+### 12.2 Full Production PR Checklist
+
+Use this checklist when the related platform/production features are in scope.
 
 Check
 
@@ -868,37 +1275,41 @@ Runtime code uses authoritative controller/service owner.
 
 Yes
 
-Device policy APIs go through `KioskPolicyManager` / policy services.
+Threading/concurrency follows DCAM Concurrency & Threading Model Design.
 
 Yes
+
+Device policy APIs go through `KioskPolicyManager` / policy services.
+
+Feature-specific
 
 Lock Task entry/exit goes through `LockTaskController`.
 
-Yes
+Feature-specific
 
 User Restrictions go through `UserRestrictionPolicyManager`.
 
-Yes
+Feature-specific
 
 Maintenance Mode goes through `MaintenanceModeController` and security guard.
 
-Yes
+Feature-specific
 
 Device identity resolution goes through `DeviceIdentityManager`.
 
-Yes
+Feature-specific
 
 Provisioning flow goes through `ProvisioningManager` / approved service.
 
-Yes
+Feature-specific
 
 Code uses `dcam_cloud_device_id` as server device id, not serial.
 
-Yes
+Feature-specific
 
 Code uses `serial_number` only as Hardware Identity / recovery key, not cloud primary key.
 
-Yes
+Feature-specific
 
 Code does not use `ANDROID_ID`, `android_id_hash` or `device_lookup/{android_id_hash}` for current production identity/recovery baseline.
 
@@ -914,15 +1325,15 @@ Yes
 
 Remote config fetch/apply goes through approved provider/repository/coordinator.
 
-Yes
+Feature-specific
 
-Remote config apply checks runtime guard.
+Remote config apply checks runtime guard and Safe Window Guard.
 
-Yes
+Feature-specific
 
 Kiosk requested-policy config does not directly mutate Android policy outside policy manager boundary.
 
-Yes
+Feature-specific
 
 Operational settings are not written into `dcam_config.cson`.
 
@@ -930,15 +1341,15 @@ Yes
 
 Login/session behavior goes through `OperatorSessionManager`.
 
-Yes
+Feature-specific
 
 Device reboot invalidates previous active session.
 
-Yes
+Feature-specific
 
 Background/foreground does not logout operator.
 
-Yes
+Feature-specific
 
 Recording behavior goes through `RecordingController`.
 
@@ -946,15 +1357,15 @@ Yes
 
 Normal recording checks active operator session and required production policy state.
 
-Yes
+Feature-specific
 
 Emergency override uses `EMERGENCY_OVERRIDE_ADMIN`, not real Admin user.
 
-Yes
+Feature-specific
 
 Media session stores operator snapshot.
 
-Yes
+Feature-specific
 
 Storage behavior goes through `StorageService`.
 
@@ -966,15 +1377,15 @@ Yes
 
 BDMA user sync/write-back validates schema/version/revision and table ownership.
 
-Yes
+Feature-specific
 
 Optional modules use Feature Eligibility before runtime start.
 
-Yes
+Feature-specific
 
 Sensor/AI modules do not control recording directly.
 
-Yes
+Feature-specific
 
 Hardware SDK calls are isolated in adapters and serialized when needed.
 
@@ -988,7 +1399,7 @@ Raw SDK/DB/IO/auth/config/policy errors are mapped before reaching UI.
 
 Yes
 
-Logs exist for important success/error/recovery/identity/provisioning/config/auth/sync/policy paths.
+Logs exist for important success/error/recovery/identity/provisioning/config/auth/sync/policy/threading paths.
 
 Yes
 
@@ -1000,10 +1411,41 @@ Code links to Jira issue where applicable.
 
 Recommended
 
-## 15. Practical Conclusion
+### 12.3 Feature-specific Checklist Rule
+
+Do not fail a Phase 1 recording/storage PR because it does not implement Self Update, Remote Config, Maintenance Mode, Play Store fallback, AI Detection or full Kiosk Policy.
+Fail it only if it violates MVP P0 rules, Concurrency & Threading Model rules, or creates a blocker for the working recording/storage/BDMA slice.
+## 13. Practical Conclusion
 
 Rule quan trọng nhất khi phát triển DCAM Android là:
 
-textRuntime implementation phải tuân thủ các source-of-truth documents đã được mở rộng:
+UI và business logic không bao giờ được depend trực tiếp vào hardware SDK,
+Android platform APIs, DevicePolicyManager, SQLite internals, file paths,
+identity provider, credential storage hoặc cloud/webserver SDKs.
+Rule quan trọng nhất về concurrency/threading là:
 
-textCách tổ chức này giúp DCAM ổn định, dễ test và dễ maintain trên nhiều BodyCamera hardware models khác nhau, đồng thời hỗ trợ device identity recovery, Web Portal provisioning, Android dedicated-device/kiosk policy, remote config baseline, offline user management và operator-authenticated recording.
+Only the coordinator mutates runtime state.
+Specialized executors do work and return results.
+No executor blocks another executor while holding state or DB transaction.
+Runtime implementation phải tuân thủ các source-of-truth documents đã được mở rộng:
+
+DCAM Architecture Delivery Profile
+DCAM Concurrency & Threading Model Design
+Android Operation Design
+Android Device Owner & Kiosk Policy Design
+Recording & Capture Design
+Storage Design
+SQLite Database Design
+Security & Encryption Design
+State Machine Design
+Device Capability Design
+Cloud Services / Update / Configuration Architecture
+System Settings Requirements
+DCAM-BDMA Data Contract
+MVP implementation rule:
+
+Apply MVP P0 rules first.
+Apply Concurrency & Threading Model from day one.
+Deliver Working Recording Slice first.
+Add full production rules only when the relevant feature enters scope.
+Cách tổ chức này giúp DCAM ổn định, dễ test và dễ maintain trên nhiều BodyCamera hardware models khác nhau, đồng thời hỗ trợ device identity recovery, Web Portal provisioning, Android dedicated-device/kiosk policy, remote config baseline, offline user management và operator-authenticated recording mà không làm chậm MVP recording/storage/BDMA delivery.

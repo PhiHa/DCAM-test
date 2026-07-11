@@ -3,34 +3,32 @@
 **Page ID**: 1507517  
 **Version**: 7  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/1507517
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/1507517
 
 ---
 
 
 **Driver**
 
- 
+[Hoàng Ngọc Quyền](https://ducviet.atlassian.net/wiki/people/712020:e466d315-3c2d-406d-b324-8f8eb35ccb48?ref=confluence) 
 
 **Approver**
 
- 
+[Hoàng Ngọc Quyền](https://ducviet.atlassian.net/wiki/people/712020:e466d315-3c2d-406d-b324-8f8eb35ccb48?ref=confluence) 
 
 **Contributors**
 
-[DVID-S&T](https://quyendt3k4.atlassian.net/people/team/8d961dda-ffe7-46c5-859b-624513b1235b) (  )
+[DVID-S&T](https://quyendt3k4.atlassian.net/people/team/8d961dda-ffe7-46c5-859b-624513b1235b) ([Hoàng Ngọc Quyền](https://ducviet.atlassian.net/wiki/people/712020:e466d315-3c2d-406d-b324-8f8eb35ccb48?ref=confluence) [Dinh Nhan](https://ducviet.atlassian.net/wiki/people/70121:52166504-9fa8-44ba-969f-16f03f3dc4d6?ref=confluence) [Trần Danh Hoàn (Unlicensed)](https://ducviet.atlassian.net/wiki/people/5efc4cd074183a0bb36886f7?ref=confluence))
 
 **Informed**
 
- 
+[Hoàng Ngọc Quyền](https://ducviet.atlassian.net/wiki/people/712020:e466d315-3c2d-406d-b324-8f8eb35ccb48?ref=confluence) 
 
 **Objective**
 
-Summarize the objective in 1-2 sentences
-
 **Due date**
 
- 
+30 Jun 2026 
 
 **Key outcomes**
 
@@ -38,37 +36,29 @@ Bodycam Data Management Application
 
 **Status**
 
- in progressYellow 
+ IN PROGRESS 
 
-##  Problem statement
+## \uD83E\uDD14 Problem statement
 
 Viết một ứng dụng desktop quản lý dữ liệu Camera body dùng ngôn ngữ Java.
 
-##  Scope
+##  Scope
 
 **Must have:**
-
-Add your project's core requirements
 
 - 
 
 **Nice to have:**
 
-Add anything you want but don't strictly need
-
 - 
 
 **Not in scope:**
 
-Add anything you don't want to include
-
 - 
 
-##  Timeline
+##  Timeline
 
-    Add a timeline link here or type /whiteboard to create a timeline in whiteboards
-
-##  Milestones and deadlines
+## \uD83D\uDEA9 Milestones and deadlines
 
 **Milestone**
 
@@ -78,16 +68,10 @@ Add anything you don't want to include
 
 **Status**
 
-e.g., Finalize designs for v1
-
-@ owner
-
-Type // to add a date
-
 |  
 |  |  |  |  
 |  |  |  |  
 
- Related links
+🗃️ Related links
 
 [https://quyendt3k4.atlassian.net/jira/software/projects/BDMA/boards/36?atlOrigin=eyJpIjoiZjdkZDEzMTVlMDcyNDc0ZTlhZjkxYzM2YzVhZTZiZDMiLCJwIjoiaiJ9](https://quyendt3k4.atlassian.net/jira/software/projects/BDMA/boards/36?atlOrigin=eyJpIjoiZjdkZDEzMTVlMDcyNDc0ZTlhZjkxYzM2YzVhZTZiZDMiLCJwIjoiaiJ9)

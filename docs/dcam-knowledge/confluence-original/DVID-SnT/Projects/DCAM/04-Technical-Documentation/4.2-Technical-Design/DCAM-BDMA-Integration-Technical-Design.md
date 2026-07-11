@@ -3,7 +3,7 @@
 **Page ID**: 48595030  
 **Version**: 5  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/48595030
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/48595030
 
 ---
 
@@ -104,7 +104,32 @@ DCAM SQLite Database Design
 
 ## 3. BDMA Implementation Flow
 
-text## 4. App / Contract Recognition Rule
+Detect Android device through ADB
+        ↓
+Locate DCAM storage roots according to Data Contract
+        ↓
+Read device config / database / logs according to Data Contract
+        ↓
+Identify app and contract metadata:
+    app_code
+    app_package_name
+    app_version_code
+    dcam_data_contract_version
+    media_contract_version
+    encoder_contract_version
+        ↓
+Check BDMA built-in compatibility table
+        ↓
+Scan finalized media locations according to Data Contract
+        ↓
+Build import candidate list
+        ↓
+Apply Data Contract verification/import rules
+        ↓
+Write import state if allowed by schema/contract
+        ↓
+Apply cleanup policy if allowed by Data Contract
+## 4. App / Contract Recognition Rule
 
 BDMA must identify what Android app and contract version it is communicating with before applying import logic.
 
@@ -140,11 +165,17 @@ BDMA must not depend on a cloud-provided decoder profile.
 
 Not used:
 
-textBDMA should use an internal compatibility table such as:
+bdma_decoder_profile_id
+decoder_profile_id
+dynamic_decoder_profile
+BDMA should use an internal compatibility table such as:
 
-text= supported_minimum
+Supported:
+- app_code = DCAM_ANDROID
+- dcam_data_contract_version >= supported_minimum
 - media_contract_version >= supported_minimum
-- encoder_contract_version = FIXED_V1]]>If unsupported, BDMA should block import or show a compatibility warning and must not modify source media.
+- encoder_contract_version = FIXED_V1
+If unsupported, BDMA should block import or show a compatibility warning and must not modify source media.
 
 ## 5. Device Information Usage
 
@@ -212,4 +243,9 @@ Map implementation errors sang Data Contract result categories.
 
 ## 7. Practical Conclusion
 
-text
+BDMA Technical Design owns implementation flow.
+DCAM-BDMA Data Contract owns the actual data/file/import rules.
+BDMA nhận dạng app bằng app/data/media/encoder contract metadata.
+BDMA không dùng bdma_decoder_profile_id.
+BDMA có thể hiển thị owner_name và manufacture_date như device information.
+Không duplicate full contract tables tại đây.

@@ -3,7 +3,7 @@
 **Page ID**: 48496794  
 **Version**: 6  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/48496794
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/48496794
 
 ---
 
@@ -116,7 +116,14 @@ Nếu capability, permission hoặc policy blocks feature, Android Operation ph�
 
 Sensor và location runtime không được control recording trực tiếp.
 
-textRules:
+Sensor / Location Runtime
+        ↓
+Motion / Location Event Candidate
+        ↓
+Emergency Event Manager or Application Event Router
+        ↓
+RecordingController command if recording action is required
+Rules:
 
 Rule
 
@@ -170,11 +177,18 @@ Disable/degrade/prune affected module và log reason; không control recording t
 
 ## 6. Logging Direction
 
-text
+[MONITORING] Runtime eligibility consumed
+[MONITORING] Sensor runtime initialized
+[MONITORING] Sensor runtime pruned: <reason_code>
 [LOCATION] Location runtime initialized
-[LOCATION] Location runtime pruned: 
-[MONITORING] Event candidate emitted]]>Detailed sensitive logging rules thuộc **07 - Logging & Diagnostics Requirements**.
+[LOCATION] Location runtime pruned: <reason_code>
+[MONITORING] Event candidate emitted
+Detailed sensitive logging rules thuộc **07 - Logging & Diagnostics Requirements**.
 
 ## 7. Conclusion
 
-text
+Sensor/location modules là optional runtime modules.
+Android Operation initializes them through RuntimeModuleRegistry.
+Device Capability quyết định chúng có thể run hay không.
+Sensor/location events đi qua Emergency/Event routing.
+RecordingController là component duy nhất được phép quyết định recording behavior.

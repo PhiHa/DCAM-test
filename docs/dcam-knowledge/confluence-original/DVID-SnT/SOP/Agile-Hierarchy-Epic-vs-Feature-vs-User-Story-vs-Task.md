@@ -3,7 +3,7 @@
 **Page ID**: 27165134  
 **Version**: 2  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/27165134
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/27165134
 
 ---
 
@@ -28,7 +28,18 @@ Tăng khả năng planning và tracking
 
 # Big Picture
 
-textwide760# 1. EPIC
+Business Goal
+    ↓
+Epic
+    ↓
+Feature
+    ↓
+User Story
+    ↓
+Task / Subtask
+    ↓
+Development & QA
+# 1. EPIC
 
 ## EPIC là gì?
 
@@ -175,9 +186,15 @@ measurable
 
 ## Structure chuẩn của User Story
 
-textwide760## Ví dụ USER STORY
+As a [user]
+I want [action]
+So that [benefit]
+## Ví dụ USER STORY
 
-textwide760## Đặc điểm USER STORY
+As a user,
+I want to login with Google
+So that I can access the application faster.
+## Đặc điểm USER STORY
 
 Tiêu chí
 
@@ -281,21 +298,38 @@ Very Detailed
 
 # EPIC
 
-textwide760⬇
+```
+Authentication System Revamp
+```
+
+⬇
 
 # FEATURE
 
-textwide760⬇
+```
+Google Login
+```
+
+⬇
 
 # USER STORY
 
-textwide760⬇
+As a user,
+I want to login with Google
+So that I can access the application faster.
+⬇
 
 # TASKS
 
-textwide760# Hierarchy đề xuất cho Jira
+[BE] Create OAuth API
+[FE] Google Login Button
+[QA] Test Login Flow
+# Hierarchy đề xuất cho Jira
 
-textwide760# Cách áp dụng cho team hiện tại
+Epic
+ └── Story / Feature
+      └── Subtask / Technical Task
+# Cách áp dụng cho team hiện tại
 
 ## Confluence
 
@@ -400,13 +434,13 @@ HOW
 # Recommended Workflow
 
 Business Idea
-&rarr; PRD
-&rarr; Epic
-&rarr; Story
-&rarr; Task
-&rarr; Development
-&rarr; QA
-&rarr; Release
+→ PRD
+→ Epic
+→ Story
+→ Task
+→ Development
+→ QA
+→ Release
 
 # Kết luận
 
@@ -418,7 +452,7 @@ Dễ planning hơn
 
 Dễ estimate hơn
 
-Dễ tracking progress hơn
+D�� tracking progress hơn
 
 Giảm confusion giữa PM / Dev / QA
 

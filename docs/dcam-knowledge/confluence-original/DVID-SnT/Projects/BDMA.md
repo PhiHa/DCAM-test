@@ -3,7 +3,7 @@
 **Page ID**: 25198593  
 **Version**: 7  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/25198593
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/25198593
 
 ---
 
@@ -26,4 +26,4 @@ BDMA Project Home
 
 Trang điều hướng chính cho toàn bộ tài liệu BDMA.
 
-Open
+[Open](/wiki/spaces/DVID/pages/42696706/BDMA+Project+Home)

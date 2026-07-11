@@ -24,7 +24,8 @@ final class DeveloperFeatureTogglesTest {
                 EnumSet.of(
                         FeatureGate.IMAGE_CAPTURE,
                         FeatureGate.VIDEO_CAPTURE,
-                        FeatureGate.MEDIA_BROWSER),
+                        FeatureGate.MEDIA_BROWSER,
+                        FeatureGate.STORAGE_SETTINGS),
                 enabled);
     }
 

@@ -3,7 +3,7 @@
 **Page ID**: 41189378  
 **Version**: 10  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/41189378
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/41189378
 
 ---
 
@@ -50,7 +50,42 @@ Trọng tâm tiếp theo là hoàn thiện **Requirements**, **DCAM-BDMA Data Co
 
 Cấu trúc tài liệu hiện tại của DCAM:
 
-textwide760## 3. Current Documentation Status
+DCAM
+├── DCAM Project Home
+├── 01 - Product Management
+│   ├── DCAM Project Charter
+│   ├── DCAM Roadmap
+│   ├── DCAM Product Vision
+│   └── DCAM MVP Scope
+│
+├── 02 - Sprint Operations
+│   ├── DCAM Phase 2 Documentation Plan
+│   ├── DCAM 9-Month Development Plan
+│   └── DCAM Documentation Governance
+│
+├── 03 - Requirements
+│
+├── 04 - Technical Documentation
+│   ├── 4.1 - Software Architecture
+│   │   └── DCAM Architecture Home
+│   │       ├── 01 - Architecture Overview
+│   │       ├── 02 - Architecture Principles
+│   │       ├── 03 - Android Platform & Compatibility Strategy
+│   │       ├── 04 - Application & Module Architecture
+│   │       ├── 05 - Data, Storage & BDMA Architecture
+│   │       ├── 06 - Cloud Services, Update & Configuration Architecture
+│   │       ├── 07 - Logging, Diagnostics, Performance & Security
+│   │       └── 08 - DCAM-BDMA Integration Boundary
+│   │
+│   ├── 4.2 - Technical Design
+│   ├── 4.3 - Android Development
+│   │   ├── DCAM Android Training & Architecture Onboarding
+│   │   └── DCAM Android Development Standard
+│   └── 4.4 - Architecture Decision Records (ADR)
+│
+├── 05 - Release Management
+└── 06 - Incident Log
+## 3. Current Documentation Status
 
 Area
 
@@ -586,4 +621,8 @@ Tài liệu Product Management baseline, Sprint Operations baseline, Documentati
 
 Từ thời điểm này, trọng tâm tài liệu nên chuyển sang:
 
-textwide760Mục tiêu là biến định hướng sản phẩm, architecture baseline, documentation governance và development standard thành backlog rõ ràng, hợp đồng dữ liệu rõ ràng và thiết kế kỹ thuật đủ chắc để team Android có thể triển khai ổn định.
+```
+DCAM-BDMA Data Contract → Functional Requirements → Non-functional Requirements → Storage/Metadata Design → Release Plan
+```
+
+Mục tiêu là biến định hướng sản phẩm, architecture baseline, documentation governance và development standard thành backlog rõ ràng, hợp đồng dữ liệu rõ ràng và thiết kế kỹ thuật đủ chắc để team Android có thể triển khai ổn định.

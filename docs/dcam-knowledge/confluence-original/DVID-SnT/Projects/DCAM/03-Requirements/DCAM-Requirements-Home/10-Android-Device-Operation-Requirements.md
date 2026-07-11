@@ -3,7 +3,7 @@
 **Page ID**: 48496661  
 **Version**: 9  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/48496661
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/48496661
 
 ---
 
@@ -70,7 +70,13 @@ Phạm vi bao gồm startup, login screen, full screen, Home/Launcher, dedicated
 
 Current baseline:
 
-textUser/operator requirement chi tiết thuộc **05 - User & Device Operation Requirements**. Chi tiết kiosk policy thuộc **DCAM Android Device Owner & Kiosk Policy Design**. Chi tiết các màn hình/tính năng bên trong app khi chạy kiosk thuộc **DCAM In-App Operation, Device Settings & Media Console Design**. Chi tiết update package/download/install thuộc **DCAM Self Update Design**. Trang này chỉ mô tả tác động ở mức requirement.
+No external EMM.
+No Android Management API.
+No Managed Google Play policy-driven update.
+DCAM-as-DPC / local Device Owner is preferred if target firmware supports it.
+Primary update path is DCAM Self Update / APK update.
+Manual Google Play Store update is optional controlled maintenance fallback only if device capability and approved process allow it.
+User/operator requirement chi tiết thuộc **05 - User & Device Operation Requirements**. Chi tiết kiosk policy thuộc **DCAM Android Device Owner & Kiosk Policy Design**. Chi tiết các màn hình/tính năng bên trong app khi chạy kiosk thuộc **DCAM In-App Operation, Device Settings & Media Console Design**. Chi tiết update package/download/install thuộc **DCAM Self Update Design**. Trang này chỉ mô tả tác động ở mức requirement.
 
 ## 2. Scope
 
@@ -268,7 +274,37 @@ Approved
 
 ## 3. Startup Operating Model
 
-textDetailed startup orchestration được định nghĩa trong **DCAM Android Operation Design**. Detailed Device Owner / Lock Task / User Restrictions behavior thuộc **DCAM Android Device Owner & Kiosk Policy Design**. Detailed in-app console behavior thuộc **DCAM In-App Operation, Device Settings & Media Console Design**. Detailed update flow thuộc **DCAM Self Update Design**.
+Android Device boots / App starts
+    ↓
+DCAM initializes logging and policy state detection
+    ↓
+DCAM verifies Device Owner / DCAM DPC state if production profile requires it
+    ↓
+DCAM applies/verifies User Restrictions and Lock Task allowlist when policy authority exists
+    ↓
+DCAM initializes local config and dcam.db
+    ↓
+DCAM runs safe DB/storage/recovery checks
+    ↓
+DCAM loads settings, remote config cache and update metadata cache
+    ↓
+DCAM detects device capability including GMS/Play Store availability and update capability
+    ↓
+DCAM evaluates feature eligibility
+    ↓
+DCAM starts system modules that do not require login
+    ↓
+DCAM prepares allowed in-app console modules based on role/capability/policy
+    ↓
+DCAM enters or restores Lock Task Mode when UI lifecycle is safe
+    ↓
+If same boot and active operator session is valid
+    → enter app directly and show Record / Live View
+Else
+    → show login screen
+    ↓
+After login, enable normal recording/capture commands and allowed console actions
+Detailed startup orchestration được định nghĩa trong **DCAM Android Operation Design**. Detailed Device Owner / Lock Task / User Restrictions behavior thuộc **DCAM Android Device Owner & Kiosk Policy Design**. Detailed in-app console behavior thuộc **DCAM In-App Operation, Device Settings & Media Console Design**. Detailed update flow thuộc **DCAM Self Update Design**.
 
 ## 4. Login and Session Requirements
 
@@ -974,7 +1010,10 @@ Approved Direction
 
 Permission/policy failure rule:
 
-text## 12. Power, Battery and Thermal Requirements
+Missing optional permission or optional policy capability must not crash DCAM.
+Only the affected feature, login method, console control or policy-controlled behavior is blocked, degraded, read-only or pruned.
+Missing required production kiosk policy must enter controlled policy-required/degraded behavior.
+## 12. Power, Battery and Thermal Requirements
 
 Requirement
 
@@ -1112,4 +1151,30 @@ Settings không được override capability limits; kiosk config là requested 
 
 DCAM Android operation phải capability-aware, login-aware, kiosk-policy-aware, console-aware và update-aware.
 
-text
+Detect device policy state early
+Do not assume external EMM / Android Management API / Managed Google Play
+Prefer DCAM-as-DPC / local Device Owner if firmware supports it
+Apply/verify approved User Restrictions
+Verify Lock Task allowlist
+Enter/re-enter Lock Task Mode for normal field operation
+Provide controlled in-app console because user cannot leave app freely
+Record / Live View is default screen
+Setting is console hub
+Expose App Operation Settings through safe setting/apply guards
+Expose Device/System Settings only as approved controlled proxy
+Expose File/Storage Manager and Media Viewer as read-only/view-only
+Support Login Settings and Admin-only User Settings
+Require Maintenance Password Gate for controlled maintenance
+Use DCAM Self Update / APK update as primary update path
+Treat manual Play Store update as optional controlled fallback only
+Keep Emergency Settings, Server Connection, Live Stream, PTT and AI Mode as TBD/future groups until approved
+Detect capability early
+Evaluate feature eligibility
+Start system modules that do not require login
+Show login when operator session is missing or rebooted
+Initialize only eligible runtime modules
+Prune unsupported optional features
+Block normal recording/capture until operator is authenticated
+Allow emergency override with EMERGENCY_OVERRIDE_ADMIN
+Keep recording and emergency evidence stable
+Use controlled degraded/policy-required state when required kiosk policy is missing

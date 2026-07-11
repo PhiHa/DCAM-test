@@ -3,7 +3,7 @@
 **Page ID**: 48562239  
 **Version**: 18  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/48562239
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/48562239
 
 ---
 
@@ -66,9 +66,15 @@ DCAM Factory Provisioning & Device Production SOP, DCAM Web Portal & Device API 
 
 **DCAM Android Operation Design** định nghĩa Android runtime startup, kiosk policy verification, identity restore, device information restore, provisioning state, login/session lifecycle, in-app console readiness, foreground service, boot/process survival, permission lifecycle, runtime module registry, Self Update runtime guard, recovery và safe mode behavior.
 
-Trang này follows **DCAM Factory Provisioning & Device Production SOP** làm chuẩn định danh thiết bị:
+Trang này follows [**DCAM Factory Provisioning & Device Production SOP**](/wiki/spaces/DVID/pages/49545629/DCAM+Factory+Provisioning+Device+Production+SOP) làm chuẩn định danh thiết bị:
 
-textwide760Trang này là authoritative cho Android runtime orchestration. Full Web Portal provisioning business flow, screens, QR direction, backend API direction, states và audit/error handling được định nghĩa trong **DCAM Device Provisioning Web Portal Design**.
+serial_number = Hardware Identity / primary recovery key
+dcam_cloud_device_id = Cloud Identity / primary cloud device id
+SD Identity File = recovery cache trên thẻ nhớ ngoài, không phải Hardware Identity
+Không dùng ANDROID_ID
+Không dùng android_id_hash
+Không dùng device_lookup/{android_id_hash}
+Trang này là authoritative cho Android runtime orchestration. Full Web Portal provisioning business flow, screens, QR direction, backend API direction, states và audit/error handling được định nghĩa trong **DCAM Device Provisioning Web Portal Design**.
 
 Chi tiết Device Owner/DPC policy, Lock Task Mode, User Restrictions, Home/Launcher policy, Maintenance Mode và no-external-EMM baseline thuộc **DCAM Android Device Owner & Kiosk Policy Design**.
 
@@ -78,7 +84,14 @@ Chi tiết APK artifact/download/validation/install thuộc **DCAM Self Update D
 
 ## 2. Current Runtime Baseline
 
-textwide760Runtime must not wait for or depend on EMM policy APIs.
+No external EMM / No Android Management API / No Managed Google Play. (per ADR - Dedicated Device / Device Owner / Lock Task Decision)
+DCAM-as-DPC / local Device Owner is preferred if target firmware supports it.
+Primary update path = DCAM Self Update / APK update.
+Manual Google Play Store update = optional controlled maintenance fallback only if GMS/Play Store exists and approved process exists.
+Device identity restore uses serial_number and dcam_cloud_device_id.
+SD Identity File is a recovery cache only.
+ANDROID_ID/android_id_hash/device_lookup are not used in current production baseline.
+Runtime must not wait for or depend on EMM policy APIs.
 
 ## 3. Runtime Ownership
 
@@ -246,17 +259,87 @@ State Machine Design
 
 ## 4. Startup Flow
 
-textwide760System modules allowed before login:
+App process starts / device boots
+    ↓
+Initialize logging
+    ↓
+Detect runtime profile and kiosk policy requirement
+    ↓
+Check Device Owner / DCAM DPC policy state if production profile requires it
+    ↓
+If required policy authority is missing:
+        enter DEVICE_POLICY_REQUIRED or POLICY_DEGRADED
+        block/defer normal field operation according to deployment policy
+    ↓
+Verify or apply User Restrictions when policy authority exists
+    ↓
+Verify Home/Launcher policy if required
+    ↓
+Verify Lock Task allowlist
+    ↓
+Open or create dcam.db
+    ↓
+Read dcam_config.cson if available
+    ↓
+Resolve device identity and device information by serial_number / dcam_cloud_device_id
+    ↓
+Sync SD Identity File if app-private serial_number is available
+    ↓
+Run DB/storage/recovery checks
+    ↓
+Load settings / remote config cache / update metadata cache
+    ↓
+Detect device capability including policy capability and GMS/Play Store availability
+    ↓
+Evaluate feature eligibility
+    ↓
+Prepare in-app console modules based on role/capability/policy/product phase
+    ↓
+Start system modules that do not require operator login
+    ↓
+Enter Lock Task Mode when Activity/UI lifecycle is ready and safe
+    ↓
+Resolve operator session
+    ↓
+If valid same-boot session exists:
+    enter OPERATOR_AUTHENTICATED / READY flow and show Record / Live View
+Else:
+    show Login Screen
+System modules allowed before login:
 
-textwide760Normal recording/capture evidence is blocked until operator session exists, except emergency override flow. If required production kiosk policy is missing, normal field operation must be blocked/degraded instead of silently continuing unrestricted.
+logging
+Device Owner / DPC policy state detection
+kiosk policy verification
+Lock Task allowlist verification
+DB recovery
+storage recovery
+capability/eligibility detection
+console capability pruning
+sensor monitoring if eligible and policy allows
+GPS/system tracking if eligible and policy allows
+BDMA/user-sync readiness
+remote config identity/provisioning checks by serial_number/dcam_cloud_device_id
+SD Identity File sync when app-private serial_number exists
+update metadata check if safe and allowed
+Normal recording/capture evidence is blocked until operator session exists, except emergency override flow. If required production kiosk policy is missing, normal field operation must be blocked/degraded instead of silently continuing unrestricted.
 
 ## 5. Main Screen / Console Runtime
 
 Runtime default screen after successful startup/login:
 
-textwide760Back behavior:
+Record / Live View = default main screen
+Setting = in-app console hub
+Back behavior:
 
-textwide760Runtime rules:
+Record / Live View
+    └── Back → Setting
+
+Setting
+    └── Back → Record / Live View
+
+Setting → Any child module
+    └── Back → Setting
+Runtime rules:
 
 Rule
 
@@ -294,7 +377,24 @@ Future modules must be hidden/disabled until approved design.
 
 Controlled maintenance is the only approved temporary kiosk exit path.
 
-textwide760Runtime rules:
+Admin / Maintenance requested
+    ↓
+Validate Admin or approved Maintenance role
+    ↓
+Maintenance Password Gate
+    ↓
+Validate runtime safe state
+    ↓
+Enter Controlled Maintenance Mode
+    ↓
+Temporarily stop Lock Task / relax only approved restrictions if needed
+    ↓
+Open only approved Android Settings screen or approved maintenance app
+    ↓
+Return to DCAM
+    ↓
+Restore User Restrictions and Lock Task policy
+Runtime rules:
 
 Rule
 
@@ -328,7 +428,30 @@ On timeout/resume/reboot/recovery, runtime must attempt policy restore.
 
 Current baseline uses DCAM Self Update / APK update as primary path.
 
-textwide760Optional Play Store fallback is separate and only runs through Controlled Maintenance Mode if enabled.
+Update requested / scheduled
+    ↓
+Check System Settings AutoUpdate preconditions
+    ↓
+Check Android Operation mode and State Machine guard
+    ↓
+Check kiosk policy state is safe
+    ↓
+Load manifest from approved artifact provider
+    ↓
+Download APK
+    ↓
+Validate package identity, checksum, signature, version and compatibility
+    ↓
+Install through approved package/update path
+    ↓
+After restart/resume, verify app version
+    ↓
+Verify policy and restore Lock Task
+    ↓
+Verify app-private serial_number and dcam_cloud_device_id still valid
+    ↓
+Sync SD Identity File if needed
+Optional Play Store fallback is separate and only runs through Controlled Maintenance Mode if enabled.
 
 Runtime rules:
 
@@ -364,7 +487,24 @@ Personal Google account update path is not supported for production maintenance.
 
 Detailed policy rules belong to **DCAM Android Device Owner & Kiosk Policy Design**. Android Operation only orchestrates startup/recovery behavior.
 
-textwide760Rules:
+DevicePolicyStateManager checks policy authority
+    ↓
+If DCAM Device Owner / DPC state is required and present:
+        KioskPolicyManager verifies policy profile
+        UserRestrictionPolicyManager applies/verifies restrictions
+        HomeAppPolicyManager verifies launcher policy if required
+        LockTaskController verifies allowlist
+        continue startup
+    ↓
+If policy authority is missing:
+        enter DEVICE_POLICY_REQUIRED or POLICY_DEGRADED
+        log safe reason code
+        block normal field operation if production profile requires kiosk
+    ↓
+If policy authority is present but partial policy failed:
+        enter POLICY_DEGRADED or POLICY_RECOVERY_REQUIRED
+        continue only if degradation is approved and recording safety is preserved
+Rules:
 
 Rule
 
@@ -406,13 +546,47 @@ Runtime must not depend on external EMM for current baseline.
 
 Approved identity model:
 
-textwide760Identity restore:
+Hardware Identity = serial_number
+Cloud Identity = dcam_cloud_device_id
+Recovery Cache = SD Identity File
+Not used = ANDROID_ID, android_id_hash, device_lookup/{android_id_hash}
+Identity restore:
 
-textwide760Factory reset behavior:
+Open dcam.db and read dcam_config.cson
+    ↓
+If local dcam_cloud_device_id and serial_number exist:
+    use local identity
+    validate/load local device information
+    sync SD Identity File if available
+    ↓
+If local dcam_cloud_device_id is missing but serial_number exists:
+    lookup Firebase/WebServer serial_lookup/{serial_number}
+    ↓
+    If found:
+        fetch devices/{dcam_cloud_device_id}
+        restore identity/device information/config metadata
+        sync SD Identity File if available
+    ↓
+    If not found:
+        enter PROVISIONING_REQUIRED or factory/admin provisioning flow
+    ↓
+If local serial_number is missing:
+    wait for DSetup serial injection or approved provisioning/rework flow
+Factory reset behavior:
 
-textwide760SD Identity File runtime sync:
+Factory reset clears app-private identity.
+DSetup runs again.
+DSetup attempts to recover serial_number from SD Identity File.
+If SD Identity File is valid, DSetup injects recovered serial_number.
+If SD Identity File is missing/invalid, operator scans barcode and DSetup injects serial_number.
+DCAM restores dcam_cloud_device_id through serial_lookup/{serial_number}.
+SD Identity File runtime sync:
 
-textwide760Web Portal QR Flow = DCAM business provisioning. It does not make DCAM Device Owner.
+DCAM app-private serial_number is source of truth while app is running.
+If SD Identity File is missing, DCAM recreates it.
+If SD card is replaced, DCAM creates SD Identity File on the new card.
+If SD Identity File differs from app-private serial_number, DCAM must not change app-private serial from SD; app-private serial wins.
+Web Portal QR Flow = DCAM business provisioning. It does not make DCAM Device Owner.
 
 Rules:
 
@@ -468,9 +642,33 @@ SD Identity File is recovery cache only and must not override app-private serial
 
 Remote config identity, fetch/cache/apply flow and initial setting groups are defined in System Settings and Cloud Architecture. Exact field-level payload schema and field names remain TBD for future Remote Config/API implementation.
 
-textwide760Do not apply config during:
+Identity resolved by dcam_cloud_device_id
+    ↓
+Startup fetch or periodic fetch or optional push wake-up
+    ↓
+Fetch effective config revision
+    ↓
+Validate schema/version/allowed fields/capability/policy authority if affected
+    ↓
+Store as pending_config in dcam.db
+    ↓
+Check runtime guard
+    ↓
+Apply if safe, otherwise defer
+    ↓
+Persist applied_config_revision and apply result
+Do not apply config during:
 
-textwide760Kiosk policy settings are requested policy. Actual Device Owner / Lock Task / User Restrictions apply behavior belongs to **DCAM Android Device Owner & Kiosk Policy Design**.
+recording active
+emergency active
+capture session active
+post-record/finalizing active
+DB recovery/migration active
+storage recovery active
+unsafe update/install state active
+policy recovery active
+maintenance transition active
+Kiosk policy settings are requested policy. Actual Device Owner / Lock Task / User Restrictions apply behavior belongs to **DCAM Android Device Owner & Kiosk Policy Design**.
 
 `dcam_config.cson` is updated only for device information fields. Operational settings, console settings, kiosk settings and update settings are stored in `dcam.db`.
 
@@ -478,9 +676,33 @@ textwide760Kiosk policy settings are requested policy. Actual Device Owner / Loc
 
 Product/runtime policy:
 
-textwide760Normal recording/capture evidence requires active operator session and required kiosk policy state.
+Startup shows login screen when no valid same-boot session exists.
+Session has no timeout.
+Background/foreground does not logout.
+Screen off/on does not logout.
+Process kill/recreate can restore session if same boot and DB state is valid.
+Device reboot invalidates previous session and requires login again.
+Normal recording/capture evidence requires active operator session and required kiosk policy state.
 
-textwide760## 12. Runtime Modes
+StartRecordingRequested
+    ↓
+Check required kiosk policy state if production profile requires it
+    ↓
+Check active operator session
+    ↓
+If required policy is missing:
+    reject or defer according to POLICY_REQUIRED behavior
+    ↓
+If active operator exists:
+    continue Recording Precheck
+    ↓
+If no active operator and emergency recording:
+    use EMERGENCY_OVERRIDE_ADMIN
+    ↓
+If no active operator and normal recording:
+    reject OPERATOR_AUTH_REQUIRED
+    show login
+## 12. Runtime Modes
 
 Mode
 
@@ -570,13 +792,45 @@ Unrecoverable runtime error.
 
 Core boundary rule:
 
-textwide760Foreground service must start/continue for critical long-running operations such as recording, emergency recording, finalization and critical recovery when required by Android/device policy.
+ForegroundServiceHost keeps critical runtime alive.
+RecordingController owns recording decisions.
+StorageService owns file finalization.
+DatabaseService owns persisted runtime state.
+KioskPolicyManager owns policy orchestration.
+SelfUpdateCoordinator owns update orchestration.
+StateMachineCoordinator owns global guards.
+Foreground service must start/continue for critical long-running operations such as recording, emergency recording, finalization and critical recovery when required by Android/device policy.
 
 Service must not be stopped when recording, emergency, finalization or critical recovery is active.
 
 Boot flow:
 
-textwide760Rules:
+Device boot completed / app auto-start policy triggered
+    ↓
+BootReceiver forwards startup to AppRuntimeOrchestrator
+    ↓
+Initialize logging
+    ↓
+Verify required kiosk policy state
+    ↓
+Open DB and resolve identity by serial_number/dcam_cloud_device_id
+    ↓
+Sync SD Identity File if app-private serial_number exists
+    ↓
+Expire previous operator session because boot changed
+    ↓
+Run DB/storage/recording/policy/update recovery checks
+    ↓
+Run capability and eligibility evaluation
+    ↓
+Prepare console modules
+    ↓
+Start eligible system modules if policy allows
+    ↓
+Enter or restore Lock Task when UI lifecycle is ready
+    ↓
+Show login screen unless provisioning/fatal recovery is active
+Rules:
 
 Rule
 
@@ -784,4 +1038,26 @@ TBD / Android + QA + Support
 
 ## 16. Practical Conclusion
 
-textwide760
+Android Operation owns runtime startup orchestration.
+Current device baseline per ADR: No external EMM / No Android Management API / No Managed Google Play.
+DCAM-as-DPC / local Device Owner is preferred if target firmware supports it.
+Required kiosk policy state is verified before normal field operation when production profile requires it.
+Lock Task Mode is entered/recovered only after allowlist and UI lifecycle are safe.
+User Restrictions and Home/Launcher policy are verified/applied through Kiosk Policy Design ownership.
+Record / Live View is the default screen after login/session restore.
+Setting is the in-app console hub.
+Controlled Maintenance Mode requires Maintenance Password Gate and approved target enforcement.
+Full Android unrestricted mode is not supported.
+Primary update path is DCAM Self Update / APK update.
+Manual Play Store update is optional controlled fallback only if device capability and approved process exist.
+Device identity is restored through serial_number and dcam_cloud_device_id.
+SD Identity File is recovery cache only; app-private serial_number is source of truth while DCAM is running.
+Factory reset recovery requires DSetup to recover serial from SD Identity File or barcode scan and inject serial again.
+Do not use ANDROID_ID, android_id_hash or device_lookup/{android_id_hash} in the current production baseline.
+Web Portal QR Flow is DCAM business provisioning, not Device Owner setup.
+Remote config identity/fetch/cache/apply baseline is defined; exact field-level payload schema remains TBD.
+Login session has no timeout but reboot requires login again.
+Normal recording requires active operator session and required kiosk policy state.
+Emergency recording may use EMERGENCY_OVERRIDE_ADMIN.
+System modules may run before login when safe and eligible.
+Boot/process survival uses persisted DB/file/policy/update state, not UI memory state.

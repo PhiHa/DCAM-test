@@ -85,11 +85,13 @@ public interface VideoRecordingUseCase {
 }
 ```
 
-Implementation nằm cùng folder và bắt buộc kết thúc bằng `Impl`:
+Implementation đơn giản nằm cùng folder và kết thúc bằng `Impl`. Application service có trách
+nhiệm orchestration riêng được đặt tên theo trách nhiệm đó:
 
 ```java
-public final class VideoRecordingUseCaseImpl implements VideoRecordingUseCase {
-    // application workflow
+public final class SerializedRecordingCoordinator
+        implements VideoRecordingUseCase, CaptureEventUseCase {
+    // one serialized authority for recording commands and camera events
 }
 ```
 
@@ -135,13 +137,12 @@ Rule dễ nhớ:
 ## 4. Use case khác port như thế nào?
 
 ```text
-UI / hardware key
-    ↓
-VideoRecordingUseCase              application/usecase, API đi vào app
-    ↓
-CameraGateway                      application/port, app cần camera làm gì
-    ↑
-CameraXCameraGatewayImpl           platform/camera, CameraX làm thật
+UI / hardware key ──> VideoRecordingUseCase ─┐
+                                             ├─> SerializedRecordingCoordinator
+Camera callback ─────> CaptureEventUseCase ──┘              ↓
+                                                        CameraGateway
+                                                             ↑
+                                                CameraXCameraGatewayImpl
 ```
 
 - `UseCase` là cổng đi vào application.

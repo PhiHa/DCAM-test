@@ -1,9 +1,9 @@
 # 04 - Device Configuration Requirements
 
 **Page ID**: 47710554  
-**Version**: 6  
+**Version**: 7  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/47710554
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47710554
 
 ---
 
@@ -24,7 +24,7 @@ Functional Requirements
 
 Version
 
-Approved 1.4
+Approved 1.5
 
 Status
 
@@ -52,7 +52,7 @@ PM/BA, Tech Lead, Android Developers, BDMA Developers, QA, Cloud/WebServer Team
 
 Last Updated
 
-2026-07-09
+2026-07-10
 
 Related Jira
 
@@ -60,7 +60,7 @@ None
 
 Related Documents
 
-DCAM Factory Provisioning & Device Production SOP, DCAM Web Portal & Device API Contract, DCAM Requirements Home, DCAM-BDMA Data Contract, 09 - System Settings Requirements, 06 - Cloud Services, Update & Configuration Architecture, DCAM SQLite Database Design, DCAM Android Operation Design, DCAM Security & Encryption Design, 08 - DCAM-BDMA Integration Boundary
+DCAM Release & Build Applicability Matrix, DCAM Factory Provisioning & Device Production SOP, DCAM Device Provisioning Web Portal Design, DCAM Device Provisioning Web Portal App Design, DCAM Web Portal & Device API Contract, DCAM Requirements Home, DCAM-BDMA Data Contract, 09 - System Settings Requirements, 06 - Cloud Services, Update & Configuration Architecture, DCAM SQLite Database Design, DCAM Android Operation Design, DCAM Security & Encryption Design, 08 - DCAM-BDMA Integration Boundary
 
 ## 1. Purpose
 
@@ -68,9 +68,20 @@ Trang này ghi nhận các yêu cầu chức năng liên quan đến **device co
 
 Các rule chi tiết về `dcam_config.cson`, device information, device identity, Firebase/WebServer identity và remote config boundary thuộc các tài liệu authoritative tương ứng.
 
-Trang này chốt requirement-level decision theo **DCAM Factory Provisioning & Device Production SOP Draft 1.0**:
+Trang này áp dụng requirement-level baseline từ **DCAM Factory Provisioning & Device Production SOP**, **ADR - DCAM Device Identity Baseline: serial_number + dcam_cloud_device_id** và **DCAM Web Portal & Device API Contract**. Không hardcode version của dependent document trong requirement text; current approved/draft version được quản lý bởi Project Home và Governance.
 
-text## 2. Device Configuration Requirements
+serial_number is Hardware Identity / primary recovery key.
+dcam_cloud_device_id is the Firebase/WebServer Cloud Identity / primary key.
+SD Identity File is a recovery cache on external SD card, not Hardware Identity.
+owner_name is device information and may change.
+manufacture_date is device information and should use ISO date format YYYY-MM-DD.
+serial_lookup/{serial_number} is used to create/restore dcam_cloud_device_id.
+ANDROID_ID must not be used for production identity.
+android_id_hash must not be used as recovery lookup key in the current baseline.
+device_lookup/{android_id_hash} must not be used in the current baseline.
+Build applicability is defined by **DCAM Release & Build Applicability Matrix**. Build `0.1` only requires the minimal local identity/config subset; cloud identity and Web Portal provisioning become required from Build `0.2`.
+
+## 2. Device Configuration Requirements
 
 Requirement Area
 
@@ -170,7 +181,7 @@ Approved
 
 Provisioning State
 
-Nếu local `dcam_cloud_device_id` thiếu, DCAM/DSetup phải dùng `serial_number` để restore/create cloud identity; nếu serial thiếu thì vào serial/provisioning-required flow.
+Nếu local `dcam_cloud_device_id` thiếu, DCAM phải dùng `serial_number` để restore cloud identity; nếu lookup không có mapping thì vào `PROVISIONING_REQUIRED`. Nếu local serial thiếu, DSetup thực hiện approved recovery/injection flow.
 
 Approved
 
@@ -242,17 +253,101 @@ Current app-install metadata only; not a device identity key.
 
 Rules:
 
-text## 4. First Install / Missing Local Identity Requirement
+serial_number is Hardware Identity / recovery key.
+dcam_cloud_device_id is Cloud Identity / primary server key.
+SD Identity File is recovery cache only.
+owner_name must not be used as primary key.
+manufacture_date must not be used as primary key.
+Advertising ID must not be used as primary key.
+ANDROID_ID must not be used as production identity.
+android_id_hash must not be used as recovery lookup key in the current baseline.
+manufacture_date should use ISO date format YYYY-MM-DD.
+## 4. First Install / Missing Local Identity Requirement
 
 When DCAM starts and local identity is missing:
 
-textFactory reset recovery:
+Open dcam.db and read dcam_config.cson
+    ↓
+If local dcam_cloud_device_id and serial_number exist:
+    use local identity
+    sync SD Identity File if available
+    ↓
+If local dcam_cloud_device_id is missing but serial_number exists:
+    lookup Firebase/WebServer:
+        serial_lookup/{serial_number}
+    ↓
+    If found:
+        fetch device record
+        restore dcam_cloud_device_id
+        restore owner_name if available
+        restore manufacture_date if available
+        recreate dcam.db / dcam_config.cson as needed
+        sync SD Identity File if available
+    ↓
+    If not found:
+        enter PROVISIONING_REQUIRED
+        display provisioning QR according to approved Web Portal flow
+    ↓
+If local serial_number is missing:
+    require DSetup serial recovery/injection from SD Identity File or approved barcode-assisted factory flow
+Factory reset recovery:
 
-text## 5. Web Portal Provisioning Requirement
+Factory reset clears app-private serial and cloud identity.
+DSetup runs again.
+DSetup reads SD Identity File if present and valid.
+If SD Identity File is valid:
+    DSetup recovers serial_number without barcode scan.
+If SD Identity File is missing/invalid:
+    Factory Operator scans barcode through DSetup.
+DSetup injects serial_number into DCAM using the approved mechanism.
+DSetup verifies DCAM imported serial_number.
+DCAM restores dcam_cloud_device_id through serial_lookup/{serial_number} when mapping exists.
+If mapping does not exist, DCAM displays provisioning QR for Web Portal provisioning.
+## 5. Web Portal Provisioning Requirement
 
-Default provisioning method for new/reworked devices is **serial-number based Web Provisioning Portal / Firebase provisioning**.
+Default business provisioning method for a serial without an existing cloud mapping is the approved **DCAM QR-based Web Portal flow**.
 
-textBDMA provisioning is not required for normal factory provisioning.
+DSetup completes imported serial_number verification
+    ↓
+DCAM attempts serial_lookup/{serial_number}
+    ↓
+If existing mapping is found:
+        DCAM restores dcam_cloud_device_id and device information
+Else:
+        DCAM enters PROVISIONING_REQUIRED
+        DCAM displays provisioning QR containing serial_number and approved device context
+    ↓
+Factory Worker opens Web Portal
+    ↓
+Factory Worker logs in
+    ↓
+Workspace scans QR displayed by DCAM
+    ↓
+Workspace displays serial_number as read-only
+    ↓
+Factory Worker enters/selects owner_name
+    ↓
+Factory Worker confirms manufacture_date
+    ↓
+Factory Worker submits provisioning inside Workspace
+    ↓
+Backend creates/restores:
+        devices/{dcam_cloud_device_id}
+        serial_lookup/{serial_number}
+    ↓
+Workspace displays Created / Restored / Error / Support Required
+    ↓
+DCAM receives/restores identity + device information + initial config metadata
+    ↓
+DCAM writes dcam.db and dcam_config.cson
+Forbidden in normal Web Portal flow:
+
+manual serial_number entry
+direct serial barcode scan
+editable serial_number
+Factory Worker duplicate/rebind override
+Web Portal PASS / FAIL / QUARANTINED / READY_TO_SHIP decision
+BDMA provisioning is not required for normal factory provisioning.
 
 ## 6. Source of Truth
 
@@ -260,9 +355,17 @@ Topic
 
 Source of Truth
 
-Factory provisioning, DSetup, SD Identity File recovery cache
+Build/phase applicability
 
-DCAM Factory Provisioning & Device Production SOP
+DCAM Release & Build Applicability Matrix
+
+Factory provisioning, DSetup and SD Identity File recovery execution
+
+DCAM Factory Provisioning & Device Production SOP + DCAM DSetup Factory Tool Design
+
+Web Portal business flow and Workspace behavior
+
+DCAM Device Provisioning Web Portal Design + DCAM Device Provisioning Web Portal App Design
 
 API/data schema and Firestore contract
 
@@ -294,6 +397,17 @@ DCAM Security & Encryption Design
 
 ## 7. Practical Conclusion
 
-Device configuration requirement statuses are aligned with **DCAM Factory Provisioning & Device Production SOP Draft 1.0**.
+Device configuration requirements are aligned with the current authoritative Factory SOP, identity ADR and approved QR-based Web Portal flow.
 
-text
+dcam_config.cson = device information and identity mirror only
+dcam.db = operational/runtime settings + identity/cache mirror
+serial_number = Hardware Identity / primary recovery key
+dcam_cloud_device_id = Firebase/WebServer Cloud Identity / primary key
+SD Identity File = recovery cache on external SD card, not Hardware Identity
+serial_lookup/{serial_number} = create/restore path for dcam_cloud_device_id
+owner_name = mutable/semi-static device information
+manufacture_date = semi-static device information using YYYY-MM-DD
+Web Portal provisioning = Factory Worker + Login/Workspace + QR displayed by DCAM
+serial_number = read-only in Web Portal
+Do not use ANDROID_ID, android_id_hash or device_lookup/{android_id_hash} in the current baseline
+Build applicability is controlled by DCAM Release & Build Applicability Matrix

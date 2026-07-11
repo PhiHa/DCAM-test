@@ -3,7 +3,7 @@
 **Page ID**: 25460748  
 **Version**: 2  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/25460748
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/25460748
 
 ---
 
@@ -26,7 +26,13 @@ Giảm task bị mơ hồ hoặc quên trạng thái
 
 # 🧭 Standard Workflow
 
-text# 📌 Workflow Definition
+Backlog
+→ To Do
+→ In Progress
+→ Code Review
+→ Testing
+→ Done
+# 📌 Workflow Definition
 
 ## 1. Backlog
 

@@ -3,7 +3,7 @@
 **Page ID**: 47808901  
 **Version**: 3  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/47808901
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47808901
 
 ---
 
@@ -144,4 +144,6 @@ DCAM SQLite Database Design
 
 Storage requirements are now no longer TBD at requirement level.
 
-text
+Requirements define what DCAM must support.
+Storage Design defines how Android implements storage mechanics.
+Data Contract defines external media/file/BDMA contract.

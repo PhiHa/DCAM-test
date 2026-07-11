@@ -1,9 +1,9 @@
 # DCAM 9-Month Development Plan
 
 **Page ID**: 46759955  
-**Version**: 7  
+**Version**: 8  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/46759955
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/46759955
 
 ---
 
@@ -24,7 +24,7 @@ Development Plan
 
 Version
 
-Approved 1.3
+Approved 1.4
 
 Status
 
@@ -52,7 +52,7 @@ PM/BA, Product Owner, Tech Lead, Developers, QA, Stakeholders
 
 Last Updated
 
-2026-07-03
+2026-07-09
 
 Related Jira
 
@@ -60,7 +60,7 @@ None
 
 Related Documents
 
-DCAM Project Home, DCAM Documentation Governance, DCAM Product Vision, DCAM Project Charter, DCAM Roadmap, DCAM MVP Scope
+DCAM Project Home, DCAM Documentation Governance, DCAM Product Vision, DCAM Project Charter, DCAM Roadmap, DCAM MVP Scope, DCAM Architecture Delivery Profile
 
 Duration
 
@@ -76,8 +76,10 @@ Tài liệu này mô tả kế hoạch triển khai thực tế của dự án *
 
 Khác với **DCAM Roadmap**, tài liệu này tập trung vào cách đội phát triển sẽ thực hiện roadmap, bao gồm Android onboarding, sprint planning, buffer planning, delivery planning, integration strategy, risk management và release preparation.
 
-Roadmap trả lời câu hỏi **What & When**.  
+Roadmap trả lời câu hỏi **What & When**.    
 Development Plan trả lời câu hỏi **How**.
+
+Kế hoạch implementation phải tuân theo **DCAM Architecture Delivery Profile** để tránh implement toàn bộ target architecture trước khi có working recording/storage/BDMA vertical slice.
 
 ## 2. Project Assumptions
 
@@ -129,6 +131,10 @@ Development Language
 
 Java-first
 
+Architecture Delivery Baseline
+
+MVP first; target architecture grows by phase after working recording slice.
+
 ## 3. Current Team Situation
 
 Team hiện tại có nền tảng tốt về Java, JavaFX/Desktop Application, BDMA domain knowledge, Git, Jira và Confluence.
@@ -141,6 +147,8 @@ Quy tắc implementation Android chính nằm trong **DCAM Android Development S
 
 Quy trình owner/reviewer và bảo trì tài liệu nằm trong **DCAM Documentation Governance**.
 
+Architecture delivery guardrail nằm trong **DCAM Architecture Delivery Profile**.
+
 ## 4. Development Strategy
 
 Principle
@@ -150,6 +158,10 @@ Description
 Foundation First
 
 Làm chắc recording, capture, storage, metadata và logging trước khi mở rộng.
+
+Working Recording First
+
+Trước khi mở rộng platform architecture, team phải có APK chạy được trên BodyCamera và pass working recording/storage/BDMA vertical slice.
 
 Integration Early
 
@@ -163,6 +175,10 @@ Incremental Delivery
 
 Mỗi phase cần có deliverable rõ ràng và có thể demo được.
 
+Architecture by Delivery Profile
+
+Target architecture được giữ, nhưng implementation module/component/state/rule phải áp dụng theo phase trong DCAM Architecture Delivery Profile.
+
 Stabilize Before Pilot
 
 Phase cuối tập trung hardening, QA, release documentation và customer pilot readiness.
@@ -171,6 +187,10 @@ Documentation Governance
 
 Tài liệu chính cần tuân theo owner/reviewer/RACI và update rules trong DCAM Documentation Governance.
 
+Delivery guardrail:
+
+No new architecture layer/module may be added before Working Recording Slice is demoable,
+unless it directly blocks recording, storage, BDMA ingest, device POC or release safety.
 ## 5. Overall Timeline
 
 Stage
@@ -193,7 +213,7 @@ Phase 1 - MVP Foundation
 
 Month 1-3
 
-Hoàn thiện recording, capture, storage, metadata, logs
+Hoàn thiện recording, capture, storage, metadata, logs; pass working recording slice
 
 DCAM MVP Internal Build 0.1
 
@@ -285,6 +305,10 @@ Android Debugging Basics
 
 Dev đọc được Logcat và debug được app trên thiết bị thật.
 
+Architecture Delivery Profile
+
+Dev hiểu MVP module set, deferred modules và working recording slice gate.
+
 ### 6.2 Exit Criteria
 
 Criteria
@@ -311,6 +335,10 @@ Debug logs from device
 
 Yes
 
+Understand MVP vs Target Architecture split
+
+Yes
+
 ## 7. Phase 1 - MVP Foundation
 
 Item
@@ -329,6 +357,10 @@ Buffer
 
 20%
 
+Architecture Profile
+
+MVP Implementation Architecture only; no full target architecture expansion before Working Recording Slice.
+
 ### 7.1 Objectives
 
 Phase 1 tập trung xây dựng các chức năng cốt lõi của DCAM:
@@ -345,6 +377,8 @@ Logging.
 
 Basic Device Status.
 
+Working Recording Slice.
+
 ### 7.2 Technical Focus
 
 Area
@@ -357,11 +391,11 @@ Start/stop recording, capture image, recording state.
 
 Storage Module
 
-Folder structure, file naming, local media storage.
+Folder structure, file naming, local media storage, temp/final handling.
 
 Metadata Module
 
-Generate metadata for video/image.
+Generate metadata for video/image where supported by MVP contract.
 
 Logging Module
 
@@ -371,9 +405,17 @@ Device Status
 
 Battery, storage, GPS availability.
 
+BDMA Export
+
+Ensure BDMA can detect/import sample media through ADB.
+
 MVP Architecture
 
-Basic module separation and app structure.
+Small module set, small runtime component set, no unnecessary Gradle/module split.
+
+Working Recording Slice
+
+App can record 30s video, finalize file, write minimal DB/config/log output and BDMA can import sample.
 
 ### 7.3 Deliverables
 
@@ -384,6 +426,10 @@ Description
 DCAM MVP Internal Build 0.1
 
 Internal build with recording/capture/storage/metadata/logging.
+
+Working Recording Slice Demo
+
+Demo runnable APK on BodyCamera: record/capture/save/finalize/BDMA import.
 
 MVP Demo
 
@@ -397,6 +443,29 @@ Known Issues List
 
 Known issues from BodyCamera testing.
 
+### 7.4 Phase 1 Architecture Guardrails
+
+Phase 1 must follow the limits from **DCAM Architecture Delivery Profile**:
+
+≤ 5 Gradle modules
+≤ 8 logical modules
+≤ 10 runtime components
+≤ 7 runtime states
+≤ 8 P0 dependency rules
+1 working recording/storage/BDMA vertical slice before platform expansion
+Phase 1 deferred modules:
+
+AI Detection
+Sensor Monitoring advanced
+Remote Config apply
+Self Update
+Play Store fallback
+Full In-App Console advanced
+Full Kiosk Policy stack
+Advanced User Management
+Full Feature Eligibility engine
+Full Runtime Module Registry
+Full State Machine Coordinator
 ## 8. Phase 2 - Platform Foundation & BDMA Integration
 
 Item
@@ -418,6 +487,8 @@ Buffer
 ### 8.1 Objectives
 
 Phase 2 tập trung đảm bảo DCAM tương thích với BDMA, đồng thời xây dựng sớm nền tảng Device/User để tránh refactor lớn ở các phase sau.
+
+Phase 2 chỉ bắt đầu mở rộng platform architecture sau khi Phase 1 đã có working recording/storage/BDMA slice demoable.
 
 ### 8.2 Main Scope
 
@@ -460,6 +531,18 @@ Basic user/profile/operator/role/permission foundation.
 Basic Encryption
 
 Basic encryption scope for media/metadata based on agreed design.
+
+Kiosk / Device Owner Baseline
+
+Begin Device Owner/DPC baseline only after device POC confirms feasibility.
+
+Remote Config Foundation
+
+Fetch/cache foundation may start; apply policy must follow guard rules.
+
+Self Update Foundation
+
+Basic APK update path may start after recording/storage stability is protected.
 
 ### 8.3 Deliverables
 
@@ -535,6 +618,10 @@ Streaming/PTT Logs
 
 Log state, error, reconnect, timeout and operational status.
 
+Sensor / AI Optional Expansion
+
+Only after recording/storage/platform foundation is stable and approved.
+
 ## 10. Phase 4 - Hardening & Customer Pilot
 
 Item
@@ -578,6 +665,10 @@ Test GPS availability, route recording and fallback.
 Security Review
 
 Review encryption/security scope.
+
+Architecture Debt Review
+
+Check module/component growth against Architecture Delivery Profile.
 
 Bug Fixing
 
@@ -629,7 +720,7 @@ Sprint 1
 
 Week 1-2
 
-Android Training and environment setup.
+Android Training, environment setup and Architecture Delivery Profile onboarding.
 
 Sprint 2
 
@@ -637,11 +728,23 @@ Week 3-4
 
 Camera prototype, basic record/capture proof of concept.
 
-Sprint 3-6
+Sprint 3
 
-Week 5-12
+Week 5-6
 
-MVP Foundation: recording, capture, storage, metadata, logging.
+Working Recording Slice: record 30s, capture image, save/finalize file on BodyCamera.
+
+Sprint 4
+
+Week 7-8
+
+Minimal DB/config/log output and BDMA import sample media.
+
+Sprint 5-6
+
+Week 9-12
+
+MVP Foundation hardening: recording, capture, storage, metadata, logging and MVP test checklist.
 
 Sprint 7-10
 
@@ -695,7 +798,7 @@ Plan execution, track progress, manage requirements, coordinate releases and doc
 
 Tech Lead
 
-Own architecture, technical decisions, code review direction and implementation quality.
+Own architecture, technical decisions, code review direction, implementation quality and Architecture Delivery Profile enforcement.
 
 Android Developers
 
@@ -727,7 +830,7 @@ Phase 1
 
 20%
 
-Android learning curve, camera compatibility and BodyCamera hardware issues.
+Android learning curve, camera compatibility, BodyCamera hardware issues and working recording slice risk.
 
 Phase 2
 
@@ -774,6 +877,18 @@ BodyCamera hardware limitation
 Performance, storage, battery or permission issues
 
 Device-specific testing and fallback design.
+
+Analysis-paralysis / over-architecture
+
+Low development velocity, delayed recording demo
+
+Enforce Architecture Delivery Profile; working recording slice before platform expansion.
+
+Too many Gradle modules too early
+
+Slow build, complex dependency management, team confusion
+
+Keep MVP module count small; split package into module only with approved trigger.
 
 BDMA Data Contract changes
 
@@ -831,6 +946,12 @@ End of Week 6
 
 Video recording and image capture work on BodyCamera.
 
+M1.5 - Working Recording Slice
+
+End of Week 8
+
+App can record 30s, capture image, finalize media, write minimal DB/config/log output and BDMA can detect/import sample media.
+
 M2 - DCAM MVP Internal 0.1
 
 End of Week 12
@@ -874,6 +995,10 @@ Criteria
 Required
 
 Android onboarding completed
+
+Yes
+
+Working Recording Slice completed before optional platform expansion
 
 Yes
 
@@ -929,7 +1054,7 @@ Required Documents
 
 Current Baseline
 
-DCAM Project Home, DCAM Documentation Governance, DCAM Architecture Home, DCAM Android Development Standard.
+DCAM Project Home, DCAM Documentation Governance, DCAM Architecture Home, DCAM Architecture Delivery Profile, DCAM Android Development Standard.
 
 Android Training
 
@@ -937,7 +1062,7 @@ DCAM Android Training & Architecture Onboarding, Camera Training Prototype Notes
 
 Phase 1
 
-DCAM Functional Requirements, MVP Test Checklist, Known Issues, MVP Release Notes.
+DCAM Functional Requirements, MVP Test Checklist, Working Recording Slice Notes, Known Issues, MVP Release Notes.
 
 Phase 2
 
@@ -964,6 +1089,10 @@ Main documentation hub and current documentation status.
 DCAM Documentation Governance
 
 Owner, reviewer, RACI, lifecycle and update rules for DCAM documents.
+
+DCAM Architecture Delivery Profile
+
+Defines MVP vs target architecture delivery guardrails and working recording slice gate.
 
 DCAM Product Vision
 
@@ -1013,6 +1142,15 @@ Build, versioning, release and pilot process.
 
 Mục tiêu thực tế của kế hoạch 9 tháng là:
 
-textwide760Development Plan này không thay thế Roadmap. Tài liệu này dùng để quản lý cách triển khai roadmap thành sprint, deliverable, milestone, buffer và release readiness.
+Android readiness + Working Recording Slice + DCAM stable MVP + BDMA ingest
++ Device/User platform foundation + advanced communication beta + customer pilot release.
+Development Plan này không thay thế Roadmap. Tài liệu này dùng để quản lý cách triển khai roadmap thành sprint, deliverable, milestone, buffer và release readiness.
 
 Tài liệu này cũng không thay thế DCAM Project Home hoặc DCAM Documentation Governance. Project Home phản ánh trạng thái tài liệu hiện tại; Documentation Governance quy định owner, reviewer, lifecycle và update rules.
+
+Architecture delivery baseline hiện tại là:
+
+Target Architecture remains valid.
+MVP Implementation Architecture is intentionally smaller.
+Working recording/storage/BDMA slice must come first.
+Additional managers/coordinators/modules become mandatory only when their feature enters scope.

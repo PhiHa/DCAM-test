@@ -3,7 +3,7 @@
 **Page ID**: 27165291  
 **Version**: 4  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/27165291
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/27165291
 
 ---
 
@@ -42,7 +42,7 @@ PatchApplyService
 
 com.app.common.services
 
-Điều phối: decrypt &rarr; execute SQL &rarr; ghi record, có @Transactional
+Điều phối: decrypt → execute SQL → ghi record, có @Transactional
 
 PatchApplyRepository
 
@@ -74,7 +74,7 @@ File được mã hóa theo định dạng nhị phân BDP v2. Bố cục byte n
 
 Magic
 
-0x42 0x44 0x50 0x02  ("BDP\x02") – định danh file
+0x42 0x44 0x50 0x02  ("BDP\x02") – định danh file
 
 4
 
@@ -104,11 +104,11 @@ Nội dung SQL sau khi mã hóa + 16 bytes authentication tag
 
 ## 2.1. Quy tắc đặt tên file
 
-File plaintext:  patch_001_mo_ta.sql   &rarr;   File mã hóa:  patch_001_mo_ta.sql.enc
+File plaintext:  patch_001_mo_ta.sql   →   File mã hóa:  patch_001_mo_ta.sql.enc
 
 Quy trình encrypt luôn thêm đuôi .enc, không xóa đuôi gốc, tránh ghi đè file plaintext.
 
- 
+ 
 
 # 3. Luồng Xử lý
 
@@ -126,7 +126,7 @@ Thực hiện bởi PatchCryptoService.encrypt(Path sqlFile):
 
 **Load master key – **đọc từ property patch.master.key, clear khỏi heap sau dùng
 
-**Mã hóa AES-256-GCM – **plaintext + AAD (header) &rarr; ciphertext + GCM tag
+**Mã hóa AES-256-GCM – **plaintext + AAD (header) → ciphertext + GCM tag
 
 **Ghi file .sql.enc – **layout: [magic][patchId][iv][ciphertext+tag]
 
@@ -136,15 +136,15 @@ Thực hiện bởi PatchApplyService.apply(Path encFile) với @Transactional:
 
 **decryptAndValidate() – **validate magic bytes, đọc Patch ID
 
-**Tầng 1 – pre-check DB – **existsByPatchId(): nếu đã apply &rarr; ném AppException ngay, KHÔNG decrypt
+**Tầng 1 – pre-check DB – **existsByPatchId(): nếu đã apply → ném AppException ngay, KHÔNG decrypt
 
-10.  **Giải mã AES-256-GCM – **xác minh GCM tag + AAD; thất bại &rarr; AEADBadTagException
+10.  **Giải mã AES-256-GCM – **xác minh GCM tag + AAD; thất bại → AEADBadTagException
 
-11.  **Parse & validate SQL – **JSQLParser kiểm tra lần 2 sau decrypt
+11.  **Parse & validate SQL – **JSQLParser kiểm tra lần 2 sau decrypt
 
-12.  **Execute từng câu lệnh – **jdbcTemplate.execute() cho mỗi INSERT / UPDATE
+12.  **Execute từng câu lệnh – **jdbcTemplate.execute() cho mỗi INSERT / UPDATE
 
-13.  **Tầng 2 – ghi record – **INSERT patch_apply; UNIQUE constraint bắt race condition
+13.  **Tầng 2 – ghi record – **INSERT patch_apply; UNIQUE constraint bắt race condition
 
 # 4. Schema Database
 
@@ -226,19 +226,19 @@ PATCH_MASTER_KEY=<64-char-hex> ./gradlew bootRun
 
 Thực hiện các bước sau trên [http://GitHub.com](http://GitHub.com) :
 
-1.  Mở repository trên GitHub &rarr; vào **Settings**
+1.  Mở repository trên GitHub → vào **Settings**
 
-2.  Chọn **Secrets and variables** &rarr; **Actions**
+2.  Chọn **Secrets and variables** → **Actions**
 
-3.  Click **New repository secret**
+3.  Click **New repository secret**
 
-4.  Điền vào form:
+4.  Điền vào form:
 
-◦       Name:   PATCH_MASTER_KEY
+◦       Name:   PATCH_MASTER_KEY
 
-◦       Secret: <chuỗi hex 64 ký tự sinh ở bước 5.1>
+◦       Secret: <chuỗi hex 64 ký tự sinh ở bước 5.1>
 
-5.  Click **Add secret**
+5.  Click **Add secret**
 
 ## 6.2. Sử dụng trong workflow (build.yml)
 
@@ -248,35 +248,35 @@ Key được truyền vào build qua hai bước chính:
 
 name: Build shadow JAR
 
-  env:
+  env:
 
-    APP_VERSION: ${{ env.APP_VERSION }}
+    APP_VERSION: ${{ env.APP_VERSION }}
 
-    LOGGLY_TOKEN: ${{ secrets.LOGGLY_TOKEN }}
+    LOGGLY_TOKEN: ${{ secrets.LOGGLY_TOKEN }}
 
-    PATCH_MASTER_KEY: ${{ secrets.PATCH_MASTER_KEY }}
+    PATCH_MASTER_KEY: ${{ secrets.PATCH_MASTER_KEY }}
 
-  run: ./gradlew clean shadowJar
+  run: ./gradlew clean shadowJar
 
 **Bước Build app-image (jpackage):**
 
 name: Build app-image
 
-  env:
+  env:
 
-    LOGGLY_TOKEN: ${{ secrets.LOGGLY_TOKEN }}
+    LOGGLY_TOKEN: ${{ secrets.LOGGLY_TOKEN }}
 
-    PATCH_MASTER_KEY: ${{ secrets.PATCH_MASTER_KEY }}
+    PATCH_MASTER_KEY: ${{ secrets.PATCH_MASTER_KEY }}
 
-  run: |
+  run: |
 
-    jpackage \
+    jpackage \
 
-      --java-options "-DPATCH_MASTER_KEY=$env:PATCH_MASTER_KEY" \
+      --java-options "-DPATCH_MASTER_KEY=$env:PATCH_MASTER_KEY" \
 
-      ...
+      ...
 
- 
+ 
 
 Khi jpackage khởi động JVM, -DPATCH_MASTER_KEY được set thành system property. Spring Boot đọc nó qua ${PATCH_MASTER_KEY} trong application.properties.
 
@@ -302,7 +302,7 @@ File .exe tải về và chạy được bình thường
 
 ## 7.1. Quy trình tạo file patch
 
-1.  **Viết file SQL** chứa các câu INSERT / UPDATE cần thiết:
+1.  **Viết file SQL** chứa các câu INSERT / UPDATE cần thiết:
 
 -- patch_20250526_add_white_list.sql
 
@@ -311,19 +311,19 @@ INSERT INTO model_whitelist_rule (whitelist_id, prop_key, expected_value) VALUES
 INSERT INTO model_whitelist_rule (whitelist_id, prop_key, expected_value) VALUES('body_camera_lloo', 'ro.product.device', 'k70v12_64_k419LLOo');
 INSERT INTO model_whitelist_rule (whitelist_id, prop_key, expected_value) VALUES('body_camera_lloo', 'ro.board.platform', 'mt70701LLOo');
 
- 
+ 
 
-2.  **Gọi PatchCryptoService.encrypt()** để sinh file .sql.enc:
+2.  **Gọi PatchCryptoService.encrypt()** để sinh file .sql.enc:
 
 Gọi từ `AdminSettingsDialogController` đã tạo button `btnEncryptPatch` ở dev mode
 
 Click button `btnEncryptPatch` xong chọn file patch_20250526_add_white_list.sql
 
- 
+ 
 
-3.  **Phân phối file .sql.enc** đến môi trường target. KHÔNG phân phối file .sql gốc.
+3.  **Phân phối file .sql.enc** đến môi trường target. KHÔNG phân phối file .sql gốc.
 
-4.  **Gọi PatchApplyService.apply()** trên máy target (cùng PATCH_MASTER_KEY):
+4.  **Gọi PatchApplyService.apply()** trên máy target (cùng PATCH_MASTER_KEY):
 
 Gọi từ `AdminSettingsDialogController` đã tạo button `btnApplyPatch`ở dev mode
 

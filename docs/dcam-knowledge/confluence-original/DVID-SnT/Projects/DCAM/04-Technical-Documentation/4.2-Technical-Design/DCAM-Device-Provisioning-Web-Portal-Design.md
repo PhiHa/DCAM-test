@@ -1,9 +1,9 @@
 # DCAM Device Provisioning Web Portal Design
 
 **Page ID**: 49315858  
-**Version**: 8  
+**Version**: 10  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/49315858
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/49315858
 
 ---
 
@@ -24,11 +24,11 @@ Technical Design / Business Flow Design
 
 Version
 
-Draft 0.8
+Approved 1.0
 
 Status
 
-Draft
+Approved
 
 Owner
 
@@ -36,7 +36,7 @@ Hoàng Ngọc Quyền
 
 Technical Reviewer
 
-Tech Lead / Cloud Lead / Security Reviewer / Android Lead / Backend Lead / Web Portal Lead
+Tech Lead / Cloud Lead / Security Reviewer / Android Lead / Backend Lead / Web Portal Lead / Factory Lead
 
 Approver
 
@@ -48,11 +48,11 @@ Parent Folder
 
 Target Audience
 
-PM/BA, Tech Lead, Android Developers, Web Developers, Cloud/WebServer Team, QA, Factory/Admin Users
+PM/BA, Tech Lead, Android Developers, Web Developers, Cloud/WebServer Team, QA, Factory Worker, Factory Lead
 
 Last Updated
 
-2026-07-09
+2026-07-10
 
 Related Jira
 
@@ -60,29 +60,68 @@ Không có
 
 Related Documents
 
-DCAM Web Portal & Device API Contract, DCAM Factory Provisioning & Device Production SOP, 04 - Device Configuration Requirements, 09 - System Settings Requirements, 06 - Cloud Services, Update & Configuration Architecture, DCAM Android Operation Design, DCAM Android Device Owner & Kiosk Policy Design, ADR - DCAM Android Dedicated Device / Device Owner / Lock Task Decision, DCAM SQLite Database Design, DCAM Security & Encryption Design, DCAM-BDMA Data Contract, DCAM Android Development Standard
+DCAM Device Provisioning Web Portal App Design, DCAM Device Provisioning Web Portal Implementation Design, DCAM Web Portal & Device API Contract, DCAM Factory Provisioning & Device Production SOP, DCAM DSetup Factory Tool Design, 04 - Device Configuration Requirements, 09 - System Settings Requirements, 06 - Cloud Services, Update & Configuration Architecture, DCAM Android Operation Design, DCAM Android Device Owner & Kiosk Policy Design, ADR - DCAM Android Dedicated Device / Device Owner / Lock Task Decision, ADR - DCAM Device Identity Baseline: serial_number + dcam_cloud_device_id, DCAM SQLite Database Design, DCAM Security & Encryption Design, DCAM-BDMA Data Contract
 
 ## 1. Purpose
 
-Tài liệu này là **source of truth** cho **DCAM Device Provisioning Web Portal** business flow.
+Tài liệu này là source of truth cho **DCAM Device Provisioning Web Portal business flow**.
 
-Tài liệu này định nghĩa cách một BodyCamera device mới hoặc reworked trở thành registered DCAM device thông qua Web Portal / Factory Admin flow.
+Web Portal là ứng dụng Web chuyên dụng trong nhà máy. Ứng dụng chỉ có một loại tài khoản user-facing là `Factory Worker` và chỉ có hai screen:
 
-Tài liệu này follows **DCAM Factory Provisioning & Device Production SOP Draft 1.0** làm chuẩn định danh thiết bị:
+Login
+Workspace
+Sau khi login thành công, toàn bộ QR scan, device review, nhập thông tin, submit, result và error handling được thực hiện trong `Workspace`. Các phần đó là panel/state trong cùng screen, không phải screen hoặc route riêng.
 
-textTài liệu này owns:
+Identity baseline:
 
-textAPI/data schema chi tiết thuộc **DCAM Web Portal & Device API Contract**.
+serial_number = Hardware Identity / primary recovery key
+dcam_cloud_device_id = Cloud Identity / primary cloud device id
+serial_lookup/{serial_number} = cloud create/restore lookup
+SD Identity File = recovery cache trên external SD card
+Không dùng ANDROID_ID
+Không dùng android_id_hash
+Không dùng device_lookup/{android_id_hash}
+Tài liệu này owns:
 
+QR-based business provisioning flow
+Factory Worker behavior
+Login và Workspace business behavior
+Device review và device information capture
+Create/restore result behavior
+Provisioning states, audit direction và business error handling
+Các tài liệu chi tiết:
+
+DCAM Device Provisioning Web Portal App Design
+    → owns app UI model, Workspace panels và app-side behavior
+
+DCAM Device Provisioning Web Portal Implementation Design
+    → owns frontend/backend module implementation, Firebase Hosting/Auth/Functions direction và application state
+
+DCAM Web Portal & Device API Contract
+    → owns request, response, path, schema, reason code và Firestore contract
+## 2. Current Provisioning Baseline
+
+DSetup resolves serial_number from SD Identity File or approved barcode/manual fallback.
+DSetup installs approved DCAM APK.
+DSetup sets or verifies Device Owner if required by the approved factory flow.
+DSetup injects serial_number through the approved factory serial injection mechanism.
+DSetup launches DCAM and verifies DCAM imported the expected serial_number.
+DSetup stops after imported serial_number verification.
+DCAM displays the provisioning QR.
+Factory Worker logs in to Web Portal.
+Factory Worker scans the QR displayed by DCAM inside Workspace.
+Web Portal parses QR payload and displays serial_number as read-only.
+Factory Worker enters/selects owner_name and manufacture_date.
+Factory Worker submits provisioning from Workspace.
+Backend creates or restores dcam_cloud_device_id through serial_lookup/{serial_number}.
+Workspace displays the result.
 Important boundary:
 
-text## 2. Current Provisioning Baseline
-
-textProvisioning/recovery lookup ở phía backend được giữ đơn giản có chủ đích:
-
-text dcam_cloud_device_id
-devices/{dcam_cloud_device_id}]]>Chi tiết endpoint/collection/document/schema đầy đủ thuộc **DCAM Web Portal & Device API Contract**.
-
+Web Portal does not set Android Device Owner.
+Web Portal does not inject serial_number into Android.
+Web Portal does not scan a serial barcode from the device label.
+Web Portal does not allow manual serial_number entry.
+Web Portal does not mark PASS, FAIL, QUARANTINED or READY_TO_SHIP.
 ## 3. Scope
 
 ### 3.1 In Scope
@@ -91,49 +130,49 @@ Area
 
 Description
 
-New device business provisioning
+Factory Worker authentication
 
-Đăng ký DCAM device lần đầu khi chưa có `dcam_cloud_device_id` và serial chưa có mapping active.
+`Factory Worker` login trước khi truy cập `Workspace` và submit provisioning.
 
-Rework / factory reset recovery
+Two-screen application model
 
-Restore existing `dcam_cloud_device_id` bằng `serial_number` sau factory reset/rework.
+Business flow chỉ sử dụng `Login` và `Workspace`.
 
-Serial-based identity creation
+QR scan inside Workspace
 
-Backend/WebServer tạo hoặc restore `dcam_cloud_device_id` và map `serial_number` tới cloud id trong Cloud Firestore.
+Worker scan provisioning QR đang hiển thị trên DCAM device.
 
-Web Portal business flow
+QR payload parsing
 
-Admin mở Web Portal, nhập/verify serial/owner/manufacture date và confirm provisioning nếu UI flow yêu cầu.
+App parse payload type/version và lấy `serial_number` cùng device context.
 
-Optional QR Flow
+Read-only device review
 
-DCAM có thể hiển thị QR business provisioning chứa `serial_number` nếu UI/flow yêu cầu; QR không chứa Android system identifier.
+`serial_number`, device model, firmware/app version và QR metadata được hiển thị read-only nếu có.
 
-Device information assignment
+Device information capture
 
-Admin nhập/scan `serial_number`, nhập/chọn `owner_name` và nhập/chọn `manufacture_date`; server lưu device information.
+Worker nhập/chọn `owner_name` và `manufacture_date` trong `Workspace`.
 
-BodyCamera identity restore
+Inline review and submit
 
-BodyCamera/DCAM restore local `dcam_cloud_device_id` bằng serial-based provisioning result.
+Worker review dữ liệu và submit provisioning trong cùng `Workspace`; không có Confirmation screen riêng.
 
-SD Identity File awareness
+New device creation
 
-Web Portal có thể ghi nhận serial source = `SD_IDENTITY_FILE` hoặc `BARCODE_SCAN` trong factory/provisioning record.
+Backend tạo `dcam_cloud_device_id`, device record và serial lookup khi serial chưa được map.
 
-Provisioning states
+Existing identity restore
 
-Định nghĩa state model từ `UNPROVISIONED` đến `ACTIVE`.
+Backend restore existing `dcam_cloud_device_id` khi serial đã có mapping hợp lệ.
 
-Error handling
+Result and error display
 
-Xử lý duplicate serial, invalid owner name, invalid manufacture date, server unavailable, unauthorized admin, already provisioned.
+`Workspace` hiển thị success, restored, safe error hoặc support-required state.
 
-Audit
+Audit direction
 
-Provisioning actions và device information changes phải auditable.
+Provisioning action phải gắn với authenticated worker identity, request identifier, result và safe reason code.
 
 ### 3.2 Out of Scope
 
@@ -141,57 +180,53 @@ Area
 
 Managed In
 
-API request/response/path/schema and Firestore collection/document contract
+Manual `serial_number` entry in Web Portal
 
-DCAM Web Portal & Device API Contract
+Không hỗ trợ. Serial chỉ lấy từ QR displayed by DCAM.
 
-Firebase Realtime Database design
+Direct serial barcode scan in Web Portal
 
-Not applicable for current baseline.
+Không hỗ trợ. Barcode/label fallback thuộc DSetup/factory flow.
 
-Android Enterprise / Device Owner enrollment
+Separate QR Scan, Device Review, Confirmation or Result screens
 
-DCAM Android Device Owner & Kiosk Policy Design + Factory SOP
+Không hỗ trợ. Đây là panel/state trong `Workspace`.
 
-DSetup detailed factory operation
+Multi-role user-facing portal
 
-DCAM Factory Provisioning & Device Production SOP
+Không hỗ trợ. User-facing account type duy nhất là `Factory Worker`.
 
-SD Identity File path/schema/sync rules
+User management / role administration
 
-DCAM Factory Provisioning & Device Production SOP
+Ngoài phạm vi ứng dụng provisioning này.
 
-Lock Task Mode, User Restrictions, Home/Launcher policy and Maintenance Mode
+Duplicate/rebind override by worker
 
-DCAM Android Device Owner & Kiosk Policy Design
+Không hỗ trợ; conflict phải chuyển support/factory process.
 
-Device identity requirement and CSON scope
+Android Device Owner setup
 
-04 - Device Configuration Requirements
+DCAM DSetup Factory Tool Design + Kiosk Policy Design + Factory SOP.
 
-Cloud provider architecture and device identity model
+DSetup detailed operation
 
-06 - Cloud Services, Update & Configuration Architecture
+DCAM DSetup Factory Tool Design.
 
-Runtime startup, kiosk policy verification and local identity restore
+Factory acceptance / ready-to-ship
 
-DCAM Android Operation Design
+DCAM Factory Provisioning & Device Production SOP + QA Test Matrix.
 
-Local DB tables and config cache
+API request/response/path/schema
 
-DCAM SQLite Database Design
+DCAM Web Portal & Device API Contract.
 
-Security constraints and logging policy
+Runtime local identity restore
 
-DCAM Security & Encryption Design
+DCAM Android Operation Design.
 
-Remote config payload fields
+Security implementation
 
-09 - System Settings Requirements / future Remote Config design
-
-BDMA media import and user sync
-
-DCAM-BDMA Data Contract
+DCAM Security & Encryption Design.
 
 ## 4. Core Decisions
 
@@ -199,9 +234,29 @@ Decision
 
 Status
 
-Default factory DCAM business provisioning method is serial-number based provisioning.
+User-facing account type duy nhất là `Factory Worker`.
 
-Approved Direction
+Approved
+
+Application chỉ có `Login` và `Workspace`.
+
+Approved
+
+Mọi thao tác sau login nằm trong `Workspace`.
+
+Approved
+
+Provisioning QR displayed by DCAM là serial source duy nhất của Web Portal.
+
+Approved
+
+`serial_number` luôn read-only trong Web Portal.
+
+Approved
+
+Web Portal không có manual serial entry hoặc direct serial barcode scan.
+
+Approved
 
 Firebase Cloud Firestore là selected storage baseline.
 
@@ -215,71 +270,23 @@ Not Applicable
 
 Approved
 
-`dcam_cloud_device_id` là server/cloud primary device id.
+`dcam_cloud_device_id` là Cloud Identity / primary cloud device id.
 
 Approved
 
-`serial_lookup/{serial_number}` là lookup/create/restore path chính.
+`serial_lookup/{serial_number}` là create/restore lookup path.
 
 Approved
 
-SD Identity File là recovery cache trên thẻ nhớ ngoài, không phải Hardware Identity.
+`owner_name` và `manufacture_date` là business information, không phải identity key.
 
 Approved
 
-DSetup có thể recover serial từ SD Identity File hoặc scan barcode.
+Factory Worker không được override duplicate, rebind, disabled, revoked hoặc quarantined state.
 
 Approved
 
-Web Portal QR Flow không phải Android Enterprise / Device Owner enrollment.
-
-Approved
-
-BDMA provisioning không required cho normal factory business provisioning.
-
-Approved Direction
-
-`owner_name` là mutable/semi-static device information, không phải primary key.
-
-Approved
-
-`manufacture_date` là semi-static device information dùng ISO format `YYYY-MM-DD`, không phải primary key.
-
-Approved
-
-ANDROID_ID không được dùng làm DCAM device identity key.
-
-Approved
-
-android_id_hash không được dùng làm recovery lookup key trong current baseline.
-
-Approved
-
-device_lookup/{android_id_hash} không dùng trong current baseline.
-
-Approved
-
-Advertising ID không được dùng làm DCAM device identity key.
-
-Approved
-
-Provisioning action yêu cầu authenticated Web Admin / Factory Admin.
-
-Approved Direction
-
-BDMA decoder profile không thuộc provisioning.
-
-Approved
-
-App/data/media/encoder contract metadata có thể được lưu để hỗ trợ support/compatibility.
-
-Approved Direction
-
-QR optional nonce/signature/expiration vẫn là implementation TBD.
-
-TBD
-
-Exact REST backend vs direct Firestore SDK/API usage vẫn là TBD.
+QR signature, nonce, expiration và replay policy thuộc API Contract/Security.
 
 TBD
 
@@ -291,123 +298,147 @@ Responsibility
 
 BodyCamera / DCAM App
 
-Nhận `serial_number` từ DSetup, lưu app-private serial, sync SD Identity File, fetch/restore `dcam_cloud_device_id`, ghi local identity/config sau khi provisioning thành công.
+Lưu imported `serial_number`, hiển thị provisioning QR, nhận/restore `dcam_cloud_device_id` và áp dụng local identity state sau provisioning.
 
 DSetup
 
-Resolve serial từ SD Identity File hoặc barcode scan, install/update APK, set/verify Device Owner khi required, inject serial vào DCAM.
+Thực hiện factory tool flow đến khi DCAM xác nhận đã import đúng `serial_number`; không sở hữu Web Portal provisioning hoặc production acceptance.
 
-Factory Admin / Web Admin
+Factory Worker
 
-Login vào Web Portal, verify serial, nhập/chọn owner name, nhập/chọn manufacture date và confirm provisioning.
+Login, làm việc trong `Workspace`, scan QR, review read-only device information, nhập/chọn `owner_name` và `manufacture_date`, submit provisioning và xem result.
 
-Web Provisioning Portal
+Web Portal Frontend
 
-Mobile-browser UI cho scan/entry, preview, device information entry, confirmation và result.
+Cung cấp `Login` và `Workspace`, scan/parse QR, validate UI fields, submit authenticated request và hiển thị safe result.
 
-Firebase Cloud Firestore / WebServer Backend
+Backend / Cloud Functions
 
-Validate admin request, tạo/restore Firestore device record, tạo serial lookup mapping, lưu device information, lưu app/contract metadata nếu cần và audit log.
+Xác thực worker, validate request, create/restore identity, enforce duplicate policy, ghi audit và trả stable reason code.
 
-Android Enterprise / DPC Enrollment Flow
+Firebase Cloud Firestore
 
-Deployment process riêng để đưa device vào fully managed / Device Owner. Không thuộc tài liệu này.
+Lưu worker profile, serial lookup, device record và audit data theo API Contract.
 
 QA / Support
 
-Verify provisioning flow, error cases, audit log, local restore behavior và boundary với Device Owner/kiosk policy.
+Verify flow, conflict handling, audit, restore và support-required cases.
 
 ## 6. High-level Business Flow
 
-text## 7. BodyCamera-side Flow
-
-text### 7.1 Local Write after Provisioning Success
-
-Sau khi provisioning lookup thành công, DCAM ghi:
-
-Local Target
-
-Data
-
-`dcam.db`
-
-`dcam_cloud_device_id`, `serial_number`, `owner_name` mirror, `manufacture_date` mirror, provisioning state, remote config metadata, app/contract metadata nếu applicable.
-
-`dcam_config.cson`
-
-`serial_number`, `owner_name`, `manufacture_date`, device model/firmware info nếu applicable, app/contract metadata nếu cần cho BDMA/support display.
-
-SD Identity File
-
-Recovery cache chứa `serial_number` để hỗ trợ DSetup sau factory reset.
-
-Logs / diagnostics
-
-Provisioning result với safe reason codes.
-
-`dcam_config.cson` phải chỉ chứa device-information. Operational settings và kiosk policy settings nằm trong `dcam.db`/policy boundary, không nằm trong CSON.
-
-## 8. Web Portal Screen Flow
+DSetup completes imported serial_number verification
+    ↓
+DCAM displays provisioning QR
+    ↓
+Factory Worker opens Web Portal
+    ↓
+Login screen is shown
+    ↓
+Factory Worker logs in
+    ↓
+Workspace is shown
+    ↓
+Factory Worker scans QR displayed by DCAM
+    ↓
+Workspace parses and validates QR
+    ↓
+Workspace displays serial_number and device context as read-only
+    ↓
+Factory Worker enters/selects owner_name
+    ↓
+Factory Worker uses today's manufacture_date or selects another approved date
+    ↓
+Workspace displays inline review
+    ↓
+Factory Worker submits provisioning
+    ↓
+Backend validates authenticated worker and request
+    ↓
+Backend checks serial_lookup/{serial_number}
+    ↓
+If serial is new:
+        create dcam_cloud_device_id
+        create serial lookup
+        create device record
+If serial exists and restore is allowed:
+        restore existing dcam_cloud_device_id
+        update allowed business information
+If conflict exists:
+        stop and return support-required result
+    ↓
+Workspace displays Created / Restored / Error result
+    ↓
+DCAM retrieves or receives dcam_cloud_device_id and applies local state
+## 7. Screen and Workspace Model
 
 Screen
 
 Purpose
 
-Key Actions
-
 Login
 
-Authenticate Factory/Admin user.
+Xác thực `Factory Worker` trước khi truy cập provisioning workspace.
 
-Login, session check, role check.
+Workspace
 
-Serial Entry / Scan
+Chứa toàn bộ QR scan, device review, information input, inline review, submit, result và error behavior.
 
-Nhập hoặc scan `serial_number`, hoặc nhận serial từ QR nếu UI flow dùng QR.
+Workspace areas:
 
-Manual input, barcode scan, or QR parsing.
+Workspace Area
 
-Device Info Preview
+Purpose
 
-Hiển thị decoded/resolved device information trước provisioning.
+Session Header
 
-Hiển thị serial, model, app version, firmware version, environment, serial source nếu có.
+Hiển thị worker/session/environment và logout action nếu được enable.
 
-Owner Name Input
+QR Scanner Panel
 
-Nhập/chọn `owner_name`.
+Mở camera và scan provisioning QR displayed by DCAM.
 
-Manual input, customer/agency selection hoặc default value theo factory/customer policy.
+Device Review Panel
 
-Manufacture Date Input
+Hiển thị `serial_number` và device context ở chế độ read-only.
 
-Nhập/chọn `manufacture_date`.
+Device Information Panel
 
-Date input dùng ISO date `YYYY-MM-DD`; validate date format.
+Thu thập `owner_name` và `manufacture_date`.
 
-Confirmation
+Inline Review / Submit Area
 
-Confirm provisioning action.
+Hiển thị dữ liệu cuối cùng và submit action trong cùng screen.
 
-Hiển thị serial + owner + manufacture date + target environment.
+Result / Error Panel
 
-Success
+Hiển thị Created, Restored, safe failure hoặc support-required result.
 
-Provisioning completed.
+Rules:
 
-Hiển thị `dcam_cloud_device_id`, serial, owner, manufacture date và status.
+Workspace panels are not separate screens or routes.
+There is no Confirmation screen.
+There is no separate Success or Failed screen.
+Rescan and Provision Next Device reset the current Workspace session according to App Design.
+## 8. QR Payload Direction
 
-Failed / Retry
+Exact schema thuộc **DCAM Web Portal & Device API Contract**.
 
-Error handling.
+Expected business fields:
 
-Hiển thị reason, retry hoặc tạo support action.
-
-## 9. QR Payload Direction if QR Is Used
-
-Exact schema thuộc **DCAM Web Portal & Device API Contract**. Business-level direction:
-
-textRules:
+payload_type = DCAM_DEVICE_PROVISIONING
+payload_version
+serial_number
+device_model
+firmware_version
+app_package_name
+app_version_name
+app_version_code
+optional serial_source
+optional generated_at
+optional expires_at
+optional provisioning_nonce
+optional signature
+optional contract metadata
 
 Rule
 
@@ -415,53 +446,143 @@ Description
 
 QR-001
 
-QR không được chứa raw Android system identifier.
+QR phải là provisioning QR do DCAM hiển thị.
 
 QR-002
 
-QR không được chứa `android_id_hash`.
+QR phải có supported payload type/version.
 
 QR-003
 
-QR có thể chứa `serial_number` vì serial là approved Hardware Identity.
+QR phải chứa `serial_number`.
 
 QR-004
 
-QR có thể chứa local nonce/correlation id nếu được API Contract/Security approve.
+`serial_number` được hiển thị read-only và không thể override.
 
 QR-005
 
-QR phải có payload version để compatibility.
+QR không được chứa `ANDROID_ID`, `android_id_hash`, credential hoặc long-lived secret.
 
 QR-006
 
-Exact QR signature/expiration vẫn là TBD.
+Camera stream không được lưu hoặc upload.
 
 QR-007
 
-`owner_name` và `manufacture_date` thường được nhập/chọn trong Web Portal, không required trong QR.
+Invalid, expired hoặc unsupported QR phải bị reject.
 
 QR-008
 
-QR payload này chỉ dùng cho DCAM business provisioning; không phải Android Enterprise Device Owner enrollment payload.
+QR chỉ dùng cho DCAM business provisioning; không phải Device Owner enrollment payload.
+
+## 9. Device Information
+
+Field
+
+Source
+
+Behavior
+
+`serial_number`
+
+QR displayed by DCAM
+
+Read-only; không manual input; không barcode fallback trong Web Portal.
+
+`device_model`
+
+QR nếu available
+
+Read-only.
+
+`firmware_version`
+
+QR nếu available
+
+Read-only.
+
+`app_version_name` / `app_version_code`
+
+QR nếu available
+
+Read-only.
+
+`owner_name`
+
+Factory Worker
+
+Required/validation theo approved Product/Factory policy.
+
+`manufacture_date`
+
+Factory Worker / current factory local date
+
+Dùng `YYYY-MM-DD`; default UX và correction policy theo App/Implementation Design.
+
+`dcam_cloud_device_id`
+
+Backend result
+
+Hiển thị sau Created/Restored success.
 
 ## 10. Backend/API Direction
 
 API schema thuộc **DCAM Web Portal & Device API Contract**.
 
-Current logical API flow:
+Logical request:
 
-textBackend/WebServer/Firestore không được yêu cầu Android tạo server-side provisioning challenge trước khi hiển thị QR trong current baseline.
+authenticated Factory Worker session
+request_id
+serial_number from QR
+owner_name
+manufacture_date
+approved QR/device metadata
+optional nonce/signature context
+Logical backend behavior:
 
-Request direction cho Web Portal device creation nên include hoặc derive:
+validate authentication and Factory Worker authorization
+validate request and QR-derived data
+check serial_lookup/{serial_number}
+create or restore dcam_cloud_device_id
+create/update allowed device information
+write audit event
+return stable result and safe reason code
+Frontend không được ghi trực tiếp vào production provisioning collections.
 
-textRequest không được include:
+Request không được chứa:
 
-text## 11. Server-side Data Created
+ANDROID_ID
+android_id_hash
+device_lookup/{android_id_hash}
+manual replacement serial
+password or identity token as business data
+maintenance credential
+Device Owner credential
+APK signing secret
+## 11. Logical Server Data
 
-Provisioning tạo hoặc cập nhật Cloud Firestore data:
+Logical Area
 
-textExact Firestore collection/document names có thể thay đổi trong implementation, nhưng logical ownership phải được preserve theo **DCAM Web Portal & Device API Contract**.
+Purpose
+
+Worker Profiles
+
+Worker identity, authorization và active status.
+
+Serial Lookup
+
+Mapping `serial_number` → `dcam_cloud_device_id`.
+
+Devices
+
+Cloud identity, hardware identity, business information, app/device metadata và device state.
+
+Audit Events
+
+Worker action, request identifier, result, reason code và changed fields.
+
+Exact collection/document naming thuộc API Contract.
 
 ## 12. Provisioning State Model
 
@@ -469,53 +590,51 @@ State
 
 Meaning
 
-`UNPROVISIONED`
-
-Chưa có local cloud identity và chưa có confirmed server mapping.
-
-`SERIAL_REQUIRED`
-
-DCAM/DSetup cần serial từ SD Identity File hoặc barcode scan.
-
-`SERIAL_RESOLVED`
-
-Serial đã được recover/scan/inject và validated.
-
 `PROVISIONING_REQUIRED`
 
-Device phải được register/restore thông qua Web Provisioning Portal hoặc approved backend flow.
+DCAM đã có imported serial nhưng chưa có valid local/cloud provisioning result.
 
 `PROVISIONING_QR_DISPLAYED`
 
-BodyCamera đang hiển thị local QR payload nếu UI flow dùng QR.
+DCAM đang hiển thị QR để Factory Worker scan.
+
+`WORKSPACE_READY`
+
+Worker đã login và Workspace sẵn sàng.
+
+`QR_SCANNING`
+
+Workspace đang scan QR.
+
+`DEVICE_REVIEW_READY`
+
+QR hợp lệ và device information đã hiển thị read-only.
+
+`REVIEW_READY`
+
+Required business information hợp lệ và có thể submit.
 
 `PROVISIONING_PENDING`
 
-Web Portal/admin action có thể đang xử lý hoặc Android đang chờ serial lookup result.
+Backend đang xử lý request.
 
 `PROVISIONED`
 
-Server identity tồn tại và local restore/write đang xử lý.
+Backend create/restore thành công; DCAM đang apply local state nếu cần.
 
 `ACTIVE`
 
-Device có valid local identity và có thể tiếp tục normal runtime/login nếu runtime/policy guards cho phép.
+Device có valid identity và runtime/policy guards cho phép normal operation.
 
-`DISABLED`
+`SUPPORT_REQUIRED`
 
-Device record tồn tại nhưng cloud/config operation bị disabled bởi server policy.
-
-`REVOKED`
-
-Device không được phép dùng production cloud/webserver identity.
-
-`QUARANTINED`
-
-Device fail factory/release checks và không được enter field operation.
+Duplicate/conflict/state cần xử lý ngoài Factory Worker flow.
 
 `PROVISIONING_FAILED`
 
-Provisioning failed; cần admin/support action.
+Request thất bại và cần retry hoặc support action.
+
+`QUARANTINED` và `READY_TO_SHIP` là factory/release states, không phải decision do Web Portal App đưa ra.
 
 ## 13. Error and Exception Handling
 
@@ -523,117 +642,99 @@ Case
 
 Expected Handling
 
-Invalid QR payload
+Login failed
 
-Portal reject và hiển thị invalid QR message.
+Giữ ở `Login` và hiển thị safe error.
 
-Admin unauthorized
+Session expired
 
-Portal block provisioning action.
+Chặn submit và yêu cầu login lại.
 
-Missing serial_number
+Camera permission denied
 
-Portal/backend reject; DSetup must recover from SD Identity File or barcode scan.
+`Workspace` hiển thị hướng dẫn cấp quyền camera.
 
-Duplicate `serial_number`
+Invalid or wrong QR
 
-Backend restore existing device if expected; block or require admin-approved resolution if conflict exists.
+Reject và cho phép scan lại.
+
+Missing `serial_number`
+
+Reject QR; không mở manual serial entry.
+
+Unsupported QR version
+
+Reject và hiển thị update/support-required message.
+
+Duplicate serial conflict
+
+Backend không silently remap; `Workspace` hiển thị support-required.
+
+Existing serial restorable
+
+Backend restore same `dcam_cloud_device_id`.
 
 Invalid `owner_name`
 
-Portal/backend reject hoặc yêu cầu admin sửa giá trị.
+Hiển thị field-level validation.
 
 Invalid `manufacture_date`
 
-Portal/backend reject hoặc yêu cầu admin dùng valid `YYYY-MM-DD` date.
+Hiển thị field-level validation và yêu cầu valid `YYYY-MM-DD`.
 
-Device already provisioned
+Backend unavailable
 
-Portal hiển thị existing device; không tạo duplicate active record silently.
+Hiển thị retry-safe message; không assume success.
 
-Server unavailable
+Request timeout / unknown outcome
 
-BodyCamera vẫn ở provisioning-required/pending và admin retry sau.
-
-Device offline after portal success
-
-Server record tồn tại; BodyCamera hoàn tất khi serial lookup thành công sau đó.
-
-Local DB write failed
-
-DCAM report provisioning local apply failure và retry safe local write.
-
-CSON write failed
-
-DCAM giữ DB state và report CSON apply failure để retry/support.
-
-SD Identity File sync failed
-
-DCAM report safe warning; flow tiếp tục nếu SD recovery cache là optional.
-
-SD Identity File conflicts with app-private serial
-
-App-private serial wins; overwrite file hoặc raise warning theo policy.
+Hiển thị unknown outcome và thực hiện reconciliation/idempotency theo API Contract.
 
 Device disabled/revoked/quarantined
 
-DCAM không được enter normal ACTIVE cloud/config behavior.
+Hiển thị state và support-required instruction; worker không được override.
 
-Device Owner missing
+Local DCAM apply failed
 
-Không được xử lý bởi business provisioning flow này; Android Operation/Kiosk Policy/SOP xử lý policy-required state.
+DCAM giữ safe state và retry/report theo Android Operation Design.
 
 ## 14. Security and Audit
-
-Security requirements được định nghĩa bởi **DCAM Security & Encryption Design**. Tài liệu này áp dụng các rule đó vào provisioning.
 
 Area
 
 Requirement
 
-Admin authentication
+Factory Worker authentication
 
-Chỉ authenticated Web Admin / Factory Admin mới được provision.
+Chỉ authenticated và active `Factory Worker` được submit provisioning.
 
 Backend authority
 
-Web Portal client gọi backend; backend tạo production records và serial lookup mapping.
+Backend phải verify authentication/authorization; không tin role hoặc worker id từ request body.
 
-Firestore access control
+Serial handling
 
-Firestore security rules hoặc backend API authorization phải ngăn unauthorized read/write.
+`serial_number` chỉ đến từ QR displayed by DCAM và luôn read-only.
 
-Identifier handling
+Conflict handling
 
-Dùng `serial_number`; không dùng raw Android system identifier hoặc `android_id_hash`.
+Factory Worker không được override duplicate, rebind hoặc restricted device state.
 
-SD Identity File
+Firestore access
 
-Chỉ là recovery cache; nếu ghi nhận vào backend thì chỉ ghi safe result/source metadata.
+Frontend không được direct-write vào Serial Lookup, Devices hoặc Audit Events.
 
-Device information
+Sensitive data
 
-`owner_name` và `manufacture_date` là device information; thay đổi phải auditable nếu được admin/server update.
+Không log password, auth token, maintenance credential, signing secret hoặc raw restricted identifier.
 
-Contract metadata
+Camera privacy
 
-App/data/media/encoder contract metadata có thể dùng cho compatibility/support; dynamic decoder profile không được dùng.
+Không lưu hoặc upload camera stream/image trong QR scan flow.
 
 Audit
 
-Provisioning action phải ghi nhận actor, time, source, serial source, result, changed fields và reason code.
-
-Rebind
-
-Re-provision/rebind yêu cầu explicit admin approval và audit.
-
-Sensitive logging
-
-Logs phải dùng safe ids/reason codes.
-
-Kiosk boundary
-
-Provisioning audit không được chứa Android/device policy enrollment secret values, Maintenance Mode credential values hoặc kiosk exit secret values.
+Submit/result phải gắn worker identity, serial, cloud device id nếu có, request id, timestamp, result và safe reason code.
 
 ## 15. QA / Acceptance Checklist
 
@@ -641,69 +742,65 @@ Test Case
 
 Expected Result
 
-New device with serial not mapped
+Screen model
 
-Backend creates new `dcam_cloud_device_id` and `serial_lookup/{serial_number}` when authorized.
+Chỉ có `Login` và `Workspace`.
 
-Factory reset with valid SD Identity File
+Valid Factory Worker login
 
-DSetup recovers serial and backend restores existing `dcam_cloud_device_id`.
+Mở `Workspace`.
 
-Factory reset without valid SD Identity File
+Invalid login
 
-DSetup requires barcode scan before provisioning/recovery.
+Giữ ở `Login` và hiển thị safe error.
 
-Admin enters serial/owner/manufacture date
+Valid DCAM provisioning QR
 
-Backend stores device information and serial lookup mapping.
+Workspace parse QR và hiển thị device review.
 
-BodyCamera checks serial lookup after success
+Wrong QR / missing serial
 
-BodyCamera ghi local identity/device info và chỉ trở thành `ACTIVE` nếu runtime/policy guards cho phép.
+Reject; không có manual serial input.
 
-Firestore baseline verified
+Serial display
 
-Provisioning data được lưu trong Cloud Firestore, không phải Realtime Database.
+`serial_number` read-only và không có edit control.
 
-App update after provisioning
+Direct serial barcode flow
 
-BodyCamera keeps local identity and syncs SD Identity File if needed.
+Không tồn tại trong Web Portal.
 
-Duplicate serial
+Required owner/date validation
 
-Portal/backend restores existing expected device or blocks conflict for support/admin resolution.
+Invalid field chặn submit.
 
-Invalid owner name
+New serial
 
-Portal/backend block hoặc yêu cầu sửa.
+Backend trả Created với new `dcam_cloud_device_id`.
 
-Invalid manufacture date format
+Existing restorable serial
 
-Portal/backend block và yêu cầu `YYYY-MM-DD`.
+Backend trả Restored với existing `dcam_cloud_device_id`.
 
-Server offline
+Duplicate/conflict
 
-BodyCamera vẫn safe và retryable.
+Trả Support Required; không có override action.
 
-Local DB/CSON write failure
+Backend unavailable
 
-Failure được log và device không silently trở thành inconsistent.
+Không assume success; hiển thị retry-safe state.
 
-Unauthorized admin
+Android identity fields
 
-Provisioning action bị block.
+Test fail nếu payload/request dùng `ANDROID_ID` hoặc `android_id_hash`.
 
-Decoder profile field supplied accidentally
+Device Owner boundary
 
-Backend reject/ignore field vì `bdma_decoder_profile_id` không thuộc contract.
+QR/Web Portal không được hiểu là Device Owner setup.
 
-Web Portal QR confused with Device Owner enrollment
+Production decision boundary
 
-QA verify documentation/UI labels thể hiện rõ đây là DCAM business provisioning, không phải Android Enterprise enrollment.
-
-Android ID fields appear in payload
-
-Test must fail; `ANDROID_ID`, `android_id_hash`, `device_lookup` are not in current baseline.
+Web Portal không mark PASS, FAIL, QUARANTINED hoặc READY_TO_SHIP.
 
 ## 16. Open Questions / TBD
 
@@ -711,72 +808,51 @@ Item
 
 Status
 
-Exact QR payload optional nonce/signature/expiration mechanism
+Exact QR payload schema
+
+TBD / API Contract
+
+QR nonce/signature/expiration/replay policy
 
 TBD / API Contract + Security
 
-REST backend vs direct Firestore SDK/API usage
+Exact owner source and validation
+
+TBD / Product + Factory
+
+Worker account model: individual or shared station
+
+TBD / Factory + Security
+
+Duplicate/rebind support process
+
+TBD / Product + Support + Backend
+
+Request idempotency and timeout reconciliation
 
 TBD / API Contract + Backend
 
-Exact Firestore collection/document names
+Exact audit retention
 
-TBD / API Contract + Backend
+TBD / Security + Backend
 
-Exact Firestore security rules / backend authorization boundary
+Supported browser/factory station profile
 
-TBD / API Contract + Security + Backend
-
-Web Portal UI wireframe
-
-TBD
-
-Serial barcode/QR format on device label
-
-TBD
-
-Owner name validation length/charset
-
-TBD
-
-Owner source: manual input vs customer dropdown
-
-TBD
-
-Manufacture date source and correction policy
-
-TBD
-
-Duplicate serial policy
-
-TBD
-
-Device rebind policy
-
-TBD
-
-Admin roles/permissions
-
-TBD
-
-Audit log physical schema
-
-TBD / API Contract + Security
-
-Serial lookup retry interval / timeout
-
-TBD / Android Operation
-
-Offline factory network behavior
-
-TBD
-
-Exact sequencing between DSetup Device Owner setup, serial injection and Web Portal business provisioning
-
-TBD / Factory SOP + Kiosk Policy Design + Device POC
+TBD / Implementation Design + Factory
 
 ## 17. Practical Conclusion
 
-textDefault DCAM business provisioning baseline:
-
-text
+DCAM Device Provisioning Web Portal là single-purpose factory Web App.
+User-facing account type duy nhất là Factory Worker.
+Application chỉ có Login và Workspace.
+Mọi thao tác sau login được thực hiện và hiển thị trong Workspace.
+Factory Worker scan provisioning QR displayed by DCAM.
+serial_number chỉ lấy từ QR và luôn read-only.
+Web Portal không có manual serial entry hoặc direct serial barcode scan.
+Factory Worker nhập/chọn owner_name và manufacture_date trong Workspace.
+Backend create/restore dcam_cloud_device_id qua serial_lookup/{serial_number}.
+Workspace hiển thị Created, Restored, safe error hoặc support-required result.
+Web Portal không set Device Owner, không inject serial vào Android và không quyết định production acceptance.
+API/path/schema/reason code thuộc DCAM Web Portal & Device API Contract.
+App UI behavior thuộc DCAM Device Provisioning Web Portal App Design.
+Implementation modules thuộc DCAM Device Provisioning Web Portal Implementation Design.

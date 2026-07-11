@@ -3,7 +3,7 @@
 **Page ID**: 47743376  
 **Version**: 4  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/47743376
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47743376
 
 ---
 
@@ -142,4 +142,6 @@ Approved
 
 ## 4. Practical Conclusion
 
-text
+BDMA Requirements defines requirement-level integration intent.
+DCAM-BDMA Data Contract owns concrete media/file/MD5/cleanup rules.
+BDMA Technical Design owns implementation flow.

@@ -37,7 +37,7 @@ public class CsonConfigStoreTest {
         assertEquals("CAMDEFAULT", config.getAccountUserId());
         assertEquals("build-password", config.getMediaEncryptionPassword());
         String generated = Files.readString(file.toPath());
-        assertTrue(config.isVideoEncrypted());
+        assertFalse(config.isVideoEncrypted());
         assertFalse(generated.contains("file.encrypt_password"));
         assertFalse(generated.contains("file.encryption"));
     }

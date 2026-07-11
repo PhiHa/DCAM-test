@@ -3,16 +3,16 @@
 **Page ID**: 27132217  
 **Version**: 2  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/27132217
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/27132217
 
 ---
 
 
 # 1. Tổng quan quy trình đóng gói
 
-Hệ thống CI/CD của BDMA được triển khai trên GitHub Actions, tự động hoá toàn bộ chuói biên dịch &rarr; đóng gói &rarr; phân phối từ hai nhánh có chức năng khác nhau.
+Hệ thống CI/CD của BDMA được triển khai trên GitHub Actions, tự động hoá toàn bộ chuói biên dịch → đóng gói → phân phối từ hai nhánh có chức năng khác nhau.
 
- 
+ 
 
 ## 1.1 Chiến lược nhánh
 
@@ -26,15 +26,15 @@ cicd
 
 Release chính thức
 
-Build &rarr; Đóng gói &rarr; Upload artifact &rarr; Tạo GitHub Release + tag
+Build → Đóng gói → Upload artifact → Tạo GitHub Release + tag
 
 develop
 
 Kiểm tra / phát triển
 
-Build &rarr; Đóng gói &rarr; Upload artifact (không tạo Release)
+Build → Đóng gói → Upload artifact (không tạo Release)
 
- 
+ 
 
 ## 1.2 Sơ đồ các bước CI/CD
 
@@ -54,7 +54,7 @@ NSIS đóng gói app-image thành file BDMA-<version>-Setup.exe
 
 Upload artifact (cả 2 nhánh) — chỉ tạo GitHub Release khi push vào cicd
 
- 
+ 
 
 # 2. Chi tiết file build.yml
 
@@ -64,7 +64,7 @@ Workflow chứa file được commit tại đường dẫn:
 
 .github/workflows/build.yml
 
- 
+ 
 
 **Thuộc tính**
 
@@ -82,7 +82,7 @@ Permission
 
 contents: write — cần thiết để tạo GitHub Release và upload asset
 
- 
+ 
 
 ## 2.2 Quản lý phiên bản
 
@@ -92,7 +92,7 @@ APP_VERSION = 1.0.<github.run_number>
 
 Giá trị này được truyền vào môi trường GITHUB_ENV và dùng nhất quán xuyên suốt: tên JAR, tham số jpackage, tên file .exe, và tag Release.
 
- 
+ 
 
 ## 2.3 Các Secret yêu cầu
 
@@ -112,7 +112,7 @@ GITHUB_TOKEN
 
 Token tự động của GitHub Actions, dùng cho step Upload Release Asset
 
- 
+ 
 
 ## 2.4 Bước jpackage — cấu hình chi tiết
 
@@ -150,15 +150,15 @@ Output
 
 build\dist\BDMA\
 
- 
+ 
 
 Lưu ý: --jlink-options rút gọn runtime nhưng giữ lại --bind-services để hỗ trợ các dịch vụ phụ thuộc (JDBC, logging provider...).
 
- 
+ 
 
 ## 2.5 Phân tích bước Build NSIS Installer
 
-Trước khi gọi makensis.exe, step này thực hiện một regex parse tự động trên file AppDataPaths.java để rút ra đường dẫn thư mục dữ liệu của ứng dụng (APP_DATA_DIR). Mục tiêu là truyền đường dẫn này vào NSIS để hỗ trợ tính năng "Uninstall and delete all data".
+Trước khi gọi makensis.exe, step này thực hiện một regex parse tự động trên file AppDataPaths.java để rút ra đường dẫn thư mục dữ liệu của ứng dụng (APP_DATA_DIR). Mục tiêu là truyền đường dẫn này vào NSIS để hỗ trợ tính năng “Uninstall and delete all data”.
 
 Logic parse hỗ trợ hai cú pháp:
 
@@ -192,7 +192,7 @@ APP_DATA_DIR
 
 $PROFILE\<suffix rút từ AppDataPaths.java>
 
- 
+ 
 
 # 3. Chi tiết file installer.nsi
 
@@ -202,7 +202,7 @@ File installer.nsi được viết bằng ngôn ngữ NSIS (Nullsoft Scriptable 
 
 src\main\resources\installer\installer.nsi
 
- 
+ 
 
 ## 3.2 Cấu hình cơ bản
 
@@ -242,17 +242,17 @@ Giao diện
 
 MUI2 (Modern UI 2) — ngôn ngữ English
 
- 
+ 
 
 ## 3.3 Logic kiểm tra cài đặt (.onInit)
 
 Khi khởi chạy, installer kiểm tra registry HKLM\Software\BDMA để xác định trạng thái:
 
-Đã có registry và file BDMA.exe tồn tại &rarr; đặt IsInstalled = 1, hiển thị dialog chọn hành động
+Đã có registry và file BDMA.exe tồn tại → đặt IsInstalled = 1, hiển thị dialog chọn hành động
 
-Không có registry hoặc file không tồn tại &rarr; xóa registry rác, đặt IsInstalled = 0, UserChoice = 1 (đi thẳng vào cài đặt)
+Không có registry hoặc file không tồn tại → xóa registry rác, đặt IsInstalled = 0, UserChoice = 1 (đi thẳng vào cài đặt)
 
- 
+ 
 
 ## 3.4 Ba hành động được hỗ trợ
 
@@ -282,7 +282,7 @@ Uninstall + delete data
 
 Xóa dữ liệu APP_DATA_DIR trước, sau đó Uninstall như chức năng 2
 
- 
+ 
 
 ## 3.5 Cấu hình registry (Add/Remove Programs)
 
@@ -298,7 +298,7 @@ NoModify=1, NoRepair=1 (disable Modify/Repair button)
 
 EstimatedSize tính tự động bằng GetSize
 
- 
+ 
 
 ## 3.6 Cơ chế Uninstall an toàn
 
@@ -312,13 +312,13 @@ Rmdir /S /Q toàn bộ thư mục $INSTDIR
 
 Tự xóa chính file batch
 
- 
+ 
 
 ## 3.7 Bảo vệ khi xóa dữ liệu (DeleteData)
 
-Chức năng "Uninstall and delete all data" có cơ chế kiểm tra an toàn: chỉ cho phép xóa nếu APP_DATA_DIR kết thúc bằng chuỗi bdma (4 ký tự cuối). Nếu điều kiện không thoả, hiển thị cảnh báo và huỷ thao tác. Trước khi xóa, attrib được gọi để bỏ các cờ ReadOnly/Hidden/System trên toàn bộ cây thư mục.
+Chức năng “Uninstall and delete all data” có cơ chế kiểm tra an toàn: chỉ cho phép xóa nếu APP_DATA_DIR kết thúc bằng chuỗi bdma (4 ký tự cuối). Nếu điều kiện không thoả, hiển thị cảnh báo và huỷ thao tác. Trước khi xóa, attrib được gọi để bỏ các cờ ReadOnly/Hidden/System trên toàn bộ cây thư mục.
 
- 
+ 
 
 ## 3.8 Tắt AutoPlay
 
@@ -330,7 +330,7 @@ NoDriveTypeAutoRun = 0xFF
 
 Giá trị 0xFF tắt AutoPlay/AutoRun trên mọi loại ổ đĩa. Mục đích: ngăn Windows hiển thị dialog AutoPlay mỗi khi kết nối body camera qua USB (cần thiết để BDMA kiểm soát luồng phát hiện thiết bị). Giá trị này được xóa khi uninstall.
 
- 
+ 
 
 # 4. Hướng dẫn vận hành
 
@@ -352,7 +352,7 @@ Tải artifact
 
 Vào Actions > build > Artifacts, tải BDMA-<version>
 
- 
+ 
 
 ## 4.2 Cài đặt / nâng cấp
 
@@ -364,7 +364,7 @@ Nếu đã cài: dialog hiển thị 3 tùy chọn (Reinstall/Uninstall/Uninstal
 
 Shortcut được tạo tự động trên Desktop và Start Menu
 
- 
+ 
 
 ## 4.3 Gỡ cài đặt
 
@@ -376,7 +376,7 @@ Vào Control Panel > Add/Remove Programs > BDMA > Uninstall
 
 Khi đó installer ở trong thư mục cài đặt cũng sẽ được khởi chạy. Nếu các tiến trình BDMA đang chạy, người dùng sẽ được nhắc đồng ý đóng trước khi tiếp tục.
 
- 
+ 
 
 # 5. Cấu trúc file liên quan
 
@@ -412,7 +412,7 @@ build/installer/BDMA-<version>-Setup.exe
 
 File installer cuối cùng
 
- 
+ 
 
 # 6. Lưu ý và rủi ro cần biết
 

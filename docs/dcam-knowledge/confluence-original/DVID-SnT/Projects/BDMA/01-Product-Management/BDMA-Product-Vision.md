@@ -3,7 +3,7 @@
 **Page ID**: 25264240  
 **Version**: 3  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/25264240
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/25264240
 
 ---
 
@@ -28,7 +28,11 @@ Tạo nền tảng cho AI-assisted operation trong tương lai
 
 BDMA hướng tới việc trở thành:
 
-textthay vì chỉ là một desktop utility application.
+```
+Operational Data Management Platform for BodyCam Ecosystem
+```
+
+thay vì chỉ là một desktop utility application.
 
 # 👤 Target Users
 
@@ -370,7 +374,11 @@ Continuous improvement
 
 Mục tiêu dài hạn là xây dựng:
 
-text# 💡 PM Notes
+```
+AI-Native BodyCam Operation Platform
+```
+
+# 💡 PM Notes
 
 Ưu tiên reliability trước feature expansion
 

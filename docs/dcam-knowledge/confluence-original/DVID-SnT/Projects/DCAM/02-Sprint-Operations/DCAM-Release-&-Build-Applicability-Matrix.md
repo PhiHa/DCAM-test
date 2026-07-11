@@ -1,0 +1,333 @@
+# DCAM Release & Build Applicability Matrix
+
+**Page ID**: 51020012  
+**Version**: 2  
+**Type**: page  
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/51020012
+
+---
+
+
+DCAM Release & Build Applicability Matrix
+
+Item
+
+Information
+
+Project
+
+DCAM (Android BodyCamera Application)
+
+Document Type
+
+Release / Build Applicability Matrix
+
+Version
+
+Approved 1.0
+
+Status
+
+Approved
+
+Owner
+
+Hoàng Ngọc Quyền
+
+Technical Reviewer
+
+Tech Lead / Android Lead / QA Lead / BDMA Lead / Cloud Lead / Security Reviewer
+
+Approver
+
+Hoàng Ngọc Quyền
+
+Parent Folder
+
+02 - Sprint Operations
+
+Target Audience
+
+PM/BA, Product Owner, Tech Lead, Developers, BDMA Team, QA, Factory, Security Reviewer
+
+Last Updated
+
+2026-07-10
+
+Related Jira
+
+None
+
+Related Documents
+
+DCAM MVP Scope, DCAM Roadmap, DCAM 9-Month Development Plan, DCAM Architecture Delivery Profile, DCAM Requirements Home, DCAM Architecture Home, DCAM QA Test Strategy & Test Matrix, DCAM Documentation Governance
+
+## 1. Purpose
+
+Tài liệu này là source of truth để xác định requirement, design và QA test group nào áp dụng cho từng build của DCAM.
+
+Requirements and designs define what DCAM must support.
+This matrix defines when each rule becomes applicable to a build.
+## 2. Current Active Build Baseline
+
+Active Build Profile = DCAM MVP Internal Build 0.1
+Active Delivery Gate = Working Recording Slice
+Active Phase = Phase 1 - MVP Foundation
+Build `0.1` tập trung vào:
+
+```
+Record / Capture → Save / Finalize Media → Minimal DB / CSON / logs.txt → BDMA sample import
+```
+
+## 3. Applicability Status
+
+Status
+
+Meaning
+
+Required
+
+Phải implement và pass applicable QA trước khi accept build.
+
+Conditional
+
+Chỉ bắt buộc khi điều kiện/feature được explicitly enabled.
+
+Deferred
+
+Thuộc phase sau và không block build hiện tại.
+
+Not Applicable
+
+Không thuộc mục tiêu của build.
+
+POC Blocked
+
+Chờ Device POC hoặc decision trước khi freeze implementation.
+
+A document-level P0 does not automatically mean P0 for every build.
+Build-level applicability in this matrix controls release planning and QA execution.
+## 4. Build Profiles
+
+Build Profile
+
+Phase
+
+Primary Goal
+
+DCAM MVP Internal Build 0.1
+
+Phase 1
+
+Working recording/capture/storage/BDMA vertical slice.
+
+Secure Platform MVP Build 0.2
+
+Phase 2
+
+Device/User, provisioning, platform and security foundation.
+
+Advanced Communication Beta Build 0.3
+
+Phase 3
+
+Live Streaming, PTT, GPS route and advanced communication.
+
+Customer Pilot / Production Candidate
+
+Phase 4
+
+Full applicable regression and production readiness.
+
+## 5. Core Feature Applicability
+
+Feature / Area
+
+Build 0.1
+
+Build 0.2
+
+Build 0.3
+
+Pilot
+
+Recording / Capture
+
+Required
+
+Required
+
+Required
+
+Required
+
+Storage / Finalization
+
+Required
+
+Required
+
+Required
+
+Required
+
+Minimal DB / CSON / logs.txt
+
+Required
+
+Required
+
+Required
+
+Required
+
+BDMA sample import
+
+Required
+
+Required E2E
+
+Required
+
+Required
+
+Local Operational Logging
+
+Required
+
+Required
+
+Required
+
+Required
+
+Loggly / Crashlytics cloud providers
+
+Conditional / Deferred
+
+Required when enabled
+
+Required
+
+Required or approved fallback
+
+Local `serial_number`
+
+Required minimal
+
+Required
+
+Required
+
+Required
+
+Cloud identity / Web Portal provisioning
+
+Deferred
+
+Required
+
+Required
+
+Required
+
+User/Auth foundation
+
+Deferred unless explicitly enabled
+
+Required
+
+Required
+
+Required
+
+Full Device Owner / Kiosk
+
+Deferred; POC only if needed
+
+Conditional / POC Blocked
+
+Required if active
+
+Required for production profile
+
+Remote Config / Self Update
+
+Deferred
+
+Required foundation
+
+Required
+
+Required or documented exception
+
+AI / Live Streaming / PTT / Full GPS route
+
+Not Applicable
+
+Deferred
+
+Required according to approved scope
+
+Required only if included in pilot scope
+
+Factory `READY_TO_SHIP` acceptance
+
+Not Applicable
+
+Conditional
+
+Conditional
+
+Required
+
+## 6. Build 0.1 Release Gate
+
+Build `0.1` must implement:
+
+Runnable APK
+RecordingController / CameraService boundary
+Single-threaded state coordination
+StorageService with temp/final flow
+Minimal dcam.db and dcam_config.cson where required
+Sanitized Logs/logs.txt
+MVP Data Contract output
+BDMA detects/imports sample media
+Build `0.1` must not be blocked by:
+
+Web Portal provisioning
+Cloud device identity
+Full operator authentication
+Full Device Owner / kiosk policy
+Remote Config
+Self Update
+Advanced User Management
+Realtime AI
+Live Streaming
+PTT
+Full GPS route
+## 7. QA Interpretation
+
+```
+A QA test marked P0 is a release blocker only when its feature/test group is applicable to the current build profile.
+```
+
+For Build `0.1`, mandatory QA groups are Working Recording Slice, Recording/Capture, Storage/Finalization, minimal DB/CSON/logs, BDMA sample import, critical-path concurrency, MVP performance and sensitive-data sanitization.
+
+## 8. Change Control
+
+Update this Matrix first when a feature moves between builds.
+Update Roadmap / MVP Scope / Development Plan if phase scope changes.
+Update QA applicability and release gates.
+Update Project Home navigation/status summary.
+A feature may not move from `Deferred` to `Required` through an isolated Jira task without updating this Matrix or documenting an approved temporary exception.
+
+## 9. Practical Conclusion
+
+Current active build = DCAM MVP Internal Build 0.1.
+Current gate = Working Recording Slice.
+Build 0.1 requires recording, capture, storage, minimal DB/CSON/logs and BDMA sample import.
+Build 0.1 is not blocked by Web Portal, full auth, full kiosk, Remote Config, Self Update, AI, Live Streaming or PTT.
+Build 0.2 activates identity/provisioning/user/platform foundations.
+Build 0.3 activates advanced communication.
+Pilot applies all features and tests included in approved pilot scope.

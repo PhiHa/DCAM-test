@@ -1,9 +1,9 @@
 # DCAM Security & Encryption Design
 
 **Page ID**: 48496720  
-**Version**: 11  
+**Version**: 12  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/48496720
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/48496720
 
 ---
 
@@ -24,7 +24,7 @@ Technical Design
 
 Version
 
-Draft 1.1
+Draft 1.2
 
 Status
 
@@ -36,7 +36,7 @@ Hoàng Ngọc Quyền
 
 Technical Reviewer
 
-Tech Lead / Security Reviewer / BDMA Lead / Cloud Lead / Android Lead
+Tech Lead / Security Reviewer / BDMA Lead / Cloud Lead / Android Lead / Web Portal Lead / Factory Lead
 
 Approver
 
@@ -48,11 +48,11 @@ Parent Folder
 
 Target Audience
 
-Tech Lead, Android Developers, BDMA Developers, QA, Security Reviewer, Support, Cloud/WebServer Team
+Tech Lead, Android Developers, Web Portal Developers, Backend Developers, BDMA Developers, QA, Security Reviewer, Support, Factory, Cloud/WebServer Team
 
 Last Updated
 
-2026-07-09
+2026-07-10
 
 Related Jira
 
@@ -60,15 +60,24 @@ None
 
 Related Documents
 
-08 - Security & Encryption Requirements, 04 - Device Configuration Requirements, 05 - User & Device Operation Requirements, 06 - Cloud Services, Update & Configuration Architecture, 09 - System Settings Requirements, 10 - Android Device Operation Requirements, DCAM Android Device Owner & Kiosk Policy Design, DCAM In-App Operation, Device Settings & Media Console Design, DCAM Self Update Design, ADR - DCAM Android Dedicated Device / Device Owner / Lock Task Decision, DCAM-BDMA Data Contract, DCAM SQLite Database Design, DCAM Android Operation Design, DCAM Recording & Capture Design, DCAM State Machine Design, DCAM Web Portal & Device API Contract, DCAM QA Test Strategy & Test Matrix, DCAM Factory Provisioning & Device Production SOP, 07 - Logging & Diagnostics Requirements
+08 - Security & Encryption Requirements, 04 - Device Configuration Requirements, 05 - User & Device Operation Requirements, 06 - Cloud Services, Update & Configuration Architecture, 09 - System Settings Requirements, 10 - Android Device Operation Requirements, DCAM Device Provisioning Web Portal Design, DCAM Device Provisioning Web Portal App Design, DCAM Device Provisioning Web Portal Implementation Design, DCAM Web Portal & Device API Contract, DCAM Android Device Owner & Kiosk Policy Design, DCAM In-App Operation, Device Settings & Media Console Design, DCAM Self Update Design, ADR - DCAM Android Dedicated Device / Device Owner / Lock Task Decision, ADR - DCAM Device Identity Baseline: serial_number + dcam_cloud_device_id, DCAM-BDMA Data Contract, DCAM SQLite Database Design, DCAM Android Operation Design, DCAM Recording & Capture Design, DCAM State Machine Design, DCAM Logging & Diagnostics Design, DCAM QA Test Strategy & Test Matrix, DCAM Factory Provisioning & Device Production SOP, 07 - Logging & Diagnostics Requirements
 
 ## 1. Purpose
 
-**DCAM Security & Encryption Design** định nghĩa security direction cho DCAM Android, bao gồm device identity handling, device information security, Web Portal provisioning security, kiosk policy security, in-app console security, Maintenance Password Gate, operator authentication methods, emergency override audit behavior, Self Update/package validation, optional manual Google Play Store fallback constraints, sensitive logging, encrypted media direction và BDMA/WebServer compatibility.
+**DCAM Security & Encryption Design** định nghĩa security direction cho DCAM Android và Web Portal provisioning, bao gồm device identity handling, device information security, `Factory Worker` authentication/authorization, QR-based provisioning security, factory Wi-Fi credential decision, kiosk policy security, in-app console security, Maintenance Password Gate, operator authentication methods, emergency override audit behavior, Self Update/package validation, optional manual Google Play Store fallback constraints, sensitive logging, encrypted media direction và BDMA/WebServer compatibility.
 
 Current baseline:
 
-textTài liệu này không redefine user-management requirement, DB schema, provisioning API, remote config payload, kiosk policy detail hoặc BDMA Data Contract. Tài liệu này định nghĩa security constraints mà các tài liệu đó phải tuân theo.
+No external EMM.
+No Android Management API.
+No Managed Google Play policy-driven update.
+Primary update path = DCAM Self Update / APK update.
+Manual Google Play Store update = optional controlled maintenance fallback only if approved.
+Web Portal user-facing account type = Factory Worker only.
+Web Portal screens = Login and Workspace only.
+Web Portal serial source = provisioning QR displayed by DCAM only.
+Factory Wi-Fi SSID/password hardcoded in approved DCAM APK = approved project decision.
+Tài liệu này không redefine user-management requirement, DB schema, provisioning API, remote config payload, kiosk policy detail hoặc BDMA Data Contract. Tài liệu này định nghĩa security constraints mà các tài liệu đó phải tuân theo.
 
 ## 2. Authoritative References
 
@@ -84,11 +93,23 @@ Device identity, device information and CSON scope
 
 Security Design ràng buộc identifier/device-info handling và logging.
 
-Firebase/WebServer identity and Web Portal provisioning
+Provisioning business flow and actor model
 
-06 - Cloud Services, Update & Configuration Architecture
+DCAM Device Provisioning Web Portal Design
 
-Security Design ràng buộc provisioning/audit behavior.
+Security Design áp dụng `Factory Worker`, QR-only serial source và Login/Workspace baseline.
+
+Web App UI/security behavior
+
+DCAM Device Provisioning Web Portal App Design
+
+Security Design ràng buộc read-only serial, camera privacy, no override và safe error behavior.
+
+Web App implementation stack
+
+DCAM Device Provisioning Web Portal Implementation Design
+
+Security Design áp dụng Firebase Authentication, Cloud Functions backend authority và no direct production Firestore write từ frontend.
 
 Provisioning API and serial lookup contract
 
@@ -96,23 +117,23 @@ DCAM Web Portal & Device API Contract
 
 Security Design phải tuân theo `serial_lookup/{serial_number}` và không dùng `device_lookup/{android_id_hash}`.
 
-Factory identity/provisioning baseline
+Factory identity/provisioning and Wi-Fi baseline
 
 DCAM Factory Provisioning & Device Production SOP
 
-Security Design phải tuân theo factory baseline: serial number là Hardware Identity / recovery key.
+Security Design áp dụng serial baseline, DSetup boundary và approved hardcoded factory Wi-Fi decision.
 
 Kiosk policy
 
 DCAM Android Device Owner & Kiosk Policy Design
 
-Security Design ràng buộc kiosk exit, Maintenance Mode, policy removal, restriction changes and no-external-EMM baseline.
+Security Design ràng buộc kiosk exit, Maintenance Mode, restriction changes và no-external-EMM baseline.
 
 In-app console and Maintenance Password Gate UX
 
 DCAM In-App Operation, Device Settings & Media Console Design
 
-Security Design ràng buộc access/auth/audit behavior for console actions and controlled maintenance.
+Security Design ràng buộc access/auth/audit behavior for console actions.
 
 Self Update / APK update
 
@@ -136,7 +157,7 @@ User/auth/session/identity DB tables
 
 DCAM SQLite Database Design
 
-Security Design ràng buộc những gì được store và cách sensitive values được represented.
+Security Design ràng buộc dữ liệu được store và representation của sensitive values.
 
 User/operator sync and BDMA write-back boundary
 
@@ -148,7 +169,7 @@ Android startup/session/provisioning/kiosk lifecycle
 
 DCAM Android Operation Design
 
-Security Design hỗ trợ identity restore, policy verification, no-timeout session và reboot-login-required policy.
+Security Design hỗ trợ identity restore, policy verification và reboot-login-required policy.
 
 Recording operator attribution and emergency override
 
@@ -156,17 +177,17 @@ DCAM Recording & Capture Design
 
 Security Design bảo vệ auditability của operator attribution.
 
+Operational logging and Crashlytics
+
+DCAM Logging & Diagnostics Design
+
+Security Design sở hữu sensitive-field restrictions; Logging Design sở hữu routing/sanitization implementation.
+
 QA release validation
 
 DCAM QA Test Strategy & Test Matrix
 
-Security Design cung cấp security baseline để QA verify identity/provisioning/security behavior.
-
-Sensitive logging
-
-07 - Logging & Diagnostics Requirements
-
-Security Design reference logging policy và thêm auth/security/policy/update examples.
+Security Design cung cấp security baseline để QA verify.
 
 ## 3. Security Principles
 
@@ -180,15 +201,15 @@ Operator authentication phải hoạt động without Internet/cloud dependency 
 
 Stable cloud identity
 
-Cloud/WebServer primary device id là `dcam_cloud_device_id`; không phụ thuộc owner name, manufacture date, Android system identifier hoặc `android_id_hash`.
+Cloud/WebServer primary device id là `dcam_cloud_device_id`; không phụ thuộc owner name, manufacture date hoặc Android system identifier.
 
 Stable hardware recovery identity
 
-Hardware Identity / primary recovery key là `serial_number` theo Factory SOP và API Contract baseline.
+Hardware Identity / primary recovery key là `serial_number`.
 
 Recovery cache is not identity
 
-SD Identity File chỉ là recovery cache; không phải authoritative Hardware Identity hoặc Cloud Identity.
+SD Identity File chỉ là recovery cache.
 
 Identifier minimization
 
@@ -196,49 +217,61 @@ Không expose hoặc log unnecessary device identifiers.
 
 Device information minimization
 
-Device information như `owner_name` có thể dùng cho admin/support/BDMA display nhưng không được dùng như identity key hoặc credential.
+`owner_name` và `manufacture_date` không được dùng như identity key hoặc credential.
 
 Protected credential representation
 
-Password, pattern, QR, NFC login data, face auth material and Maintenance Password Gate credentials phải dùng approved protected representation.
+Password, pattern, login QR/NFC token, face auth material và Maintenance Password Gate credential phải dùng approved protected representation.
+
+Backend authority
+
+Frontend không được tự quyết định authorization, duplicate/rebind hoặc ghi trực tiếp production provisioning records.
 
 Auditability
 
-Provisioning, serial correction/rebind, config apply, kiosk policy apply/remove/failure, Maintenance Mode, maintenance password gate, update, login events, user sync, auth method changes và emergency override phải auditable.
+Provisioning, serial correction/rebind, config apply, kiosk policy, Maintenance Mode, update, login, user sync và emergency override phải auditable.
 
 Evidence preservation
 
-Security failure hoặc policy failure không được silently delete hoặc modify recorded evidence.
+Security/policy failure không được silently delete hoặc modify recorded evidence.
 
 Runtime safety
 
-User/auth/config/policy/update changes phải được validate và apply chỉ khi runtime guard cho phép.
-
-Dedicated-device session policy
-
-No-timeout session được allow theo product decision, nhưng reboot phải yêu cầu login lại.
+User/auth/config/policy/update changes chỉ apply khi runtime guard cho phép.
 
 Kiosk fail closed
 
-Required production kiosk policy failure không được làm thiết bị rơi về unrestricted field operation.
+Required kiosk policy failure không được làm thiết bị rơi về unrestricted field operation.
 
 Maintenance fail closed
 
-Failed maintenance password validation must not stop Lock Task, relax restrictions or expose Android Settings.
+Failed maintenance credential validation không được relax restrictions.
 
 Update fail closed
 
-Failed update validation/install must not leave device unrestricted or downgrade security.
+Failed update validation/install không được leave device unrestricted.
 
 No personal account dependency
 
-Production maintenance/update must not depend on a personal Google account.
+Production maintenance/update không phụ thuộc personal Google account.
+
+Explicit exception control
+
+Approved exception như hardcoded factory Wi-Fi credential phải được ghi rõ scope, risk, handling và rotation boundary; không được mở rộng thành general permission để hardcode secret khác.
 
 ## 4. Device Identity and Device Information Security
 
 Approved identity model:
 
-textSecurity rules:
+Cloud Identity / primary cloud device id = dcam_cloud_device_id
+Hardware Identity / primary recovery key = serial_number
+Approved recovery lookup = serial_lookup/{serial_number}
+SD Identity File = recovery cache only
+ANDROID_ID = not used
+android_id_hash = not used
+Deprecated endpoint = device_lookup/{android_id_hash}
+Mutable device information = owner_name
+Semi-static device information = manufacture_date
 
 Rule
 
@@ -246,67 +279,79 @@ Description
 
 SEC-ID-001
 
-`serial_number` không được dùng làm Firebase/WebServer primary key; `serial_number` là Hardware Identity / primary recovery key.
+`serial_number` không được dùng làm Firebase/WebServer primary document id cho device record; primary cloud key là `dcam_cloud_device_id`.
 
 SEC-ID-002
 
-`owner_name` và `manufacture_date` không được dùng làm Firebase/WebServer primary key.
+`owner_name` và `manufacture_date` không được dùng làm primary key.
 
 SEC-ID-003
 
-Advertising ID không được dùng làm DCAM primary key hoặc recovery key.
+Advertising ID không được dùng làm primary key hoặc recovery key.
 
 SEC-ID-004
 
-`ANDROID_ID` và Android system identifier không được dùng làm production identity, recovery lookup key hoặc server lookup input.
+`ANDROID_ID` và Android system identifier không được dùng làm production identity, lookup input hoặc recovery key.
 
 SEC-ID-005
 
-Original Android system identifier không được ghi vào logs.
+Raw Android system identifier không được ghi vào logs, Crashlytics hoặc audit.
 
 SEC-ID-006
 
-`android_id_hash` không được dùng làm production identity hoặc recovery lookup trong current SOP baseline.
+`android_id_hash` không được dùng trong current production baseline.
 
 SEC-ID-007
 
-`dcam_cloud_device_id` được lưu locally sau provisioning/restore và dùng cho cloud/webserver requests.
+`dcam_cloud_device_id` được lưu locally sau provisioning/restore và dùng cho cloud requests.
 
 SEC-ID-008
 
-Serial correction/rebind phải auditable và phải preserve previous serial history ở server side.
+Serial correction/rebind phải auditable và preserve previous serial history ở server side.
 
 SEC-ID-009
 
-Owner/manufacture date change phải auditable nếu update qua Web Portal, server hoặc approved admin flow.
+Owner/manufacture date change phải auditable.
 
 SEC-ID-010
 
-`manufacture_date` phải dùng format chuẩn `YYYY-MM-DD` khi stored/synced.
+`manufacture_date` dùng format `YYYY-MM-DD`.
 
 SEC-ID-011
 
-`bdma_decoder_profile_id` không thuộc identity/security contract; BDMA compatibility dùng app/data/media/encoder contract metadata.
+`bdma_decoder_profile_id` không thuộc identity/security contract.
 
 SEC-ID-012
 
-`device_lookup/{android_id_hash}` là deprecated/removed path và không được dùng trong current production baseline.
+`device_lookup/{android_id_hash}` không được dùng.
 
 SEC-ID-013
 
-`serial_lookup/{serial_number}` là approved recovery lookup path cho provisioning/restore.
+`serial_lookup/{serial_number}` là approved recovery/create/restore lookup.
 
 SEC-ID-014
 
-SD Identity File chỉ được dùng như recovery cache, không được promote thành authoritative identity source nếu conflict với server record.
+SD Identity File không được promote thành authoritative identity nếu conflict với server record.
 
 ## 5. Web Portal Provisioning Security
 
-Default DCAM business provisioning method là Web Provisioning Portal QR Flow.
+Approved Web Portal baseline:
 
+User-facing account type = Factory Worker only.
+Screens = Login and Workspace only.
+Factory Worker scans the provisioning QR displayed by DCAM.
+serial_number is obtained only from the QR payload.
+serial_number is read-only in Workspace.
+No manual serial entry.
+No direct serial barcode scan in Web Portal.
+Frontend uses Firebase Authentication.
+Cloud Functions/backend validates authorization and owns create/restore/audit.
+Frontend does not directly write Serial Lookup, Devices or Audit Events.
 Important boundary:
 
-textSecurity rules:
+Web Portal QR Flow provisions DCAM business identity and device information.
+It does not make DCAM Device Owner.
+It does not perform production acceptance.
 
 Rule
 
@@ -314,43 +359,119 @@ Description
 
 SEC-PROV-001
 
-Chỉ authenticated Web Admin / Factory Admin được provision production devices.
+Chỉ authenticated và active `Factory Worker` được mở provisioning Workspace và submit request.
 
 SEC-PROV-002
 
-Web client phải gọi backend API; production device records được tạo bởi backend.
+Backend phải verify Firebase identity token, worker profile, active status và `Factory Worker` authorization; không tin role/worker id từ request body.
 
 SEC-PROV-003
 
-Provisioning QR phải include version và challenge direction; exact signing/expiration vẫn TBD.
+Web client phải gọi Cloud Functions/backend; frontend không direct-write production provisioning collections.
 
 SEC-PROV-004
 
-Provisioning action phải auditable với admin, time, source, `dcam_cloud_device_id`, `serial_number`, owner/manufacture info nếu changed và reason code.
+`serial_number` chỉ lấy từ provisioning QR displayed by DCAM và phải read-only trong UI.
 
 SEC-PROV-005
 
-DCAM không được trở thành ACTIVE cho đến khi server identity và `serial_lookup/{serial_number}` mapping được tạo/fetched successfully.
+Web Portal không có manual serial input hoặc direct serial barcode fallback.
 
 SEC-PROV-006
 
-Nếu serial lookup/provisioning lookup fails, DCAM vẫn ở provisioning-required/recovery state.
+QR phải include payload type/version; signature/nonce/expiration/replay policy vẫn thuộc API Contract/Security decision.
 
 SEC-PROV-007
 
-Re-provision/rebind flow yêu cầu admin approval và audit.
+QR không được chứa long-lived secret, auth token, maintenance credential, factory Wi-Fi password hoặc Google credential.
 
 SEC-PROV-008
 
-Provisioning API phải reject/ignore `bdma_decoder_profile_id` vì field này không thuộc contract.
+Camera stream/image dùng để scan QR không được lưu hoặc upload.
 
 SEC-PROV-009
 
-Provisioning API và Android client không được dùng `device_lookup/{android_id_hash}` trong current production baseline.
+Provisioning action phải auditable với worker identity, time, request id, `dcam_cloud_device_id`, `serial_number`, changed fields, result và safe reason code.
 
-## 6. Kiosk Policy Security
+SEC-PROV-010
 
-Detailed policy behavior thuộc **DCAM Android Device Owner & Kiosk Policy Design**. In-app Maintenance Password Gate UX thuộc **DCAM In-App Operation, Device Settings & Media Console Design**.
+Nếu serial lookup/provisioning fails, DCAM vẫn ở provisioning-required/recovery state.
+
+SEC-PROV-011
+
+Factory Worker không được override duplicate, rebind, disabled, revoked hoặc quarantined device state.
+
+SEC-PROV-012
+
+Rebind/conflict resolution phải đi qua separate support/admin process và audit, ngoài user-facing Web Portal App.
+
+SEC-PROV-013
+
+API phải reject/ignore `bdma_decoder_profile_id`, `ANDROID_ID`, `android_id_hash` và `device_lookup/{android_id_hash}`.
+
+SEC-PROV-014
+
+Login/error UI không được tiết lộ account existence, raw Firebase error, backend stack trace hoặc authorization configuration.
+
+SEC-PROV-015
+
+Logout/session expiration phải clear current Workspace provisioning state và block submit.
+
+## 6. Factory Wi-Fi Credential Security
+
+Current approved project decision:
+
+Factory Wi-Fi SSID/password is hardcoded in the approved DCAM APK.
+DCAM configures factory Wi-Fi after serial_number import/validation.
+Đây là một **explicit project exception** cho factory provisioning baseline. Exception này không cho phép hardcode các secret khác như Maintenance Password, cloud token, Firebase service credential, signing private key hoặc Google credential.
+
+Rule
+
+Description
+
+SEC-WIFI-001
+
+Factory Wi-Fi SSID/password chỉ được tồn tại trong release-approved DCAM APK/build configuration theo approved factory baseline.
+
+SEC-WIFI-002
+
+Factory Wi-Fi password không được đưa vào `dcam_config.cson`, `dcam.db`, QR payload, Web Portal request, API response hoặc production record.
+
+SEC-WIFI-003
+
+Factory Wi-Fi password không được ghi vào Operational Logging, Loggly, Crashlytics custom logs/keys, support logs, screenshots hoặc evidence attachment.
+
+SEC-WIFI-004
+
+UI không được hiển thị plaintext factory Wi-Fi password cho Factory Worker/operator.
+
+SEC-WIFI-005
+
+Source repository/build pipeline access chứa credential phải giới hạn cho approved personnel/process.
+
+SEC-WIFI-006
+
+APK obfuscation có thể giảm accidental disclosure nhưng không được coi là cryptographic protection; extraction risk được project chấp nhận theo quyết định hiện tại.
+
+SEC-WIFI-007
+
+Credential rotation yêu cầu tạo và phát hành approved APK mới hoặc approved secure replacement mechanism trong future design.
+
+SEC-WIFI-008
+
+Factory Wi-Fi credential chỉ dùng trong factory environment; không được reuse cho customer/production field network.
+
+SEC-WIFI-009
+
+Nếu credential bị lộ hoặc network bị compromise, Security/Factory phải rotate credential và phát hành replacement build/process.
+
+SEC-WIFI-010
+
+Security review phải đánh giá lại exception trước production scale-up hoặc khi network topology thay đổi.
+
+## 7. Kiosk Policy Security
+
+Detailed policy behavior thuộc **DCAM Android Device Owner & Kiosk Policy Design**.
 
 Rule
 
@@ -362,7 +483,7 @@ Chỉ approved admin/support flow mới được thoát Lock Task hoặc vào Ma
 
 SEC-KIOSK-002
 
-Maintenance Mode entry/exit phải auditable với actor/source/time/result/reason code.
+Maintenance Mode entry/exit phải auditable.
 
 SEC-KIOSK-003
 
@@ -378,7 +499,7 @@ Kiosk exit / Maintenance credential không được hardcode, plaintext hoặc l
 
 SEC-KIOSK-006
 
-Emergency override không được cấp full interactive admin UI access, Maintenance Mode access hoặc Maintenance Password Gate bypass.
+Emergency override không được cấp interactive admin UI hoặc Maintenance Mode access.
 
 SEC-KIOSK-007
 
@@ -386,47 +507,58 @@ Lock Task allowlist changes phải auditable và chỉ include approved packages
 
 SEC-KIOSK-008
 
-Device Owner / DPC missing state phải được logged bằng safe reason code; không expose admin token, enrollment secret hoặc raw identifier.
+Device Owner/DPC missing state phải log safe reason code.
 
 SEC-KIOSK-009
 
-Maintenance Mode không được interrupt active recording, emergency hoặc finalization trừ khi có safe stop policy được approve.
+Maintenance Mode không được interrupt active recording/emergency/finalization ngoài approved safe-stop policy.
 
 SEC-KIOSK-010
 
-Policy restore sau Maintenance Mode/update/reboot phải được verified và logged.
+Policy restore sau Maintenance Mode/update/reboot phải verified và logged.
 
 SEC-KIOSK-011
 
-Enter Maintenance Mode / Exit Kiosk temporarily must require Maintenance Password Gate.
+Enter Maintenance Mode / Exit Kiosk temporarily phải require Maintenance Password Gate.
 
 SEC-KIOSK-012
 
-Failed Maintenance Password Gate validation must not stop Lock Task, relax restrictions or open Android Settings/system surfaces.
+Failed gate validation không được stop Lock Task, relax restrictions hoặc open Android Settings.
 
 SEC-KIOSK-013
 
-Repeated failed maintenance password attempts must be rate-limited, cooled down or locked according to approved policy.
+Repeated failed attempts phải rate-limit/cooldown/lockout theo approved policy.
 
 SEC-KIOSK-014
 
-Full Android unrestricted mode is not supported.
+Full Android unrestricted mode không được hỗ trợ.
 
 SEC-KIOSK-015
 
-Controlled Mode may open only approved targets.
+Controlled Mode chỉ mở approved targets.
 
 SEC-KIOSK-016
 
-External EMM / Android Management API must not be required for current security baseline.
+External EMM / Android Management API không được required cho current baseline.
 
-## 7. Maintenance Password Gate Security
+## 8. Maintenance Password Gate Security
 
-Maintenance Password Gate protects Enter Maintenance Mode / Exit Kiosk temporarily.
+### 8.1 Required Behavior
 
-### 7.1 Required Behavior
-
-text### 7.2 Credential Rules
+Admin / Maintenance action requested
+    ↓
+Validate caller role
+    ↓
+Prompt Maintenance Password Gate
+    ↓
+Validate protected credential
+    ↓
+If success and runtime guard is safe:
+        allow Controlled Maintenance Mode
+If failure:
+        keep Lock Task and restrictions active
+        audit safe reason code
+### 8.2 Credential Rules
 
 Rule
 
@@ -434,49 +566,49 @@ Description
 
 SEC-MAINT-001
 
-Maintenance password must be a dedicated maintenance credential or approved maintenance secret.
+Maintenance password là dedicated maintenance credential hoặc approved maintenance secret.
 
 SEC-MAINT-002
 
-Normal operator password must not be enough to exit kiosk.
+Normal operator password không đủ để exit kiosk.
 
 SEC-MAINT-003
 
-Admin login alone must not bypass Maintenance Password Gate unless a future ADR explicitly approves single-factor maintenance.
+Admin login alone không bypass gate trừ future ADR.
 
 SEC-MAINT-004
 
-Maintenance password must not be hardcoded in source code, resources, config files, CSON, remote config payload or logs.
+Maintenance password không được hardcode trong source, resources, config, CSON, remote config hoặc logs.
 
 SEC-MAINT-005
 
-Maintenance password must not be stored plaintext in `dcam.db`, SharedPreferences, files, logs or crash reports.
+Không lưu plaintext trong DB, preferences, files, logs hoặc crash reports.
 
 SEC-MAINT-006
 
-Store only approved protected representation, such as salted/slow hash or secure credential reference, according to Security Review.
+Chỉ lưu approved protected representation.
 
 SEC-MAINT-007
 
-If Android Keystore or hardware-backed security is available, use it where appropriate for protecting secrets/keys.
+Dùng Android Keystore/hardware-backed protection nếu available và phù hợp.
 
 SEC-MAINT-008
 
-Maintenance password validation must use constant-time/safe comparison where applicable.
+Validation dùng safe comparison khi applicable.
 
 SEC-MAINT-009
 
-Maintenance password reset/recovery must require approved Admin/Security process and audit.
+Reset/recovery yêu cầu approved Admin/Security process và audit.
 
 SEC-MAINT-010
 
-Maintenance password rotation policy is TBD and must be finalized by Security/Product.
+Rotation policy là TBD.
 
 SEC-MAINT-011
 
-Maintenance Password Gate must not be available from emergency override identity.
+Emergency override không được access gate.
 
-### 7.3 Attempt, Lockout and Audit Rules
+### 8.3 Attempt, Lockout and Audit Rules
 
 Rule
 
@@ -484,84 +616,87 @@ Description
 
 SEC-MAINT-012
 
-Failed attempts must increment non-sensitive failed-attempt metadata.
+Failed attempts tăng non-sensitive failed-attempt metadata.
 
 SEC-MAINT-013
 
-Repeated failed attempts must trigger delay, cooldown, temporary lockout or escalation according to approved policy.
+Repeated failures trigger delay/cooldown/temporary lockout/escalation.
 
 SEC-MAINT-014
 
-Failed attempts must not reveal whether password length/format/partial value is correct.
+Failure không reveal partial credential correctness.
 
 SEC-MAINT-015
 
-Audit must include actor/source/time/result/reason code but not secret values.
+Audit có actor/source/time/result/reason code, không có secret.
 
 SEC-MAINT-016
 
-Failed attempts must not stop Lock Task, relax restrictions or open Android Settings.
+Failed attempt không alter kiosk state.
 
 SEC-MAINT-017
 
-Maintenance session must have timeout/inactivity policy and restore kiosk policy after exit/timeout/recovery.
+Maintenance session có timeout/inactivity policy và restore kiosk.
 
 SEC-MAINT-018
 
-Maintenance password state must not be synced to BDMA or exposed through media/file viewer.
+Maintenance credential state không sync sang BDMA.
 
-## 8. Update and Runtime Package Security
+## 9. Update and Runtime Package Security
 
-Current baseline update security:
+Primary update path = DCAM Self Update / APK update.
+Managed Google Play / Android Management API policy-driven update = not applicable.
+Manual Google Play Store update = optional controlled fallback only if approved.
 
-text
 Rule
 
 Description
 
 SEC-UPD-001
 
-APK must match expected DCAM package identity.
+APK phải match expected package identity.
 
 SEC-UPD-002
 
-APK must pass checksum/integrity validation before install.
+APK phải pass checksum/integrity validation.
 
 SEC-UPD-003
 
-APK signature must be trusted and compatible with update path.
+APK signature phải trusted và compatible.
 
 SEC-UPD-004
 
-APK source must be trusted; arbitrary user-provided APK is not allowed.
+APK source phải trusted; arbitrary user APK không allowed.
 
 SEC-UPD-005
 
-Update must preserve Device Owner/DPC policy, Lock Task recovery and User Restrictions baseline.
+Update phải preserve Device Owner/DPC, Lock Task recovery và User Restrictions baseline.
 
 SEC-UPD-006
 
-Update must not leave device unrestricted if install fails.
+Install failure không được leave device unrestricted.
 
 SEC-UPD-007
 
-Update path must not run during recording, emergency, finalization, DB/storage recovery or policy recovery.
+Update không chạy trong recording, emergency, finalization hoặc recovery unsafe state.
 
 SEC-UPD-008
 
-Update/maintenance path must not bypass Maintenance Password Gate if temporary kiosk exit is needed.
+Update/maintenance path không bypass Maintenance Password Gate.
 
 SEC-UPD-009
 
-Managed Google Play / policy-driven update request must be rejected/ignored as not applicable for current baseline.
+Managed Google Play policy request bị reject/ignore cho current baseline.
 
 SEC-UPD-010
 
-Downgrade/rollback must be explicitly approved and audited if supported.
+Downgrade/rollback phải explicitly approved và audited.
 
-## 9. Optional Manual Google Play Store Fallback Security
+SEC-UPD-011
 
-Manual Google Play Store update is not the primary update path. It is an optional controlled maintenance fallback only.
+APK release process chứa hardcoded factory Wi-Fi credential phải tuân theo `Factory Wi-Fi Credential Security`.
+
+## 10. Optional Manual Google Play Store Fallback Security
 
 Rule
 
@@ -569,43 +704,41 @@ Description
 
 SEC-PLAY-001
 
-Play Store may be opened only through Admin / Maintenance Controlled Mode after Maintenance Password Gate.
+Play Store chỉ mở qua Controlled Maintenance sau Maintenance Password Gate.
 
 SEC-PLAY-002
 
-Play Store fallback is allowed only if target device has GMS/Play Store and Product/Security approve it.
+Chỉ allowed nếu device có GMS/Play Store và Product/Security approve.
 
 SEC-PLAY-003
 
-Only DCAM/approved apps may be updated. General app browsing/install is not allowed.
+Chỉ DCAM/approved apps được update; general browsing/install không allowed.
 
 SEC-PLAY-004
 
-Personal Google account must not be used for production maintenance update.
+Không dùng personal Google account.
 
 SEC-PLAY-005
 
-Approved maintenance/factory Google account handling is TBD and must be auditable.
+Approved maintenance/factory account handling phải auditable.
 
 SEC-PLAY-006
 
-Google account password/token must never be logged.
+Google password/token không được logged.
 
 SEC-PLAY-007
 
-Account sign-in/sign-out or account persistence must follow approved Security/Product decision.
+Account persistence theo approved decision.
 
 SEC-PLAY-008
 
-After Play Store update, DCAM must return to app, verify update result where applicable and restore kiosk policy.
+Sau update phải return DCAM và restore kiosk policy.
 
 SEC-PLAY-009
 
-Play Store fallback must not become full Android unrestricted mode.
+Fallback không được trở thành unrestricted mode.
 
-## 10. Remote Config Security
-
-Remote config payload fields vẫn TBD. Security baseline đã approved.
+## 11. Remote Config Security
 
 Area
 
@@ -613,51 +746,53 @@ Security Requirement
 
 Identity
 
-Fetch config bằng `dcam_cloud_device_id` sau khi identity resolved.
+Fetch config bằng `dcam_cloud_device_id`.
 
 Validation
 
-Validate schema/version/allowed fields trước khi cache/apply.
+Validate schema/version/allowed fields trước cache/apply.
 
 Capability
 
-Config không được enable unsupported hardware/runtime capability.
+Config không enable unsupported capability.
 
 Kiosk policy
 
-Kiosk settings are requested policy; actual apply must validate Device Owner/DPC authority, runtime guard and Kiosk Policy Design constraints.
+Requested policy phải validate authority/runtime guard.
 
 Maintenance password
 
-Remote config may define policy knobs such as timeout/failed-attempt policy, but must not carry plaintext maintenance password.
+Remote config không carry plaintext credential.
+
+Factory Wi-Fi
+
+Remote config không được expose/return hardcoded factory Wi-Fi password trong current baseline.
 
 Update
 
-Remote config may request Self Update behavior, but must not force Managed Google Play policy-driven path on current no-EMM baseline.
+Không force Managed Google Play policy path.
 
 Runtime guard
 
-Config apply phải deferred trong lúc recording, emergency, finalization, recovery hoặc policy unsafe states.
+Apply deferred trong unsafe states.
 
 Local storage
 
-Pending/applied config metadata được lưu trong `dcam.db`.
+Pending/applied metadata lưu trong `dcam.db`.
 
 CSON scope
 
-`dcam_config.cson` chỉ được update cho device information như serial, owner name, manufacture date, model hoặc firmware information.
+CSON chỉ chứa approved device information.
 
 Audit
 
-Fetch/apply/reject/defer/rollback phải được log bằng safe reason codes.
+Fetch/apply/reject/defer/rollback dùng safe reason code.
 
 Last good config
 
-Invalid config không được replace last valid applied config.
+Invalid config không replace last valid config.
 
-## 11. Authentication Method Security
-
-DCAM hỗ trợ nhiều login methods theo device capability và security policy.
+## 12. Authentication Method Security
 
 Method
 
@@ -667,71 +802,74 @@ Storage Direction
 
 Password
 
-Offline verification; enforce lock/retry policy nếu configured.
+Offline verification; enforce retry/lock policy nếu configured.
 
-Chỉ store approved protected representation.
+Approved protected representation only.
 
 Pattern
 
-Offline verification; tránh lưu raw pattern path/sequence.
+Không lưu raw pattern path.
 
-Chỉ store approved protected representation.
+Approved protected representation only.
 
 Face Authentication
 
-Chỉ enable nếu device capability và security policy cho phép.
+Enable theo capability/security policy.
 
-Ưu tiên platform/vendor secure biometric flow hoặc approved protected reference.
+Platform/vendor secure flow hoặc protected reference.
 
 QR Code
 
-QR phải represent credential id/token có thể validate offline.
+Login QR/token phải validate offline và support revocation.
 
-Store approved protected reference; support revocation và revision.
+Protected reference.
 
 NFC Tag
 
-NFC credential phải map tới user/auth method offline.
+NFC credential map tới user/auth method offline.
 
-Store approved protected reference; support revocation và revision.
+Protected reference.
 
 Maintenance Password Gate credential
 
-Required for Enter Maintenance Mode / Exit Kiosk temporarily; must support offline verification, lockout, audit and recovery.
+Required cho controlled kiosk exit.
 
-Chỉ store approved protected representation; no plaintext.
+Protected representation; no plaintext.
 
 Emergency Override
 
-Chỉ dùng cho emergency recording khi chưa có operator logged in.
+Chỉ emergency recording khi chưa có operator login.
 
-System identity only; không phải real admin credential.
+System identity only.
 
-## 12. Operator Session Security
+Factory Worker Web credential
 
-Product decision:
+Firebase Authentication credential dùng cho Web Portal; frontend không lưu password trong browser storage.
 
-textSecurity implications and controls:
+Firebase Auth/session; backend validates token and worker profile.
+
+## 13. Operator Session Security
+
+DCAM operator session has no timeout.
+Background/foreground does not logout operator.
+Screen off/on does not logout operator.
+Device reboot requires login again.
 
 Scenario
 
 Required Security Behavior
 
-App backgrounded
+App backgrounded/reopened
 
-Preserve active session; unapproved background transition should not happen in normal kiosk operation.
+Preserve active session nếu same boot và state valid.
 
-App reopened
+Process recreated
 
-Reuse active session nếu same boot và DB state valid.
-
-Process recreated without reboot
-
-Restore session chỉ khi `device_boot_id` matches và session/auth state valid.
+Restore session chỉ khi `device_boot_id` và auth state valid.
 
 Device reboot
 
-Mark previous session expired và yêu cầu login.
+Expire previous session và require login.
 
 User disabled by BDMA sync
 
@@ -739,27 +877,28 @@ Không interrupt current recording; block new recording sau safe window.
 
 Auth method revoked
 
-Apply tại safe window và require re-login nếu session bị invalidated.
+Apply tại safe window và require re-login nếu invalidated.
 
-Severe auth table corruption
+Severe auth DB corruption
 
-Block normal recording; allow diagnostics/system modules và emergency override only if safe.
+Block normal recording; allow diagnostics/system modules và emergency override nếu safe.
 
 Device policy missing
 
-Block/degrade normal production field operation according to Kiosk Policy Design; operator login must not override missing required policy.
+Login không được override missing required policy.
 
 Maintenance requested
 
-Existing operator session alone must not bypass Maintenance Password Gate.
+Operator session không bypass Maintenance Password Gate.
 
-## 13. Emergency Override Security
+## 14. Emergency Override Security
 
-Emergency override không được attribute vào real Admin user.
-
-Required system identity:
-
-textRules:
+user_id = SYSTEM_EMERGENCY_OVERRIDE
+operator_code = EMERGENCY_OVERRIDE_ADMIN
+display_name = Emergency Override Admin
+user_type = SYSTEM
+role = SYSTEM_ADMIN
+status = ACTIVE
 
 Rule
 
@@ -767,35 +906,33 @@ Description
 
 SEC-EO-001
 
-Emergency override chỉ được allow cho emergency recording khi không có operator session.
+Chỉ allow cho emergency recording khi không có operator session.
 
 SEC-EO-002
 
-Emergency override phải auditable và visible trong BDMA.
+Phải auditable và visible trong BDMA.
 
 SEC-EO-003
 
-Emergency override không được cấp full interactive admin UI access.
+Không cấp full interactive admin UI.
 
 SEC-EO-004
 
-Emergency override identity phải system-created/protected khỏi normal user deletion.
+System identity protected khỏi normal deletion.
 
 SEC-EO-005
 
-Media/session attribution phải preserve `EMERGENCY_OVERRIDE_ADMIN` snapshot.
+Media/session attribution preserve snapshot.
 
 SEC-EO-006
 
-Emergency override không được dùng làm Maintenance Mode credential hoặc kiosk exit credential.
+Không dùng làm Maintenance credential.
 
 SEC-EO-007
 
-Emergency override không được bypass Maintenance Password Gate.
+Không bypass Maintenance Password Gate.
 
-## 14. BDMA User Sync Security
-
-BDMA và DCAM synchronize user/operator data through ADB theo **DCAM-BDMA Data Contract** và **DCAM SQLite Database Design**.
+## 15. BDMA User Sync Security
 
 Area
 
@@ -803,55 +940,57 @@ Security Requirement
 
 Schema compatibility
 
-BDMA phải check DB schema/version trước write-back.
+BDMA check DB schema/version trước write-back.
 
-App/contract compatibility
+Contract compatibility
 
-BDMA phải check app/data/media/encoder contract metadata; không fetch/use dynamic decoder profile.
+Check app/data/media/encoder metadata; không dùng dynamic decoder profile.
 
 Revision
 
-User/auth changes phải versioned/revisioned.
+User/auth changes versioned/revisioned.
 
 Source
 
-Changes phải record source: `DCAM`, `BDMA`, `MIGRATION`, `DEFAULT`.
+Record source `DCAM`, `BDMA`, `MIGRATION`, `DEFAULT`.
 
 Audit
 
-Add/edit/delete/disable/auth-method changes phải auditable.
+Add/edit/delete/disable/auth-method changes auditable.
 
 Soft delete
 
-Ưu tiên disable/soft delete thay vì destructive delete.
+Ưu tiên disable/soft delete.
 
 Active user change
 
-Không interrupt active recording; apply revoke/block tại safe window.
+Không interrupt active recording.
 
 Invalid auth data
 
-Reject invalid records và preserve last valid state.
+Reject và preserve last valid state.
 
 Conflict
 
-Apply agreed conflict rule và log conflict.
+Apply agreed rule và log conflict.
 
-Kiosk restrictions impact
+Kiosk impact
 
-Production restrictions must be validated so approved BDMA ADB/media import/user sync boundary is not broken silently.
+Restrictions không được silently break approved ADB boundary.
 
-Maintenance password state
+Maintenance credential
 
-BDMA must not read/write/export maintenance password secret or protected credential material unless a future explicit security contract allows a safe management operation.
+BDMA không read/write/export secret/protected material.
 
-Google account/token
+Google credential
 
-BDMA must not read/write/export Google account password/token.
+BDMA không read/write/export Google password/token.
 
-## 15. Media Encryption Direction
+Factory Wi-Fi credential
 
-Encrypted media naming và BDMA-facing suffix rules thuộc **DCAM-BDMA Data Contract**.
+BDMA không read/write/export factory Wi-Fi password.
+
+## 16. Media Encryption Direction
 
 Area
 
@@ -873,7 +1012,7 @@ TBD / Security Review
 
 Key storage
 
-Dùng Android/device secure storage nếu available; exact mechanism TBD.
+Dùng Android/device secure storage nếu available.
 
 TBD / POC
 
@@ -885,37 +1024,49 @@ TBD
 
 BDMA decryption compatibility
 
-Phải coordinate với Data Contract và BDMA implementation. Không dùng `bdma_decoder_profile_id`.
+Coordinate với Data Contract/BDMA; không dùng `bdma_decoder_profile_id`.
 
 TBD
 
 Emergency media
 
-Phải preserve evidence; encryption failure handling phải explicit.
+Preserve evidence; encryption failure handling explicit.
 
 Draft Direction
 
-## 16. Sensitive Logging Rules
+## 17. Sensitive Logging Rules
 
 Allowed examples:
 
-text
-[POLICY] Maintenance mode entered
-[POLICY] Maintenance mode exited
-[CONFIG] Config fetched
-[CONFIG] Config rejected: 
-[UPDATE] Self update check started
-[UPDATE] APK validation failed: 
-[UPDATE] Managed Google Play not applicable: 
-[UPDATE] Manual Play Store fallback started
-[UPDATE] Manual Play Store fallback completed
-[AUTH] Login success: 
-[AUTH] Login failed: 
-[AUTH] Emergency override used
-[USER_SYNC] Auth method update rejected: 
-[SECURITY] Package validation failed: ]]>Forbidden log content:
+[IDENTITY] Device identity restored
+[PROVISIONING] Factory Worker provisioning completed
+[PROVISIONING] QR rejected: <reason_code>
+[POLICY] Device owner state verified
+[POLICY] Maintenance password gate failed: <reason_code>
+[CONFIG] Config rejected: <reason_code>
+[UPDATE] APK validation failed: <reason_code>
+[AUTH] Login success: <safe_user_id>
+[AUTH] Login failed: <reason_code>
+[SECURITY] Package validation failed: <reason_code>
+[FACTORY_WIFI] Configuration result: <PASS|FAILED_REASON_CODE>
+Forbidden log/Crashlytics content:
 
-text## 17. Recovery and Failure Behavior
+maintenance password value or hash input
+password hint/recovery secret
+factory Wi-Fi password
+Google account password/token/session token
+Firebase identity token or service credential
+APK signing private key
+raw Android system identifier
+ANDROID_ID
+android_id_hash
+cloud token / provisioning secret
+private admin/support token
+enrollment secret
+full sensitive config payload
+QR raw payload when it may contain restricted fields
+stack traces containing credential input
+## 18. Recovery and Failure Behavior
 
 Scenario
 
@@ -923,81 +1074,77 @@ Expected Behavior
 
 Local DB/CSON deleted
 
-Attempt identity restore bằng `serial_lookup/{serial_number}`; nếu không tìm thấy thì enter provisioning-required state.
+Restore bằng `serial_lookup/{serial_number}`; nếu không found thì provisioning-required.
 
-SD Identity File exists but server mapping conflicts
+SD Identity File conflicts
 
-Treat SD Identity File as recovery cache only; require server-side `serial_lookup/{serial_number}` validation/rebind approval before ACTIVE.
+Treat as cache only; require server validation/support.
 
-Device Owner / DPC state missing
+Device Owner missing
 
-Enter policy-required/degraded state; do not silently allow unrestricted production operation.
+Enter policy-required/degraded state; no unrestricted production operation.
 
-Lock Task start failed
+Lock Task/restriction apply failed
 
-Log safe reason code; enter policy recovery/degraded state.
+Log safe reason; recover/degrade/block according to policy.
 
-User restriction apply failed
+Maintenance password invalid/locked
 
-Log safe reason code; apply approved degraded behavior or block production if required.
+Reject, keep kiosk active, audit.
 
-Maintenance password invalid
+Maintenance state missing/corrupt
 
-Reject maintenance entry; keep Lock Task/restrictions active; audit safe reason code.
+Block kiosk exit và require approved recovery.
 
-Maintenance password lockout/cooldown active
+Self Update invalid/install failed
 
-Reject maintenance entry until allowed by policy; audit safe reason code.
-
-Maintenance password state missing/corrupt
-
-Block temporary kiosk exit and require approved recovery/support process.
-
-Maintenance Mode restore failed
-
-Keep device in policy recovery/degraded state; do not silently return to field operation.
-
-Managed Google Play update requested
-
-Reject/ignore as not applicable on current baseline; use Self Update or approved fallback.
-
-Self Update invalid package
-
-Reject package; keep current version and kiosk policy intact.
-
-Self Update install failure
-
-Log reason, preserve current/recoverable state, restore policy or enter policy recovery.
+Reject/preserve current state/restore policy.
 
 Play Store fallback unavailable
 
-Hide/disable fallback or reject with safe reason.
+Hide/disable fallback.
 
 Personal Google account attempted
 
-Reject production maintenance path and audit safe reason.
+Reject và audit.
 
 Invalid remote config
 
-Reject config và giữ last valid applied config.
+Reject và giữ last valid config.
+
+Factory Wi-Fi configuration failed
+
+Không log password; record safe failure reason; retry/quarantine theo Factory SOP.
+
+Factory Wi-Fi credential suspected compromised
+
+Rotate network credential và release replacement approved APK/process.
+
+Web Portal worker inactive/unauthorized
+
+Block Workspace submit và return safe error.
+
+QR invalid/expired/replayed
+
+Reject và require rescan/support according to policy.
 
 Auth DB corrupted
 
-Block normal recording; allow diagnostics/system modules và emergency override only if safe.
+Block normal recording; diagnostics/emergency only nếu safe.
 
 User disabled while recording
 
-Không interrupt current evidence; block new recording sau safe window.
+Không interrupt evidence; block new recording sau safe window.
 
 Device reboot
 
-Expire previous session và yêu cầu login; verify kiosk policy state before normal field operation.
+Expire session, require login, verify kiosk policy.
 
-Encryption failure during finalization
+Encryption failure
 
-Preserve source/staging file và mark recovery/failure theo Recording/Storage design.
+Preserve source/staging file và mark recovery/failure.
 
-## 18. Open Questions / TBD
+## 19. Open Questions / TBD
 
 Item
 
@@ -1011,15 +1158,11 @@ Pattern encoding/hashing format
 
 TBD / Security Review
 
-Face authentication implementation model
+Face authentication implementation
 
-TBD / Device Capability + Security Review
+TBD / Capability + Security
 
-QR credential format
-
-TBD
-
-NFC tag credential format
+Login QR/NFC credential format
 
 TBD
 
@@ -1043,37 +1186,25 @@ Admin permission model on DCAM
 
 TBD
 
-Maintenance Password Gate credential representation
+Maintenance credential representation/rotation/reset/lockout/session timeout
 
 TBD / Security Review
 
-Maintenance password length/complexity/rotation policy
+Device Owner/DPC setup secret handling
 
 TBD / Security Review
 
-Maintenance password reset/recovery process
+Provisioning QR signature/expiration/replay policy
 
-TBD / Security Review
+TBD / API Contract + Security
 
-Maintenance failed-attempt lockout/cooldown policy
+Factory Worker account model: individual or shared station
 
-TBD / Security Review
+TBD / Factory + Security
 
-Maintenance session timeout policy
+Factory Worker account lifecycle and password reset process
 
-TBD / Security Review
-
-Device Owner/DPC setup secret handling if DCAM-as-DPC is selected
-
-TBD / Security Review
-
-Provisioning QR signature/expiration format
-
-TBD
-
-Web Portal provisioning API auth detail
-
-TBD
+TBD / Backend + Security + Factory
 
 Owner name validation/logging policy
 
@@ -1083,11 +1214,7 @@ Manufacture date correction policy
 
 TBD
 
-Remote config payload security schema
-
-TBD
-
-Kiosk policy payload security schema
+Remote config and kiosk policy payload security schema
 
 TBD
 
@@ -1095,7 +1222,7 @@ Self Update artifact signing/checksum mechanism
 
 TBD / Security Review
 
-Manual Play Store fallback allowed or disabled
+Manual Play Store fallback allowed per model
 
 TBD / Security + Product
 
@@ -1103,6 +1230,32 @@ Maintenance/factory Google account handling
 
 TBD / Security + Product
 
-## 19. Practical Conclusion
+Factory Wi-Fi credential rotation cadence and source/build access procedure
 
-text
+TBD / Security + Factory + Release Manager
+
+## 20. Practical Conclusion
+
+DCAM authentication is offline-first after provisioning.
+dcam_cloud_device_id is Cloud Identity / primary cloud device id.
+serial_number is Hardware Identity / primary recovery key.
+serial_lookup/{serial_number} is the approved recovery lookup path.
+SD Identity File is a recovery cache, not authoritative identity.
+ANDROID_ID, android_id_hash and device_lookup/{android_id_hash} are not used.
+Web Portal user-facing account type is Factory Worker only.
+Web Portal has Login and Workspace only.
+Factory Worker scans the provisioning QR displayed by DCAM.
+serial_number is obtained only from QR and remains read-only.
+Frontend uses Firebase Authentication and Cloud Functions/backend authority.
+Factory Worker cannot override duplicate/rebind/restricted device state.
+Web Portal QR Flow is business provisioning only, not Device Owner setup or production acceptance.
+Factory Wi-Fi SSID/password hardcoded in approved DCAM APK is an explicit approved project exception.
+Factory Wi-Fi password must never appear in logs, Crashlytics, QR, API payload, CSON, DB, UI or production record.
+This exception does not permit hardcoding Maintenance Password, cloud token, signing key or other credentials.
+Current baseline has no external EMM, Android Management API or Managed Google Play policy-driven update.
+Primary update path is DCAM Self Update / APK update.
+Enter Maintenance Mode / Exit Kiosk temporarily is protected by Maintenance Password Gate.
+Full Android unrestricted mode is not supported.
+Emergency override is a system operator, not a real Admin credential.
+Sensitive auth/security/identity/policy/update/factory Wi-Fi values must not be logged.
+Encryption/key details remain open security decisions.

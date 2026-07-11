@@ -3,7 +3,7 @@
 **Page ID**: 33357826  
 **Version**: 4  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/33357826
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/33357826
 
 ---
 
@@ -70,19 +70,19 @@ Rename, Hide, Show.
 
 # 4. Quy tắc dữ liệu
 
-&middot;       Device ID không được thay đổi.
+·       Device ID không được thay đổi.
 
-&middot;       Đổi tên chỉ ảnh hưởng Display Name trên giao diện.
+·       Đổi tên chỉ ảnh hưởng Display Name trên giao diện.
 
-&middot;       Hide là ẩn mềm, không xóa thiết bị và không xóa dữ liệu.
+·       Hide là ẩn mềm, không xóa thiết bị và không xóa dữ liệu.
 
-&middot;       Thiết bị bị Hidden không hiển thị với user thông thường.
+·       Thiết bị bị Hidden không hiển thị với user thông thường.
 
-&middot;       Dữ liệu của thiết bị Hidden không hiển thị mặc định trong MediaView, File List và Search.
+·       Dữ liệu của thiết bị Hidden không hiển thị mặc định trong MediaView, File List và Search.
 
-&middot;       Admin vẫn có thể xem thiết bị Hidden trong tab Quản lý thiết bị nếu có filter phù hợp.
+·       Admin vẫn có thể xem thiết bị Hidden trong tab Quản lý thiết bị nếu có filter phù hợp.
 
-&middot;       Show lại thiết bị sẽ khôi phục hiển thị thiết bị và dữ liệu liên quan.
+·       Show lại thiết bị sẽ khôi phục hiển thị thiết bị và dữ liệu liên quan.
 
 # 5. Trạng thái rỗng
 
@@ -92,23 +92,23 @@ Chưa có thiết bị nào được ghi nhận.
 
 # 6. Acceptance Criteria
 
-&middot;       Tab Quản lý thiết bị được hiển thị cạnh tab Quản lý người dùng.
+·       Tab Quản lý thiết bị được hiển thị cạnh tab Quản lý người dùng.
 
-&middot;       Danh sách thiết bị BodyCam được hiển thị trong tab Quản lý thiết bị.
+·       Danh sách thiết bị BodyCam được hiển thị trong tab Quản lý thiết bị.
 
-&middot;       Người dùng có thể đổi tên hiển thị thiết bị.
+·       Người dùng có thể đổi tên hiển thị thiết bị.
 
-&middot;       Device ID gốc không bị thay đổi khi đổi Display Name.
+·       Device ID gốc không bị thay đổi khi đổi Display Name.
 
-&middot;       Người dùng có thể Hide và Show lại thiết bị.
+·       Người dùng có thể Hide và Show lại thiết bị.
 
-&middot;       Thiết bị Hidden và dữ liệu liên quan không hiển thị với user thông thường.
+·       Thiết bị Hidden và dữ liệu liên quan không hiển thị với user thông thường.
 
-&middot;       Show lại thiết bị khôi phục hiển thị dữ liệu liên quan.
+·       Show lại thiết bị khôi phục hiển thị dữ liệu liên quan.
 
-&middot;       Không xóa dữ liệu khi Hide thiết bị.
+·       Không xóa dữ liệu khi Hide thiết bị.
 
-&middot;       Tab Quản lý người dùng vẫn hoạt động bình thường.
+·       Tab Quản lý người dùng vẫn hoạt động bình thường.
 
 # 7. Ghi chú mở rộng
 

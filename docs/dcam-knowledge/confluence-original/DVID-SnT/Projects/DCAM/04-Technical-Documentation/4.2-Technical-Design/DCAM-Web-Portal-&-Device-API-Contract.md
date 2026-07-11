@@ -1,9 +1,9 @@
 # DCAM Web Portal & Device API Contract
 
 **Page ID**: 49873154  
-**Version**: 6  
+**Version**: 7  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/49873154
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/49873154
 
 ---
 
@@ -24,7 +24,7 @@ Technical Design / API Contract
 
 Version
 
-Draft 0.5
+Draft 0.6
 
 Status
 
@@ -48,11 +48,11 @@ Parent Folder
 
 Target Audience
 
-Android Developers, Web Portal Developers, Backend/WebServer Developers, QA, Factory Admin, Support, Security Reviewer
+Android Developers, Web Portal Developers, Backend/WebServer Developers, QA, Factory Worker, Factory Lead, Support, Security Reviewer
 
 Last Updated
 
-2026-07-09
+2026-07-10
 
 Related Jira
 
@@ -60,23 +60,74 @@ None
 
 Related Documents
 
-DCAM Device Provisioning Web Portal Design, DCAM Factory Provisioning & Device Production SOP, ADR - DCAM Android Dedicated Device / Device Owner / Lock Task Decision, DCAM Android Operation Design, DCAM Self Update Design, 06 - Cloud Services, Update & Configuration Architecture, 09 - System Settings Requirements, DCAM Security & Encryption Design, DCAM SQLite Database Design, DCAM Device Capability & Feature Eligibility Design, DCAM QA Test Strategy & Test Matrix
+DCAM Device Provisioning Web Portal Design, DCAM Device Provisioning Web Portal App Design, DCAM Device Provisioning Web Portal Implementation Design, DCAM Factory Provisioning & Device Production SOP, DCAM DSetup Factory Tool Design, ADR - DCAM Android Dedicated Device / Device Owner / Lock Task Decision, ADR - DCAM Device Identity Baseline: serial_number + dcam_cloud_device_id, DCAM Android Operation Design, DCAM Self Update Design, 06 - Cloud Services, Update & Configuration Architecture, 09 - System Settings Requirements, DCAM Security & Encryption Design, DCAM SQLite Database Design, DCAM Device Capability & Feature Eligibility Design, DCAM QA Test Strategy & Test Matrix, DCAM Documentation Governance
 
 ## 1. Purpose
 
-This document defines the API/data contract between:
+Tài liệu này định nghĩa API/data contract giữa:
 
-textwide760The contract covers:
+DCAM Android App
+DCAM Device Provisioning Web Portal
+Firebase Authentication
+Firebase Cloud Functions / Backend
+Firebase Cloud Firestore
+Factory / QA production-record workflow
+Support tools nếu applicable
+Contract cover:
 
-textwide760This document follows **DCAM Factory Provisioning & Device Production SOP** as the device identity baseline:
+Factory Worker authentication context
+QR-based business provisioning
+serial_lookup based cloud identity create/restore
+server device record
+remote config fetch/apply-result
+Self Update check/result
+heartbeat/status reporting
+factory production record
+common errors, security and versioning rules
+Identity baseline:
 
-textwide760This document does not redefine Web Portal UI flow, Android runtime, Device Owner setup, Lock Task Mode, User Restrictions, BDMA ADB import, Security rules or Self Update install behavior. It defines the API/schema boundary used by those designs.
+serial_number = Hardware Identity / primary recovery key
+dcam_cloud_device_id = Cloud Identity / primary cloud device id
+SD Identity File = recovery cache on external SD card
+No ANDROID_ID
+No android_id_hash
+No device_lookup/{android_id_hash}
+Web Portal baseline:
+
+User-facing account type = Factory Worker only.
+Screens = Login and Workspace only.
+serial_number source in Web Portal = provisioning QR displayed by DCAM only.
+serial_number is read-only.
+No manual serial input.
+No direct serial barcode scan in Web Portal.
+Tài liệu này không redefine UI flow, Android runtime, Device Owner setup, DSetup implementation, kiosk policy, BDMA ADB import, Security rules hoặc Self Update install behavior.
 
 ## 2. Current Baseline
 
-textwide760Important boundary:
+Backend storage = Firebase Cloud Firestore.
+Firebase Realtime Database is not used.
+Web Portal deployment = Firebase Hosting.
+Web Portal authentication = Firebase Authentication.
+Provisioning backend = Firebase Cloud Functions.
+Frontend does not directly write production provisioning collections.
+Factory Worker scans provisioning QR displayed by DCAM.
+Web Portal obtains serial_number only from QR.
+Backend create/restore path = serial_lookup/{serial_number}.
+DSetup supplies serial_number to DCAM and stops after imported serial verification.
+DSetup does not call Web Portal provisioning API in the current baseline.
+DSetup does not submit the official production record or decide READY_TO_SHIP / QUARANTINED.
+No external EMM / Android Management API / Managed Google Play policy-driven update.
+Primary update path = DCAM Self Update / APK update.
+BDMA media import/user sync remains ADB-based for MVP.
+Factory Wi-Fi password is hardcoded in approved DCAM APK by project decision and must never be transmitted by this API contract.
+Important boundary:
 
-textwide760## 3. Actors and API Clients
+Web Portal provisioning creates/restores DCAM business identity.
+It does not make DCAM Device Owner.
+It does not perform factory acceptance.
+Factory Worker cannot override duplicate/rebind/restricted device states.
+Factory/QA workflow owns production acceptance and official production record submission.
+## 3. Actors and API Clients
 
 Actor / Client
 
@@ -88,43 +139,61 @@ DCAM Android App
 
 Yes
 
-Use injected/imported `serial_number`, fetch device record/config, check update, report status/result.
+Resolve device identity, fetch device/config, check update và report status/result.
 
-DCAM Web Portal
+DCAM Web Portal Frontend
 
 Yes
 
-Factory/Admin creates/restores device record by `serial_number`, assigns device information, updates server state.
+Submit authenticated QR-derived provisioning request và display result.
 
-Backend/WebServer/Firebase Cloud Firestore
-
-Server
-
-Owns Firestore device records, serial lookup mapping, config, update manifest, factory records and audit.
-
-Factory Admin
+Factory Worker
 
 Through Web Portal
 
-Assign serial/owner/manufacture date and approve production/factory actions.
+Login, scan QR, enter owner/date, submit provisioning; không override conflict hoặc submit production acceptance.
+
+Firebase Authentication
+
+Authentication service
+
+Xác thực Factory Worker và cấp identity token.
+
+Firebase Cloud Functions / Backend
+
+Server
+
+Verify token/worker profile, validate request, create/restore identity, enforce policy và audit.
+
+Firebase Cloud Firestore
+
+Server storage
+
+Lưu worker profile, device, serial lookup, config, status, update, audit và factory records.
 
 DSetup
 
-Optional / Factory
+No for current Web API baseline
 
-Resolves serial from SD Identity File or barcode, injects serial to DCAM, may submit/attach factory metadata if approved.
+Local factory tool; inject/verify serial trong DCAM. Không gọi provisioning API và không submit official production result.
 
-Support/Admin
+Factory / QA Workflow
 
-Through Web Portal or support tool
+Conditional
 
-View status, audit, device record, update/config results.
+Submit official production record sau khi factory acceptance hoàn tất.
+
+Support/Admin Tool
+
+Conditional / separate authorization
+
+Xử lý conflict/rebind/restricted state ngoài Factory Worker App.
 
 BDMA
 
 No for MVP Web API
 
-BDMA import/user sync remains ADB-based according to DCAM-BDMA Data Contract.
+Media import/user sync remains ADB-based.
 
 ## 4. API Design Principles
 
@@ -134,109 +203,131 @@ Description
 
 Versioned API
 
-All APIs and payload schemas must be versioned.
+Tất cả API/payload schemas phải versioned.
 
-Firestore Baseline
+Cloud Functions Authority
 
-Firebase Cloud Firestore is the selected Firebase storage baseline for backend data. Realtime Database is not the current baseline.
+Web frontend gọi authenticated Cloud Functions/backend; không direct-write production provisioning collections.
+
+Factory Worker Authorization
+
+Backend verify Firebase token, worker profile, active status và allowed action.
+
+QR-only Web Serial Source
+
+Web provisioning `serial_number` chỉ đến từ QR displayed by DCAM.
+
+Read-only Serial
+
+Frontend không cho edit/replace serial; backend reject unexpected replacement behavior.
 
 Serial-based Provisioning
 
-Device cloud identity is created/restored by `serial_number`.
+Cloud identity create/restore bằng `serial_number`.
 
-One Lookup Path for Cloud Identity
+One Lookup Path
 
-Backend uses `serial_lookup/{serial_number}` to resolve `dcam_cloud_device_id`.
+`serial_lookup/{serial_number}` resolve `dcam_cloud_device_id`.
 
 Stable Device Identity
 
-`dcam_cloud_device_id` is the server/cloud primary device id after provisioning.
-
-Hardware Identity
-
-`serial_number` is the Hardware Identity and primary recovery key.
+`dcam_cloud_device_id` là cloud primary device id.
 
 Recovery Cache Boundary
 
-SD Identity File may cache `serial_number` on external SD card, but it is not a primary key and not Hardware Identity.
+SD Identity File chỉ cache serial; không phải cloud identity.
 
 Mutable Device Information
 
-`owner_name`, `manufacture_date`, `device_model`, `firmware_version` are device information, not primary keys.
+`owner_name`, `manufacture_date`, model/firmware là information, không phải primary key.
 
 No Android System ID Dependency
 
-API design must not depend on raw `ANDROID_ID`, `android_id_hash`, IMEI, MAC address or other app-inaccessible hardware identifiers.
-
-No Personal Account Dependency
-
-API design must not depend on personal Google account or Managed Google Play.
+Không dùng `ANDROID_ID`, `android_id_hash`, IMEI hoặc MAC làm identity.
 
 Requested vs Applied Config
 
-Server config values are requested values; Android validates capability/policy/runtime guard before apply.
+Server trả requested config; Android validate/apply locally.
 
 Safe Errors
 
-API errors must use stable `reason_code` and must not expose secrets.
+Error dùng stable `reason_code`, không expose secret/internal stack.
 
 Offline-first
 
-Android must continue with last valid local identity/config where applicable after device is provisioned.
+Android dùng last valid local state khi applicable.
 
 Auditable
 
-Provisioning, device info change, config apply, update result and factory status must be auditable.
+Provisioning, info change, config/update/factory status phải auditable.
+
+Factory Acceptance Separation
+
+Web provisioning result không đồng nghĩa production PASS/READY_TO_SHIP.
 
 ## 5. Environment and Versioning
 
-### 5.1 Base URL Direction
+### 5.1 Deployment Direction
 
-Exact URLs are deployment-specific.
+Component
 
-Environment
-
-Base URL
+Direction
 
 Status
 
-Development
+Web Hosting
 
-`https://dev-api.dcam.example.com`
+Firebase Hosting
 
-Placeholder
+Approved
 
-QA
+Web Authentication
 
-`https://qa-api.dcam.example.com`
+Firebase Authentication
 
-Placeholder
+Approved
 
-Production
+Backend
 
-`https://api.dcam.example.com`
+Firebase Cloud Functions
 
-Placeholder
+Approved
 
-Firebase direct storage
+Storage
 
-Firebase Cloud Firestore collection/document paths
+Firebase Cloud Firestore
 
-Selected baseline
+Approved
 
-Firebase Realtime Database
+Realtime Database
 
-Not used for current storage baseline
+Not used
 
 Not Applicable
 
+Logical REST paths trong tài liệu có thể được map sang HTTPS Cloud Functions hoặc callable functions, nhưng request/response/auth/error semantics phải giữ nguyên.
+
 ### 5.2 API Version
 
-textwide760Breaking changes require a new API/schema version or an explicitly compatible migration path.
+```
+/v1
+```
 
-## 6. Common Request Headers
+Breaking change yêu cầu API/schema version mới hoặc compatible migration path.
 
-Header
+## 6. Authentication and Common Request Context
+
+### 6.1 Web Portal Authentication
+
+Factory Worker logs in through Firebase Authentication.
+Frontend obtains Firebase identity token.
+Frontend sends token to Cloud Functions/backend.
+Backend verifies token and loads worker profile.
+Backend checks account active and Factory Worker authorization.
+Backend derives worker identity from verified context, not request body.
+### 6.2 Common Headers / Context
+
+Header / Context
 
 Required
 
@@ -246,11 +337,19 @@ Description
 
 `Authorization`
 
+Yes
+
+Web Portal
+
+Firebase Bearer ID token hoặc equivalent verified auth context.
+
+`Authorization`
+
 Conditional
 
-Android/Web Portal
+Android
 
-Bearer token/session/device credential if REST backend is used. Exact auth TBD.
+Device-bound credential/token; exact method TBD.
 
 `X-DCAM-Request-Id`
 
@@ -258,7 +357,7 @@ Yes
 
 All
 
-UUID for tracing/idempotency/debugging.
+UUID cho tracing/idempotency/reconciliation.
 
 `X-DCAM-App-Version-Code`
 
@@ -302,39 +401,74 @@ Client timestamp.
 
 `X-DCAM-Factory-Batch-Id`
 
-Factory only
+Conditional
 
-Web Portal/Factory
+Factory/QA workflow
 
-Factory production batch id if applicable.
+Factory batch id khi submit production record.
 
-For Firestore direct implementation, these fields map to request/auth context, document metadata, transaction metadata or audit fields instead of HTTP headers.
+Web Portal request body không được chứa trusted role, worker id hoặc authorization decision do frontend tự khai báo.
 
 ## 7. Common Response Format
 
-### 7.1 Success Response
+### 7.1 Success
 
-jsonwide760### 7.2 Error Response
+{
+  "success": true,
+  "request_id": "bcece95a-5f5f-4b24-82a8-4c43bb5a1b8d",
+  "server_time": "2026-07-10T08:00:00Z",
+  "data": {}
+}
+### 7.2 Error
 
-jsonwide760For Firestore direct implementation, a missing document at `serial_lookup/{serial_number}` means the serial has not been provisioned yet, unless the caller is explicitly running create/restore transaction.
+{
+  "success": false,
+  "request_id": "bcece95a-5f5f-4b24-82a8-4c43bb5a1b8d",
+  "server_time": "2026-07-10T08:00:00Z",
+  "error": {
+    "code": "DUPLICATE_SERIAL_CONFLICT",
+    "message": "This device requires support review.",
+    "retryable": false,
+    "support_required": true
+  }
+}
+Message phải safe và phù hợp Factory Worker. Raw Firebase/internal stack trace không được trả về frontend.
 
 ## 8. Core Data Models
 
 ### 8.1 Device Identity
 
-jsonwide760### 8.2 Device Information
+{
+  "dcam_cloud_device_id": "dcam_dev_01HXZ...",
+  "serial_number": "BC-2026-00001",
+  "identity_state": "ACTIVE"
+}
+### 8.2 Device Information
 
-jsonwide760Rules:
+{
+  "serial_number": "BC-2026-00001",
+  "owner_name": "Agency A",
+  "manufacture_date": "2026-07-10",
+  "device_model": "BC-MODEL-A",
+  "firmware_version": "FW-2026.07"
+}
+Rules:
 
-textwide760### 8.3 SD Identity File Metadata
+serial_number is Hardware Identity / recovery key.
+dcam_cloud_device_id is cloud primary key.
+owner_name is required business information for approved Web implementation.
+manufacture_date is required and uses YYYY-MM-DD.
+### 8.3 App and Contract Metadata
 
-The SD Identity File is not a cloud identity, but the backend/factory record may store safe result metadata.
-
-jsonwide760Rules:
-
-textwide760### 8.4 App and Contract Metadata
-
-jsonwide760### 8.5 Device State Values
+{
+  "app_package_name": "com.example.dcam",
+  "app_version_name": "1.0.0",
+  "app_version_code": 100,
+  "dcam_data_contract_version": "1.0",
+  "media_contract_version": "1.0",
+  "encoder_contract_version": "1.0"
+}
+### 8.4 Device State Values
 
 State
 
@@ -342,141 +476,439 @@ Meaning
 
 `NOT_PROVISIONED`
 
-No server mapping exists for `serial_number`.
+Chưa có mapping.
 
 `ACTIVE`
 
-Device business identity exists and device may continue startup if runtime/policy guards allow.
+Business identity active; runtime vẫn phải pass local policy guards.
 
 `DISABLED`
 
-Device is disabled by admin/server.
+Disabled by server policy.
 
 `REVOKED`
 
-Device identity is revoked and must not operate normally.
+Identity revoked.
 
 `QUARANTINED`
 
-Device failed factory/release checks and must not be shipped/used for field operation.
+Factory/release state blocks field operation.
 
 `ERROR`
 
-Server-side identity/device state error.
+Server-side identity/device error.
 
-## 9. Serial-based Business Provisioning
+## 9. Provisioning QR Contract
 
-### 9.1 Provisioning Flow
-
-textwide760### 9.2 QR Payload if UI Flow Uses QR
-
-QR is optional business provisioning UI only. It is not Device Owner setup and it must not use Android system identifiers.
+QR là **required Web Portal serial source** trong approved baseline.
 
 Minimum payload:
 
-jsonwide760Optional payload fields:
+{
+  "payload_type": "DCAM_DEVICE_PROVISIONING",
+  "payload_version": "1.0",
+  "serial_number": "BC-2026-00001",
+  "app_package_name": "com.example.dcam",
+  "app_version_code": 100,
+  "app_version_name": "1.0.0",
+  "device_model": "BC-MODEL-A",
+  "firmware_version": "FW-2026.07"
+}
+Optional fields:
 
-jsonwide760Rules:
+{
+  "provisioning_nonce": "local-random-uuid",
+  "generated_at": "2026-07-10T08:00:00Z",
+  "expires_at": "2026-07-10T08:05:00Z",
+  "signature": "optional-approved-signature",
+  "serial_source": "SD_IDENTITY_FILE|BARCODE_SCAN|MANUAL_APPROVED_FALLBACK|DSETUP_INJECTED",
+  "dcam_data_contract_version": "1.0",
+  "media_contract_version": "1.0",
+  "encoder_contract_version": "1.0"
+}
+Rules:
 
-textwide760## 10. Serial Lookup API
+QR is displayed by DCAM and scanned inside Workspace.
+Web Portal does not accept serial from manual input or device-label barcode scan.
+serial_number remains read-only after parsing.
+QR must not contain ANDROID_ID, android_id_hash, maintenance password, factory Wi-Fi password, Firebase token, Google credential, cloud token or signing secret.
+Camera stream/image must not be stored or uploaded.
+Exact signature/expiration/replay policy remains TBD.
+## 10. Serial Lookup API
 
-Android/backend uses this to resolve or verify cloud device identity by serial number.
+### 10.1 Logical Endpoint
 
-### 10.1 REST Endpoint Direction
+```
+GET /v1/serial-lookup/{serial_number}
+```
 
-httpwide760### 10.2 Firestore Collection Direction
+### 10.2 Firestore Direction
 
-textwide760Example Firestore document:
+```
+serial_lookup/{serial_number}
+```
 
-jsonwide760### 10.3 Response: Not Provisioned
+Example document:
 
-jsonwide760### 10.4 Response: Provisioned
+{
+  "dcam_cloud_device_id": "dcam_dev_01HXZ...",
+  "device_state": "ACTIVE",
+  "created_at": "2026-07-10T08:00:00Z",
+  "created_by_worker": "worker_001"
+}
+Not found:
 
-jsonwide760Rules:
+{
+  "success": true,
+  "data": {
+    "found": false,
+    "device_state": "NOT_PROVISIONED"
+  }
+}
+Found:
 
-textwide760## 11. Web Portal Device Creation / Restore Contract
+{
+  "success": true,
+  "data": {
+    "found": true,
+    "dcam_cloud_device_id": "dcam_dev_01HXZ...",
+    "device_state": "ACTIVE",
+    "serial_number": "BC-2026-00001",
+    "owner_name": "Agency A",
+    "manufacture_date": "2026-07-10",
+    "initial_config_revision": "cfg_001"
+  }
+}
+## 11. Web Portal Create / Restore Contract
 
-Web Portal creates or restores device record by serial number.
+### 11.1 Logical Endpoint
 
-### 11.1 Create or Restore Device Record
+```
+POST /v1/factory/provisioning/devices
+```
 
-httpwide760Request:
+Cloud Functions implementation có thể map endpoint này sang HTTPS/callable function, nhưng semantics không đổi.
 
-jsonwide760Response:
+Request:
 
-jsonwide760Backend/Firestore side effects:
+{
+  "serial_number": "BC-2026-00001",
+  "owner_name": "Agency A",
+  "manufacture_date": "2026-07-10",
+  "device_model": "BC-MODEL-A",
+  "firmware_version": "FW-2026.07",
+  "app_package_name": "com.example.dcam",
+  "app_version_name": "1.0.0",
+  "app_version_code": 100,
+  "qr_payload_version": "1.0",
+  "provisioning_nonce": "optional-local-random-uuid",
+  "serial_source": "DSETUP_INJECTED",
+  "source": "WEB_PORTAL_QR_FLOW"
+}
+Rules:
 
-textwide760### 11.2 Device Record Shape
+serial_number must come from parsed DCAM provisioning QR.
+Frontend must not send worker role or trusted worker id in the body.
+Backend derives worker identity from verified authentication context.
+owner_name and manufacture_date are required for the approved implementation baseline.
+manufacture_date uses YYYY-MM-DD and must not shift through timestamp conversion.
+Response:
 
-jsonwide760Rules:
+{
+  "success": true,
+  "data": {
+    "dcam_cloud_device_id": "dcam_dev_01HXZ...",
+    "serial_number": "BC-2026-00001",
+    "owner_name": "Agency A",
+    "manufacture_date": "2026-07-10",
+    "device_state": "ACTIVE",
+    "created_or_restored": "RESTORED",
+    "support_required": false
+  }
+}
+Backend side effects:
 
-textwide760## 12. Get Device Record API
+Create or update devices/{dcam_cloud_device_id}
+Create or verify serial_lookup/{serial_number}
+Append audit event with authenticated worker identity
+### 11.2 Device Record Shape
 
-After Android receives `dcam_cloud_device_id`, it may fetch full device record.
+{
+  "dcam_cloud_device_id": "dcam_dev_01HXZ...",
+  "serial_number": "BC-2026-00001",
+  "owner_name": "Agency A",
+  "manufacture_date": "2026-07-10",
+  "device_model": "BC-MODEL-A",
+  "firmware_version": "FW-2026.07",
+  "device_state": "ACTIVE",
+  "created_by_worker": "worker_001",
+  "last_provisioned_by_worker": "worker_001",
+  "created_at": "2026-07-10T08:00:00Z",
+  "updated_at": "2026-07-10T08:00:00Z"
+}
+Rules:
 
-httpwide760Firestore equivalent:
+Duplicate serial must not silently create unrelated active device.
+If mapping exists and restore is allowed, restore existing dcam_cloud_device_id.
+Factory Worker cannot approve rebind or conflict override.
+Conflict returns support_required and is handled by separate support/admin process.
+Web Portal provisioning success does not mark READY_TO_SHIP.
+## 12. Get Device Record API
 
-textwide760Response:
+```
+GET /v1/devices/{dcam_cloud_device_id}
+```
 
-jsonwide760## 13. Device Heartbeat / Status API
+Response:
 
-### 13.1 Endpoint
+{
+  "success": true,
+  "data": {
+    "dcam_cloud_device_id": "dcam_dev_01HXZ...",
+    "serial_number": "BC-2026-00001",
+    "owner_name": "Agency A",
+    "manufacture_date": "2026-07-10",
+    "device_model": "BC-MODEL-A",
+    "firmware_version": "FW-2026.07",
+    "device_state": "ACTIVE",
+    "config_revision": "cfg_001",
+    "app_contract": {
+      "dcam_data_contract_version": "1.0",
+      "media_contract_version": "1.0",
+      "encoder_contract_version": "1.0"
+    }
+  }
+}
+## 13. Device Heartbeat / Status API
 
-httpwide760### 13.2 Request
+```
+POST /v1/devices/{dcam_cloud_device_id}/heartbeat
+```
 
-jsonwide760### 13.3 Response
+Request direction:
 
-jsonwide760Rules:
+{
+  "app_version_code": 100,
+  "app_version_name": "1.0.0",
+  "firmware_version": "FW-2026.07",
+  "device_model": "BC-MODEL-A",
+  "battery_percent": 86,
+  "network_state": "ONLINE",
+  "policy_state": {
+    "device_policy_state": "DEVICE_POLICY_APPLIED",
+    "lock_task_state": "LOCK_TASK_ACTIVE"
+  },
+  "storage_state": {
+    "free_bytes": 123456789,
+    "used_bytes": 987654321
+  },
+  "recording_state": "IDLE",
+  "update_state": "NONE"
+}
+Response:
 
-textwide760## 14. Remote Config API
+{
+  "success": true,
+  "data": {
+    "server_device_state": "ACTIVE",
+    "target_config_revision": "cfg_002",
+    "update_available": false
+  }
+}
+Heartbeat không force direct runtime mutation và không chứa raw Android identifiers hoặc factory Wi-Fi credential.
+
+## 14. Remote Config API
 
 ### 14.1 Get Effective Config
 
-httpwide760Response:
+```
+GET /v1/devices/{dcam_cloud_device_id}/config/effective
+```
 
-jsonwide760Rules:
+Response direction:
 
-textwide760### 14.2 Report Config Apply Result
+{
+  "success": true,
+  "data": {
+    "config_revision": "cfg_002",
+    "config_schema_version": "1.0",
+    "settings": {
+      "recording.video_resolution": "1080p",
+      "recording.pre_record_seconds": 30,
+      "kiosk.enabled": true,
+      "update.self_update_enabled": true,
+      "update.manual_play_store_fallback_enabled": false,
+      "factory.sd_identity_sync_enabled": true
+    }
+  }
+}
+Rules:
 
-httpwide760Request:
+Config values are requested values only.
+Android validates capability/policy/runtime guard.
+Maintenance credential and factory Wi-Fi password must not be delivered through Remote Config.
+### 14.2 Report Apply Result
 
-jsonwide760Apply states:
+```
+POST /v1/devices/{dcam_cloud_device_id}/config/apply-result
+```
 
-textwide760## 15. Self Update API
+{
+  "config_revision": "cfg_002",
+  "apply_state": "DEFERRED",
+  "reason_code": "DEFERRED_RECORDING_ACTIVE",
+  "applied_at": null
+}
+States:
+
+PENDING
+APPLIED
+DEFERRED
+REJECTED
+FAILED
+## 15. Self Update API
 
 ### 15.1 Check Update
 
-httpwide760Request:
+```
+POST /v1/devices/{dcam_cloud_device_id}/updates/check
+```
 
-jsonwide760Response when no update:
+Request:
 
-jsonwide760Response when update is available:
+{
+  "current_version_code": 100,
+  "current_version_name": "1.0.0",
+  "device_model": "BC-MODEL-A",
+  "firmware_version": "FW-2026.07",
+  "android_version": "Android 12",
+  "policy_state": "LOCK_TASK_ACTIVE",
+  "channel": "production"
+}
+Available response:
 
-jsonwide760Rules:
+{
+  "success": true,
+  "data": {
+    "update_available": true,
+    "update_id": "upd_2026_07_001",
+    "target_version_code": 101,
+    "target_version_name": "1.0.1",
+    "apk_url": "https://artifact.example.com/dcam/1.0.1/dcam.apk",
+    "checksum": {
+      "algorithm": "SHA-256",
+      "value": "..."
+    },
+    "package_name": "com.example.dcam",
+    "requires_maintenance_window": false
+  }
+}
+### 15.2 Report Update Result
 
-textwide760### 15.2 Report Update Result
+```
+POST /v1/devices/{dcam_cloud_device_id}/updates/result
+```
 
-httpwide760Request:
+{
+  "update_id": "upd_2026_07_001",
+  "from_version_code": 100,
+  "to_version_code": 101,
+  "state": "VERIFIED",
+  "reason_code": null,
+  "policy_restore_state": "LOCK_TASK_RESTORED"
+}
+Update states:
 
-jsonwide760Update result states:
+CHECKED
+DEFERRED
+DOWNLOADED
+VALIDATION_FAILED
+INSTALL_STARTED
+INSTALL_FAILED
+INSTALLED
+VERIFIED
+POLICY_RESTORE_FAILED
+## 16. Factory Production Record API
 
-textwide760## 16. Factory Production Record API
+Official production record is submitted by the approved `Factory / QA workflow`, not by DSetup and not by the normal Factory Worker provisioning App.
 
-Factory/Web Portal may submit production record after device passes SOP.
+```
+POST /v1/factory/devices/{dcam_cloud_device_id}/production-record
+```
 
-httpwide760Request:
+Request direction:
 
-jsonwide760Forbidden fields:
+{
+  "factory_batch_id": "BATCH-2026-07-001",
+  "dsetup_run_id": "DSETUP-RUN-001",
+  "dsetup_scenario": "CLEAN_PROVISIONING",
+  "serial_source": "SD_IDENTITY_FILE|BARCODE_SCAN|MANUAL_APPROVED_FALLBACK",
+  "device_serial_number": "BC-2026-00001",
+  "bodycamera_model": "BC-MODEL-A",
+  "firmware_version": "FW-2026.07",
+  "apk_version_code": 100,
+  "apk_version_name": "1.0.0",
+  "device_owner_result": "PASS",
+  "serial_injection_result": "PASS",
+  "serial_import_result": "PASS",
+  "factory_wifi_result": "PASS",
+  "firebase_provisioning_result": "PASS",
+  "lock_task_result": "PASS",
+  "recording_test_result": "PASS",
+  "bdma_readiness_result": "PASS",
+  "self_update_capability_result": "PASS",
+  "factory_test_result": "READY_TO_SHIP",
+  "known_limitations": []
+}
+Rules:
 
-textwide760Factory test result values:
+DSetup operation results may be included as input evidence.
+DSetup itself does not decide or submit final PASS/QUARANTINED/READY_TO_SHIP.
+Backend derives submitter identity from Factory/QA authentication context.
+Factory Wi-Fi password must not appear in the record.
+Allowed final values:
 
-textwide760## 17. Audit Event Model
+READY_TO_SHIP
+QUARANTINED
+FAILED
+BLOCKED
+## 17. Audit Event Model
 
-Audit may be implemented as Firestore audit collection or backend table.
+{
+  "event_type": "DEVICE_PROVISIONED",
+  "actor_type": "FACTORY_WORKER",
+  "actor_id": "worker_001",
+  "dcam_cloud_device_id": "dcam_dev_01HXZ...",
+  "serial_number": "BC-2026-00001",
+  "result": "SUCCESS",
+  "reason_code": null,
+  "request_id": "bcece95a-5f5f-4b24-82a8-4c43bb5a1b8d",
+  "created_at": "2026-07-10T08:00:00Z"
+}
+Recommended events:
 
-jsonwide760Recommended audit events:
+WORKER_LOGIN_SUCCESS
+WORKER_LOGIN_FAILED
+WORKSPACE_OPENED
+QR_SCAN_SUCCESS
+QR_SCAN_REJECTED
+PROVISIONING_SUBMITTED
+DEVICE_RECORD_CREATED
+SERIAL_LOOKUP_MAPPING_CREATED
+DEVICE_PROVISIONED
+DEVICE_IDENTITY_RESTORED_BY_SERIAL_NUMBER
+PROVISIONING_FAILED
+SUPPORT_REQUIRED
+CONFIG_FETCHED
+CONFIG_APPLY_RESULT_REPORTED
+UPDATE_CHECKED
+UPDATE_RESULT_REPORTED
+FACTORY_RECORD_CREATED
+DEVICE_QUARANTINED
+DEVICE_READY_TO_SHIP
+DSetup local operation events and official factory acceptance events remain distinct.
 
-textwide760## 18. Standard Error Codes
+## 18. Standard Error Codes
 
 Code
 
@@ -492,7 +924,7 @@ No
 
 `UNAUTHORIZED`
 
-Missing/invalid auth.
+Missing/invalid authentication.
 
 No
 
@@ -502,11 +934,41 @@ Caller not allowed.
 
 No
 
+`WORKER_INACTIVE`
+
+Factory Worker profile inactive.
+
+No
+
+`QR_INVALID`
+
+QR type/version/content invalid.
+
+No / Rescan
+
+`QR_EXPIRED`
+
+QR expired.
+
+No / Refresh and rescan
+
+`QR_REPLAY_REJECTED`
+
+Replay detected if policy enabled.
+
+No
+
 `SERIAL_LOOKUP_NOT_FOUND`
 
-No mapping for `serial_number`.
+No mapping exists.
 
-No for lookup; create may be allowed in authorized factory flow.
+Create may be allowed in authenticated provisioning flow.
+
+`DUPLICATE_SERIAL_CONFLICT`
+
+Serial mapping conflict.
+
+No / Support required
 
 `DEVICE_DISABLED`
 
@@ -522,49 +984,31 @@ No
 
 `DEVICE_QUARANTINED`
 
-Device quarantined and must not enter field operation.
+Device restricted.
 
 No
 
-`DUPLICATE_SERIAL_NUMBER`
+`INVALID_OWNER_NAME`
 
-Serial conflict.
+Owner validation failed.
 
-No / Admin review
+No / Correct input
 
-`SD_IDENTITY_FILE_INVALID`
+`INVALID_MANUFACTURE_DATE`
 
-SD Identity File is malformed or failed validation.
+Date invalid.
 
-No / fall back to barcode scan
-
-`SERIAL_SOURCE_REQUIRED`
-
-No valid SD identity or barcode serial was provided.
-
-No
-
-`CONFIG_NOT_FOUND`
-
-No config for device/profile.
-
-Yes
+No / Correct input
 
 `UNSUPPORTED_CONTRACT_VERSION`
 
-Client contract not supported.
+Client contract unsupported.
 
 No
 
 `UPDATE_NOT_AVAILABLE`
 
 No update.
-
-No
-
-`INVALID_APP_VERSION`
-
-App version not accepted.
 
 No
 
@@ -576,7 +1020,7 @@ Yes
 
 `MANAGED_GOOGLE_PLAY_NOT_APPLICABLE`
 
-Managed Google Play not supported in current baseline.
+Not supported in current baseline.
 
 No
 
@@ -585,6 +1029,12 @@ No
 Too many requests.
 
 Yes
+
+`UNKNOWN_OUTCOME`
+
+Timeout/connection loss; reconciliation required.
+
+Conditional
 
 `SERVER_ERROR`
 
@@ -600,65 +1050,73 @@ Description
 
 API-SEC-001
 
-HTTPS is required for REST implementation.
+HTTPS/TLS required.
 
 API-SEC-002
 
-Admin APIs require Web Portal admin authentication.
+Web provisioning requires verified Firebase Authentication token and active Factory Worker profile.
 
 API-SEC-003
 
-Device APIs after provisioning require device-bound auth token, server-approved credential or Firestore security rules. Exact method TBD.
+Backend derives worker identity/role; frontend-provided authorization fields are untrusted.
 
 API-SEC-004
 
-QR payload must not contain long-lived secret.
+Frontend cannot direct-write Serial Lookup, Devices or Audit Events.
 
 API-SEC-005
 
-Raw Android ID must not be sent, stored or logged.
+QR payload must not contain long-lived secret.
 
 API-SEC-006
 
-`android_id_hash` must not be used as production identity or recovery lookup in the current SOP baseline.
+`serial_number` must come from QR in Web provisioning and remains read-only.
 
 API-SEC-007
 
-`serial_number` is the approved Hardware Identity / recovery key.
+Raw Android ID and `android_id_hash` must not be sent, stored or logged.
 
 API-SEC-008
 
-SD Identity File is a recovery cache only; validate format/signature/checksum according to approved policy.
+Maintenance password, Google credential, factory Wi-Fi password, signing private key and cloud secret must never be sent through these APIs.
 
 API-SEC-009
 
-Maintenance password must never be sent through these APIs unless a future approved secure management contract exists.
+Factory Worker cannot override duplicate/rebind/restricted state.
 
 API-SEC-010
 
-Google account password/token must never be sent.
+Camera stream/image is not uploaded or stored.
 
 API-SEC-011
 
-APK signing private key must never be sent or stored in API payloads.
+Device APIs require device-bound auth or approved Firestore rules; exact method TBD.
 
 API-SEC-012
 
-All provisioning/device-info/factory/update/config actions must be auditable with safe reason codes.
+Actions must be auditable with safe reason codes.
 
-## 20. Retry and Offline Behavior
+API-SEC-013
+
+Production and non-production environments must be separated.
+
+## 20. Retry, Idempotency and Offline Behavior
 
 API Group
 
-Offline / Retry Behavior
+Behavior
+
+Web provisioning submit
+
+Use request id/idempotency key; timeout must not be assumed failed. Reconcile unknown outcome.
 
 Serial lookup before provisioning
 
-Android stays in `PROVISIONING_REQUIRED` or DSetup/factory flow waits for network according to SOP.
+Android remains `PROVISIONING_REQUIRED` until network/result available.
 
 Device record fetch
 
-Retry later; if local identity/config exists, continue according to Android Operation rules.
+Retry later; use valid local identity/config where allowed.
 
 Config fetch
 
@@ -670,33 +1128,32 @@ Queue/report later if supported.
 
 Heartbeat
 
-Queue/drop according to policy; must not block core recording.
+Queue/drop by policy; must not block recording.
 
-Update check
+Update check/result
 
-Retry later; update is non-critical compared to recording/emergency.
-
-Update result
-
-Queue/report later if supported.
+Retry later; non-critical versus recording/emergency.
 
 Factory production record
 
-Must sync before `READY_TO_SHIP` if factory policy requires backend record.
+Must sync before READY_TO_SHIP if Factory SOP requires backend record.
 
 ## 21. API Versioning and Compatibility
 
-Rules:
-
-textwide760Example unsupported response:
-
-jsonwide760## 22. Firestore Collection Direction
-
-Firebase Cloud Firestore is the selected storage baseline. Realtime Database is not used for current backend storage.
+Breaking changes require new version.
+Android/Web report contract version.
+Backend rejects unsupported contract with stable reason_code.
+Legacy admin/manual-serial Web Portal clients are not compatible with approved Factory Worker QR-only baseline.
+Legacy android_id_hash/device_lookup clients are not compatible unless migration ADR exists.
+## 22. Firestore Collection Direction
 
 Logical API
 
-Firestore Collection / Document Direction
+Firestore Direction
+
+Worker profile
+
+`factory_workers/{worker_uid}` or approved equivalent
 
 Serial lookup
 
@@ -708,11 +1165,11 @@ Device record
 
 Effective config
 
-`device_config/{dcam_cloud_device_id}/effective` or equivalent config document/subcollection
+`device_config/{dcam_cloud_device_id}/effective` or equivalent
 
 Config apply result
 
-`device_config_apply_results/{dcam_cloud_device_id}_{config_revision}` or equivalent result document
+`device_config_apply_results/{id}` or equivalent
 
 Heartbeat/status
 
@@ -720,11 +1177,11 @@ Heartbeat/status
 
 Update manifest/check
 
-`device_updates/{dcam_cloud_device_id}` or channel/version manifest collection
+`device_updates/{dcam_cloud_device_id}` or channel manifest
 
 Update result
 
-`device_update_results/{dcam_cloud_device_id}_{update_id}` or equivalent result document
+`device_update_results/{id}`
 
 Factory production record
 
@@ -732,66 +1189,94 @@ Factory production record
 
 Audit events
 
-`audit_events/{event_id}` or scoped audit subcollection
+`audit_events/{event_id}` or scoped subcollection
 
-Exact Firestore collection/document naming is implementation TBD, but the logical schema and ownership rules in this document remain the contract baseline.
+Rules:
 
-Firestore modeling rules:
-
-textwide760## 23. Open Questions / TBD
+Use Firestore collection/document model.
+Do not use Realtime Database tree model.
+Do not use device_lookup/{android_id_hash}.
+Web frontend cannot direct-write provisioning collections.
+Cloud Functions/backend enforce authorization and transactions.
+High-write status/audit data requires retention/write-rate review.
+## 23. Open Questions / TBD
 
 Item
 
 Owner / Source
 
-REST backend vs direct Firestore SDK/API usage for MVP.
+Exact HTTPS function name/path mapping
 
 Backend/Tech Lead
 
-Exact device API auth method after provisioning.
+Exact Android device API auth method
 
 Security + Backend + Android
 
-Exact Web Portal admin role/permission model.
+Factory Worker account model: individual or shared station
 
-Product + Security + Backend
+Factory + Security + Backend
 
-Exact Firestore collection/document names.
+Factory Worker account lifecycle/password reset
+
+Factory + Security + Backend
+
+Exact Firestore collection/document names
 
 Backend/Cloud Lead
 
-Exact Firestore security rules or backend service authorization boundary.
+Exact Firestore security rules/backend authorization
 
 Security + Backend
 
-Exact QR optional nonce/signature/expiration decision.
+QR signature/nonce/expiration/replay policy
 
-Security + Web Portal Design
+Security + Web Portal + Android
 
-Duplicate `serial_number` handling policy.
+Duplicate/rebind support process
 
-Product + Backend
+Product + Backend + Support
 
-Exact SD Identity File signature/checksum validation contract if backend/factory stores validation result.
+Exact owner source/validation
 
-Android + Security + Factory
+Product + Factory + Backend
 
-Exact update manifest schema and artifact repository URL.
+Manufacture-date minimum/future-date policy
 
-Self Update + Release Plan
+Product + Factory
 
-Exact retry queue policy on Android.
+Exact update manifest/artifact URL
 
-Android Operation + SQLite Design
+Self Update + Release
 
-Exact audit retention policy.
+Exact retry/idempotency/reconciliation policy
+
+Backend + Web Portal
+
+Exact audit retention
 
 Security + Backend
 
-Exact factory production record storage/reporting process.
+Exact factory production record submitter authorization/process
 
-Factory SOP + Backend
+Factory SOP + QA + Backend
 
 ## 24. Practical Conclusion
 
-textwide760
+DCAM Web Portal & Device API Contract owns API/data boundary between Android, Web Portal, Firebase Authentication, Cloud Functions and Cloud Firestore.
+Web Portal user-facing account type is Factory Worker only.
+Factory Worker uses Login and Workspace.
+Web Portal obtains serial_number only from provisioning QR displayed by DCAM.
+serial_number is read-only; no manual or direct serial-barcode input exists in Web Portal.
+Firebase Authentication identifies worker; backend verifies worker profile and authorization.
+Frontend does not directly write production provisioning collections.
+Backend creates/restores device through serial_lookup/{serial_number}.
+dcam_cloud_device_id is cloud primary device id.
+DSetup does not call Web provisioning API, submit official production record or decide READY_TO_SHIP.
+Factory/QA workflow owns official production-record submission.
+Factory Worker cannot override duplicate/rebind/restricted device state.
+Factory Wi-Fi password is not part of QR, API, Firestore business data, logs or production record.
+Do not use ANDROID_ID, android_id_hash or device_lookup/{android_id_hash}.
+Remote config values are requested values; Android validates/applies locally.
+Self Update / APK update is primary update path.
+BDMA import/user sync remains ADB-based for MVP.

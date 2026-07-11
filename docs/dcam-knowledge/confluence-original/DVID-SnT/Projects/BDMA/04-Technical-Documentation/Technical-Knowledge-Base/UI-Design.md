@@ -3,7 +3,7 @@
 **Page ID**: 27132122  
 **Version**: 2  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/27132122
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/27132122
 
 ---
 
@@ -70,7 +70,7 @@ Gỡ admin.css và mọi CSS trong /css/admin/ hoặc /css/user/, gắn auth/log
 
 applyModule(scene, fxml)
 
-Gỡ toàn bộ module CSS cũ, rebuild đúng thứ tự base &rarr; theme &rarr; admin &rarr; module CSS. Gọi mỗi lần navigate sang module mới.
+Gỡ toàn bộ module CSS cũ, rebuild đúng thứ tự base → theme → admin → module CSS. Gọi mỗi lần navigate sang module mới.
 
 applyDialog(scene, fxml)
 
@@ -140,7 +140,7 @@ Class .status-warning-strip-active đổi background sang -warn-strip-bg và bor
 
 VBox #noticeContainer (.notice-container) là lớp overlay mouseTransparent ở trên cùng trong StackPane center. Padding bottom 30px để nổi lên trên nội dung.
 
-AppNoticeService.bindNoticeContainer() được gọi trong initialize() để kết nối service với container này. 
+AppNoticeService.bindNoticeContainer() được gọi trong initialize() để kết nối service với container này. 
 
 ## 2.6 Nút Logout
 
@@ -200,35 +200,35 @@ Icon edit (SVG path, .edit-icon-svg) — chỉ hiện khi cell được select.
 
 **Trạng thái**
 
-**Dot class / Fill  —  Text class / Color dark / Color light**
+**Dot class / Fill  —  Text class / Color dark / Color light**
 
 CONNECTED
 
-.dot-connected (#4ade80 / #16a34a)  —  .device-cell-connected (#4ade80 / #16a34a)
+.dot-connected (#4ade80 / #16a34a)  —  .device-cell-connected (#4ade80 / #16a34a)
 
 QUEUED
 
-.dot-queued (#fbbf24)  —  .device-cell-queued (#fbbf24 / #f59e0b)
+.dot-queued (#fbbf24)  —  .device-cell-queued (#fbbf24 / #f59e0b)
 
 SYNCING
 
-.dot-syncing (#60a5fa)  —  .device-cell-syncing (#60a5fa / #3b82f6)
+.dot-syncing (#60a5fa)  —  .device-cell-syncing (#60a5fa / #3b82f6)
 
 OFFLINE
 
-.dot-offline (fill #334155, stroke #475569)  —  .device-cell-offline (#64748b / #94a3b8)
+.dot-offline (fill #334155, stroke #475569)  —  .device-cell-offline (#64748b / #94a3b8)
 
 UNVALIDATED
 
-.dot-unvalidated (#fbbf24)  —  .device-cell-unvalidated (#fbbf24 / #d97706)
+.dot-unvalidated (#fbbf24)  —  .device-cell-unvalidated (#fbbf24 / #d97706)
 
 Logic resolve style class trong DashboardController:
 
-case QUEUED  -> "device-cell-queued"
+case QUEUED  -> "device-cell-queued"
 
 case SYNCING -> "device-cell-syncing"
 
-default      -> "device-cell-connected"  // khi isAlive=true
+default      -> "device-cell-connected"  // khi isAlive=true
 
 # 5. File List Panel
 
@@ -242,7 +242,7 @@ HBox .filter-bar: DatePicker từ-đến, ComboBox user/type filter, nút Reset,
 
 TableView #fileTable fixedCellSize 40. 8 cột: checkbox select, tên file, thiết bị, user, size, status, type, ngày.
 
-HBox .pagination-bar: combobox page size, btnOpenQueueDialog (giữa), các nút &laquo;&lsaquo; page numbers &rsaquo;&raquo;.
+HBox .pagination-bar: combobox page size, btnOpenQueueDialog (giữa), các nút «‹ page numbers ›».
 
 ## 5.2 Cột checkbox (colSelect)
 
@@ -270,7 +270,7 @@ Cột colAction dùng setCellFactory để render HBox chứa 2 button per row. 
 
 btnEdit.getStyleClass().add("btn-edit");
 
-btnToggleActive.getStyleClass().setAll("button", "btn-delete");   // khi user active
+btnToggleActive.getStyleClass().setAll("button", "btn-delete");   // khi user active
 
 btnToggleActive.getStyleClass().setAll("button", "btn-reactivate"); // khi user inactive
 
@@ -330,7 +330,7 @@ Có 3 settings dialog dùng chung cấu trúc FXML và CSS: admin-settings-dialo
 
 ## 8.1 Admin & User Settings Dialog
 
-[File: admin-settings-dialog.fxm](#)l / user-settings-dialog.fxml  •  CSS: applyDialog() = base + theme + user-settings-dialog.css
+[File: admin-settings-dialog.fxm](#)l / user-settings-dialog.fxml  •  CSS: applyDialog() = base + theme + user-settings-dialog.css
 
 Root StackPane (.form, .dialog-container, .settings-dialog-container). Cấu trúc bên trong:
 
@@ -350,7 +350,7 @@ Cột trái (.settings-split-left): Language segment buttons (EN|VI) và Theme s
 
 Cột phải (.settings-split-right): Button Info và Button Update (maxWidth Infinity, styleClass settings-action-btn).
 
- 
+ 
 
 ## 8.3 Segment Buttons (Language & Theme)
 
@@ -406,7 +406,7 @@ VBox detail panel (minWidth=maxWidth=220px): hiển thị metadata file (tên, t
 
 VBox chính (HBox.hgrow=ALWAYS): toolbar trên, content pane giữa, status bar dưới.
 
- 
+ 
 
 ## 9.2 Content Pane — 3 trạng thái
 
@@ -434,7 +434,7 @@ VBox .video-controls-overlay (gradient bottom to top từ -media-controls-overla
 
 Slider #videoSlider (.video-slider) — thanh tiến trình video.
 
-HBox .video-controls-bar: các nút seek (&minus;30s, &minus;5s, +5s, +30s, play/pause) dùng .video-ctrl-btn, Label thời gian, filler, ComboBox speed (.video-speed-combo), slider volume.
+HBox .video-controls-bar: các nút seek (−30s, −5s, +5s, +30s, play/pause) dùng .video-ctrl-btn, Label thời gian, filler, ComboBox speed (.video-speed-combo), slider volume.
 
 **CSS class**
 
@@ -484,7 +484,7 @@ Font-size 14px, bold, text fill -text-color.
 
 # 10. User Info
 
-VBox root (.content) spacing 16. Chứa Label tiêu đề (.title), GridPane .user-info-grid (2 cột: minWidth 120 | ALWAYS, hgap 14, vgap 10) hiển thị Username/Role/Status, và HBox #hboxBack (ẩn mặc định) chứa nút Back. 
+VBox root (.content) spacing 16. Chứa Label tiêu đề (.title), GridPane .user-info-grid (2 cột: minWidth 120 | ALWAYS, hgap 14, vgap 10) hiển thị Username/Role/Status, và HBox #hboxBack (ẩn mặc định) chứa nút Back. 
 
 # 12. Các Component & Pattern Chung
 
@@ -526,7 +526,7 @@ base.css: Segment control style. Override size trong dialog context.
 
 base.css: Tương tự icon-btn nhưng full-width trong action column.
 
- 
+ 
 
 ## 12.2 Input Fields
 
@@ -550,7 +550,7 @@ DatePicker (theme)
 
 Cùng style với text-field. Arrow button background -input-bg. Calendar popup được style đầy đủ (day-cell, spinner, v.v.).
 
- 
+ 
 
 ## 12.3 TableView — Cấu trúc CSS
 
@@ -584,7 +584,7 @@ Background transparent, border phải -border-color.
 
 Text -text-color, bold.
 
- 
+ 
 
 ## 12.4 CheckBox
 
@@ -608,7 +608,7 @@ Background -primary, border -primary.
 
 Background white.
 
- 
+ 
 
 ## 12.5 AlertHelper — Dialog hệ thống
 
@@ -620,7 +620,7 @@ Nút OK/primary được thêm class btn-primary qua styleButton(). Nút Cancel/
 
 Logo app được set làm graphic (ImageView 48×48) thay cho icon alert mặc định.
 
- 
+ 
 
 ## 12.6 Context Menu
 
@@ -640,7 +640,7 @@ Text -text-color, background -card-bg, padding 8 12.
 
 Background -table-hover.
 
- 
+ 
 
 ## 12.7 DialogHelper — Quản lý Dialog
 
@@ -654,9 +654,9 @@ Tất cả dialog đang mở được track trong openDialogScenes. Khi ThemeCha
 
 ESC key được bind để đóng dialog — xử lý trong scene.setOnKeyPressed.
 
- 
+ 
 
- 
+ 
 
 # 13. Hướng dẫn mở rộng UI
 
@@ -670,7 +670,7 @@ CssLoader.resolveCssPath() sẽ tự tìm CSS theo đường dẫn FXML — khô
 
 Gọi loadView(fxml) trong BaseLayoutController — nó sẽ tự gọi CssLoader.applyModule().
 
- 
+ 
 
 ## 13.2 Thêm màu mới
 
@@ -678,7 +678,7 @@ Gọi loadView(fxml) trong BaseLayoutController — nó sẽ tự gọi CssLoade
 
 Dùng variable trong component CSS — không hardcode HEX.
 
- 
+ 
 
 ## 13.3 Thêm dialog mới
 
@@ -688,7 +688,7 @@ Gọi DialogHelper.createDialog(fxml, title) để tạo Stage.
 
 CSS được load tự động qua applyDialog(). Theme change tự động propagate.
 
- 
+ 
 
 ## 13.4 Thêm trạng thái thiết bị mới (Dashboard)
 
@@ -696,7 +696,7 @@ Thêm CSS class mới .dot-<state> và .device-cell-<state> trong cả theme-dar
 
 Cập nhật resolveConnectedStyle() trong DashboardController để return class tương ứng.
 
- 
+ 
 
 ## 13.5 Quy tắc không viết CSS inline
 

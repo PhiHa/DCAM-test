@@ -43,6 +43,8 @@ import com.dvid.dcam.feature.media.application.usecase.OpenMediaUseCase;
 import com.dvid.dcam.feature.media.domain.MediaEntry;
 import com.dvid.dcam.feature.settings.application.usecase.LanguageSettingsUseCase;
 import com.dvid.dcam.feature.settings.application.usecase.MediaEncryptionSettingsUseCase;
+import com.dvid.dcam.feature.settings.application.usecase.StorageSettingsUseCase;
+import com.dvid.dcam.feature.settings.domain.StorageMode;
 import com.dvid.dcam.feature.settings.domain.AppLanguage;
 import com.dvid.dcam.feature.settings.presentation.DemoSettingsState;
 import com.dvid.dcam.feature.settings.presentation.SettingId;
@@ -84,6 +86,7 @@ public final class MainActivity extends ComponentActivity {
     private LanguageSettingsUseCase languageSettings;
     private DeveloperFeatureToggles developerFeatureToggles;
     private MediaEncryptionSettingsUseCase mediaEncryptionSettings;
+    private StorageSettingsUseCase storageSettings;
     private SettingsControlRenderer settingsRenderer;
     private DemoSettingsState demoSettings;
     private MainMenuModel menuModel;
@@ -110,8 +113,10 @@ public final class MainActivity extends ComponentActivity {
         languageSettings = composition.languageSettingsUseCase();
         developerFeatureToggles = composition.developerFeatureToggles();
         mediaEncryptionSettings = composition.mediaEncryptionSettingsUseCase();
+        storageSettings = composition.storageSettingsUseCase();
         settingsRenderer = new SettingsControlRenderer(this);
-        demoSettings = new DemoSettingsState(mediaEncryptionSettings.isMediaEncryptionEnabled());
+        demoSettings = new DemoSettingsState(mediaEncryptionSettings.isMediaEncryptionEnabled(),
+                storageSettings.currentMode().ordinal());
         menuModel = new MainMenuModel();
         kioskController = new DcamKioskController(this);
         kioskController.applyActiveKioskPolicy();
@@ -470,6 +475,14 @@ public final class MainActivity extends ComponentActivity {
         if (id == SettingId.LANGUAGE) {
             if (selectedIndex >= 0 && selectedIndex < renderedLanguages.length) {
                 changeLanguage(renderedLanguages[selectedIndex]);
+            }
+            return;
+        }
+        if (id == SettingId.DEFAULT_STORAGE) {
+            StorageMode[] modes = storageSettings.supportedModes();
+            if (selectedIndex >= 0 && selectedIndex < modes.length) {
+                storageSettings.changeMode(modes[selectedIndex]);
+                recreate();
             }
             return;
         }

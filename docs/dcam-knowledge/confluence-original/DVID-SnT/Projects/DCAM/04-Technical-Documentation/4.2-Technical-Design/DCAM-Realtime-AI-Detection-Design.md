@@ -3,7 +3,7 @@
 **Page ID**: 48595090  
 **Version**: 7  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/48595090
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/48595090
 
 ---
 
@@ -126,7 +126,14 @@ Nếu capability, permission, model availability, thermal/battery policy hoặc 
 
 Realtime analytics không được control recording trực tiếp.
 
-textRules:
+Realtime Analytics Runtime
+        ↓
+Detection Result / Event Candidate
+        ↓
+Application Event Router or Emergency Event Manager
+        ↓
+RecordingController command if recording action is required
+Rules:
 
 Rule
 
@@ -180,10 +187,17 @@ Không store/log raw frames, face data hoặc sensitive analytics data trừ khi
 
 ## 6. Logging Direction
 
-text
-[ANALYTICS] Runtime degraded: 
-[ANALYTICS] Event candidate emitted]]>Detailed sensitive logging rules thuộc **07 - Logging & Diagnostics Requirements** và **DCAM Security & Encryption Design**.
+[ANALYTICS] Runtime eligibility consumed
+[ANALYTICS] Runtime initialized
+[ANALYTICS] Runtime pruned: <reason_code>
+[ANALYTICS] Runtime degraded: <reason_code>
+[ANALYTICS] Event candidate emitted
+Detailed sensitive logging rules thuộc **07 - Logging & Diagnostics Requirements** và **DCAM Security & Encryption Design**.
 
 ## 7. Conclusion
 
-text
+Realtime analytics là optional runtime module.
+Android Operation initializes it through RuntimeModuleRegistry.
+Device Capability quyết định nó có thể run hay không.
+Realtime analytics chỉ emit events.
+RecordingController là component duy nhất được phép quyết định recording behavior.

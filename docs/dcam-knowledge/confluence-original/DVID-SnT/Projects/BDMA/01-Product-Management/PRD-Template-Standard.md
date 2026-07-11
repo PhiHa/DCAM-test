@@ -3,7 +3,7 @@
 **Page ID**: 27164818  
 **Version**: 1  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/27164818
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/27164818
 
 ---
 
@@ -287,15 +287,15 @@ Edge case 2
 PRD Flow:
 
 Business Idea
-&rarr; PM viết PRD
-&rarr; Review với Dev
-&rarr; QA review test impact
-&rarr; Approval
-&rarr; Breakdown Jira Epic/Story
-&rarr; Sprint Planning
-&rarr; Development
-&rarr; QA
-&rarr; Release
+→ PM viết PRD
+→ Review với Dev
+→ QA review test impact
+→ Approval
+→ Breakdown Jira Epic/Story
+→ Sprint Planning
+→ Development
+→ QA
+→ Release
 
 # Kết luận
 

@@ -3,22 +3,20 @@
 **Page ID**: 6225923  
 **Version**: 6  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/6225923
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/6225923
 
 ---
 
 
-##  Date
+##  Date
 
- 
+04 Apr 2026 
 
-##  Participants
+## \uD83D\uDC65 Participants
 
-[DVID-S&T](https://quyendt3k4.atlassian.net/people/team/8d961dda-ffe7-46c5-859b-624513b1235b) (  )
+[DVID-S&T](https://quyendt3k4.atlassian.net/people/team/8d961dda-ffe7-46c5-859b-624513b1235b) ([Hoàng Ngọc Quyền](https://ducviet.atlassian.net/wiki/people/712020:e466d315-3c2d-406d-b324-8f8eb35ccb48?ref=confluence) [Dinh Nhan](https://ducviet.atlassian.net/wiki/people/70121:52166504-9fa8-44ba-969f-16f03f3dc4d6?ref=confluence) [Trần Danh Hoàn (Unlicensed)](https://ducviet.atlassian.net/wiki/people/5efc4cd074183a0bb36886f7?ref=confluence))
 
-Type @ name to mention a person and add them as a meeting attendee - they will be notified
-
-##  Goals
+## \uD83E\uDD45 Goals
 
 **Done** - Tuần này team đã làm được những gì?
 
@@ -26,10 +24,9 @@ Type @ name to mention a person and add them as a meeting attendee - they will b
 
 **Reslove** - Các thành viên trong nhóm có vướng mắc gì cần tháo gỡ không?
 
- Brainstorm
+ Brainstorm
 
-Type /whiteboard to create an interactive canvas for icebreakers, brainstorms, diagramming, retros, and more
-##  Discussion topics
+## \uD83D\uDDE3 Discussion topics
 
 **Topic**
 
@@ -39,7 +36,7 @@ Type /whiteboard to create an interactive canvas for icebreakers, brainstorms, d
 
 **Done **
 
- 
+[Trần Danh Hoàn (Unlicensed)](https://ducviet.atlassian.net/wiki/people/5efc4cd074183a0bb36886f7?ref=confluence) 
 
 Hoàn thành code base của app gồm: 
  - Build và đóng gói thành file .exe đẩy lên releasse. 
@@ -52,11 +49,11 @@ Chức năng User Setting:
  - Hoàn thành module user để admin quản lý tài khoản. 
  - Có setting ngôn ngữ theme theo tài khoản đăng nhập.
 
-|   
+|  [Dinh Nhan](https://ducviet.atlassian.net/wiki/people/70121:52166504-9fa8-44ba-969f-16f03f3dc4d6?ref=confluence) 
 
 Thiết lập môi trường làm việc. Tham gia các nhóm quản lý tiến độ.
 
-Thiết kế sơ lược database để cùng th��o luận, thống nhất các đối tượng cần lưu trữ quản lý và cách đặt tên các field.
+Thiết kế sơ lược database để cùng thảo luận, thống nhất các đối tượng cần lưu trữ quản lý và cách đặt tên các field.
 
 Cải thiện UX/UI: live search, live validate, chuyển các setting vào một popup, sửa các lỗi hiển thị, thêm các thông báo lỗi cho các trường hợp còn thiếu.
 
@@ -68,7 +65,7 @@ Get deviceID theo MachineGuid của thiết bị (chỉ thay đổi khi user cà
 
 **What's next**
 
- 
+[Hoàng Ngọc Quyền](https://ducviet.atlassian.net/wiki/people/712020:e466d315-3c2d-406d-b324-8f8eb35ccb48?ref=confluence) 
 
 Test chéo lại các chức năng đã hoàn thành trên môi trường thực tế
 
@@ -78,7 +75,7 @@ Tìm hiểu sản phẩm phần cứng CameraBody thực tế để hoàn thiệ
 
 **Reslove**
 
- 
+[Trần Danh Hoàn (Unlicensed)](https://ducviet.atlassian.net/wiki/people/5efc4cd074183a0bb36886f7?ref=confluence) 
 
 Cần lấy deviceId là thông tin phần cứng ít thay đổi của máy tính để tránh mất thông tin khi xóa dữ liệu.
 
@@ -90,7 +87,7 @@ Khi build ci/cd thì cần chia ra các bản thử nghiệm thì chỉ để bu
 
 Tất cả các folder data, backup đều cần hạn chế quyền truy cập. Và khi thay đổi thư mục lưu thì vẫn giữ nguyên trạng thái hạn chế quyền truy cập với các file cũ để tránh người dùng thay đổi để vượt qua.
 
-|   
+|  [Dinh Nhan](https://ducviet.atlassian.net/wiki/people/70121:52166504-9fa8-44ba-969f-16f03f3dc4d6?ref=confluence) 
 
 Nên dành ít thời gian đầu để cùng thảo luận từ các chức năng chính của yêu cầu dự án
 + Thiết kế sơ bộ ra danh sách các màn hình cần có (không cần đẹp, chỉ cần bố cục tổng quan, các button, các field nào cần phải có) tránh việc mỗi người code mỗi ý rồi sau này lại phải xoá bớt để tổng hợp, chỉnh sửa lại. 
@@ -98,17 +95,10 @@ Nên dành ít thời gian đầu để cùng thảo luận từ các chức nă
 
 + Lập ra các flow hiển thị/xử lý của mỗi chức năng (vd: từ homepage thì bấm đâu để sang màn hình backup, ở trang backup thì màn hình backup sẽ gồm những field nào, bấm nút backup sẽ hiển thị gì, nhảy tới màn hình nào) để lúc code sẽ trôi chảy hơn, tránh xung đột ý tưởng khi teamwork chung trên cùng 1 màn hình.
 
-##  Action items
+##  Action items
 
-2
-87618c380c3e
-incomplete
+-  
 
-##  Decisions
+## ⤴ Decisions
 
-Type /decision to record the decisions you make in this meeting:
-
-7547aafc-ce18-4d83-949e-973cc72224fa46561588-dfd9-4abe-a9af-e4fd3f290cd4DECIDED
- Related info
-
-Type /database to create a database of related information, meetings, or assets
+🗃️ Related info

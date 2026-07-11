@@ -22,8 +22,9 @@ public final class DemoSettingsState {
     private boolean fullScreenDisplay;
     private boolean statusLightsEnabled = true;
 
-    public DemoSettingsState(boolean videoEncryptionEnabled) {
+    public DemoSettingsState(boolean videoEncryptionEnabled, int defaultStorageIndex) {
         this.videoEncryptionEnabled = videoEncryptionEnabled;
+        this.defaultStorageIndex = clamp(defaultStorageIndex, STORAGE_OPTIONS.size());
     }
 
     public void select(SettingId id, int selectedIndex) {

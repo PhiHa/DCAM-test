@@ -3,7 +3,7 @@
 **Page ID**: 50626624  
 **Version**: 1  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/50626624
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/50626624
 
 ---
 
@@ -68,9 +68,25 @@ Mục tiêu của DSetup là hỗ trợ Factory Operator thực hiện các bư�
 
 DSetup completes when:
 
-text## 2. Current Baseline
+```
+DCAM confirms that it has imported the expected serial_number.
+```
 
-text## 3. Scope
+## 2. Current Baseline
+
+DSetup chạy trên PC trong nhà máy.
+DSetup giao tiếp với BodyCamera qua ADB.
+DSetup chỉ xử lý một Android device tại một thời điểm.
+DSetup dùng serial_number làm Hardware Identity / primary recovery key.
+DSetup có thể đọc serial_number từ SD Identity File nếu file hợp lệ.
+Nếu SD Identity File không có hoặc không hợp lệ, Factory Operator scan hoặc nhập serial_number thủ công.
+DSetup install approved DCAM APK.
+DSetup set hoặc verify Device Owner nếu factory setup yêu cầu.
+DSetup inject serial_number vào DCAM.
+DSetup launch DCAM.
+DSetup verify DCAM đã import serial_number.
+DSetup không dùng ANDROID_ID, android_id_hash hoặc device_lookup/{android_id_hash}.
+## 3. Scope
 
 Area
 
@@ -236,9 +252,44 @@ Sau khi verify serial import thành công, DSetup dừng scope và không chạy
 
 ## 7. Main Flow
 
-textCompletion condition:
+Factory Operator opens DSetup on PC
+    ↓
+DSetup detects Android devices over ADB
+    ↓
+If exactly one device is connected:
+        continue
+Else:
+        stop and ask operator to fix device connection
+    ↓
+DSetup checks basic device connection state
+    ↓
+DSetup tries to read SD Identity File
+    ↓
+If valid SD Identity File exists:
+        use serial_number from SD Identity File
+Else:
+        Factory Operator scans or enters serial_number
+    ↓
+DSetup validates serial_number format
+    ↓
+DSetup installs approved DCAM APK
+    ↓
+DSetup sets or verifies Device Owner if required by factory setup
+    ↓
+DSetup injects serial_number into DCAM
+    ↓
+DSetup launches DCAM
+    ↓
+DSetup verifies DCAM imported expected serial_number
+    ↓
+DSetup completes
+Completion condition:
 
-text## 8. ADB Device Detection Rules
+```
+DSetup is complete only when DCAM confirms that imported_serial_number == expected serial_number.
+```
+
+## 8. ADB Device Detection Rules
 
 Rule
 
@@ -300,9 +351,18 @@ DSetup cố gắng đọc SD Identity File để recover `serial_number` trong f
 
 Recommended path:
 
-text/DCAM_FACTORY/device_identity.json]]>Expected minimum payload:
+```
+<SD_CARD>/DCAM_FACTORY/device_identity.json
+```
 
-json
+Expected minimum payload:
+
+{
+  "schema_version": 1,
+  "identity_type": "BODYCAMERA_SD_FACTORY_IDENTITY",
+  "serial_number": "BC-2026-00001"
+}
+
 Rule
 
 Description
@@ -495,7 +555,10 @@ DSetup inject `serial_number` vào DCAM sau khi APK install và `Device Owner` s
 
 Approved direction:
 
-textPossible mechanism:
+DSetup sends serial_number to DCAM through approved factory mechanism.
+DCAM validates and imports serial_number into app-private identity storage.
+DCAM may later sync SD Identity File according to Android Operation / Factory SOP rules.
+Possible mechanism:
 
 Mechanism
 
@@ -571,7 +634,10 @@ DSetup phải verify rằng DCAM đã import đúng `serial_number` mong đợi.
 
 Verification direction:
 
-textPossible verification mechanisms:
+expected_serial_number = serial_number resolved by DSetup
+actual_imported_serial_number = serial_number reported/read back from DCAM
+DSetup success only if actual_imported_serial_number == expected_serial_number
+Possible verification mechanisms:
 
 Mechanism
 
@@ -903,4 +969,18 @@ TBD / Security + Factory
 
 ## 21. Practical Conclusion
 
-text
+DSetup là simple PC factory helper tool.
+DSetup chỉ chạy trên PC trong nhà máy và giao tiếp BodyCamera qua ADB.
+DSetup chỉ xử lý đúng một Android device tại một thời điểm.
+DSetup resolve serial_number từ SD Identity File hoặc barcode/manual input.
+DSetup install approved DCAM APK.
+DSetup set hoặc verify Device Owner nếu factory setup yêu cầu.
+DSetup inject serial_number vào DCAM.
+DSetup launch DCAM.
+DSetup complete khi DCAM confirm đã import đúng serial_number.
+DSetup không verify Lock Task/kiosk baseline.
+DSetup không chạy recording/storage/provisioning acceptance tests.
+DSetup không ghi production record chính thức.
+DSetup không mark PASS, FAIL, QUARANTINED hoặc READY_TO_SHIP.
+DSetup không dùng ANDROID_ID, android_id_hash hoặc device_lookup/{android_id_hash}.
+Các bước sau DSetup thuộc Factory SOP, QA, Device POC hoặc Web Portal/Backend flow.

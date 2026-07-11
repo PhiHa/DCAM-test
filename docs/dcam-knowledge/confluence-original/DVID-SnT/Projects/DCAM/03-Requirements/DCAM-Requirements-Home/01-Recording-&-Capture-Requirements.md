@@ -3,7 +3,7 @@
 **Page ID**: 47743356  
 **Version**: 4  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/47743356
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47743356
 
 ---
 
@@ -460,11 +460,38 @@ Recording state machine phải hỗ trợ flow có/không có pre-record/post-re
 
 Baseline flow khi pre-record và post-record được bật:
 
-textEmergency flow khi không recording:
+Preview / Pre-record Buffering
+    ↓ user starts recording
+Preparing
+    ↓
+Recording
+    ↓ user stops recording
+Post-recording
+    ↓
+Stopping
+    ↓
+Finalizing
+    ↓
+Completed
+    ↓
+Preview / Pre-record Buffering
+Emergency flow khi không recording:
 
-textEmergency flow khi đang recording:
+Preview / Pre-record Buffering
+    ↓ emergency detected
+Emergency Recording
+    ↓ post-record completed
+Emergency Finalizing
+    ↓
+Emergency Saved
+Emergency flow khi đang recording:
 
-text
+Recording
+    ↓ emergency detected
+Emergency Marker / Emergency Segment Decision
+    ↓
+Continue Recording or Split Emergency Segment
+
 ID
 
 Requirement

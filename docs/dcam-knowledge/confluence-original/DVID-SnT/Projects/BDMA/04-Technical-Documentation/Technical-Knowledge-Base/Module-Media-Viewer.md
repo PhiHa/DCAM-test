@@ -3,7 +3,7 @@
 **Page ID**: 27197712  
 **Version**: 3  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/27197712
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/27197712
 
 ---
 
@@ -12,21 +12,21 @@
 
 Module Media Viewer là tính năng xem và phát lại file ảnh / video trực tiếp trong ứng dụng BDMA. Người dùng mở viewer từ danh sách file đã đồng bộ; viewer cho phép duyệt qua từng file, xem metadata, toạ độ GPS và phát video với đầy đủ điều khiển playback.
 
- 
+ 
 
 **Phạm vi hỗ trợ:**
 
-Ảnh tĩnh: file ảnh JPG (type = "image").
+Ảnh tĩnh: file ảnh JPG (type = “image”).
 
-Video: MP4 thông thường (type = "video") và file IMP từ bodycam (type = "IMP").
+Video: MP4 thông thường (type = “video”) và file IMP từ bodycam (type = “IMP”).
 
 Metadata GPS: đọc từ EXIF cho ảnh, đọc từ metadata track XML trong MP4 cho video.
 
- 
+ 
 
 # 2. Kiến trúc & Cấu trúc file
 
- 
+ 
 
 ## 2.1 Sơ đồ package
 
@@ -58,7 +58,7 @@ resources/css/common/media
 
 media-viewer.css – css của phần media
 
- 
+ 
 
 ## 2.2 Luồng khởi tạo
 
@@ -72,7 +72,7 @@ Sau khi Stage hiển thị, controller nhận danh sách file và index bắt đ
 
 Controller gọi callback onLoadFile để điều phối load ảnh hoặc video tuỳ type.
 
- 
+ 
 
 # 3. Mô tả chi tiết từng class
 
@@ -82,7 +82,7 @@ Controller gọi callback onLoadFile để điều phối load ảnh hoặc vide
 
 **Scope: **Spring Singleton.
 
- 
+ 
 
 Service đóng vai trò orchestrator: tạo và quản lý vòng đời của Stage viewer (singleton stage pattern – chỉ một cửa sổ viewer tồn tại tại một thời điểm). Các trách nhiệm chính:
 
@@ -98,7 +98,7 @@ Lắng nghe ThemeChangedEvent và LanguageChangedEvent để cập nhật UI khi
 
 Giải phóng tài nguyên khi Stage đóng (cleanup controller, null stage/controller).
 
- 
+ 
 
 **Method**
 
@@ -124,7 +124,7 @@ onLanguageChanged(event)
 
 @EventListener – gọi refreshLocalizedText() trên controller.
 
- 
+ 
 
 ## 3.2 MediaViewerController
 
@@ -132,11 +132,11 @@ onLanguageChanged(event)
 
 **Scope: **Spring Prototype (mỗi lần load FXML tạo instance mới).
 
- 
+ 
 
 Controller quản lý toàn bộ UI của cửa sổ viewer. Layout gồm hai vùng chính: panel detail bên trái (220px cố định) và vùng media bên phải (grow ALWAYS). Vùng media dùng StackPane để overlay 3 trạng thái: ScrollPane ảnh, StackPane video, và label loading/error.
 
- 
+ 
 
 ### 3.2.1 Quản lý trạng thái UI
 
@@ -160,7 +160,7 @@ Error
 
 lblError hiện với thông báo lỗi, các pane khác ẩn.
 
- 
+ 
 
 ### 3.2.2 Load ảnh (loadImage)
 
@@ -174,7 +174,7 @@ Cập nhật status bar và detail panel.
 
 Đọc GPS từ EXIF trên background thread, cập nhật label detailGps.
 
- 
+ 
 
 ### 3.2.3 Load video (loadVideo)
 
@@ -186,7 +186,7 @@ Cập nhật dimension từ media metadata thực tế.
 
 VideoPane nhận focus để nhận phím tắt.
 
- 
+ 
 
 ### 3.2.4 Điều khiển video
 
@@ -206,7 +206,7 @@ Kéo videoSlider để seek. Dùng flag sliderDragging tránh feedback loop khi 
 
 Seek nhanh
 
-Nút &minus;30s, &minus;5s, +5s, +30s và phím &larr; &rarr; trên bàn phím (5 giây mỗi lần).
+Nút −30s, −5s, +5s, +30s và phím ← → trên bàn phím (5 giây mỗi lần).
 
 Tốc độ phát
 
@@ -224,7 +224,7 @@ Kết thúc video
 
 Tự seek về đầu, pause, slider reset về 0.
 
- 
+ 
 
 ### 3.2.5 Zoom & Rotate ảnh
 
@@ -236,7 +236,7 @@ Hai chế độ zoom:
 
 Rotate dùng Transform Rotate quanh tâm của ImageView. Mỗi click xoay ±90 độ, tích luỹ vào biến rotation.
 
- 
+ 
 
 ### 3.2.6 Cleanup tài nguyên
 
@@ -246,7 +246,7 @@ stopCurrentMedia(): unbind volume, stop và dispose MediaPlayer, remove tất c�
 
 executor.shutdownNow(): dừng background thread.
 
- 
+ 
 
 ## 3.3 MediaMetadataService
 
@@ -254,7 +254,7 @@ executor.shutdownNow(): dừng background thread.
 
 Service facade điều phối đến reader phù hợp dựa trên type:
 
- 
+ 
 
 **Method**
 
@@ -280,7 +280,7 @@ readGpsTimeline(path, type)
 
 VideoMetadataReader.readGpsTimeline() – trả toàn bộ danh sách GpsPoint
 
- 
+ 
 
 ## 3.4 ImageMetadataReader
 
@@ -288,7 +288,7 @@ VideoMetadataReader.readGpsTimeline() – trả toàn bộ danh sách GpsPoint
 
 Đọc EXIF GPS directory từ file ảnh. Kiểm tra tồn tại của TAG_LATITUDE và TAG_LONGITUDE, sau đó lấy GeoLocation. Trả Optional.empty() nếu không có GPS hoặc GPS là (0, 0). Bắt mọi Exception và log warning thay vì throw.
 
- 
+ 
 
 ## 3.5 VideoMetadataReader
 
@@ -306,7 +306,7 @@ Trong mỗi msg, extract <Latitude> và <Longitude> bằng regex riêng, parse s
 
 readGps() lấy điểm đầu tiên trong timeline. readGpsTimeline() trả toàn bộ danh sách.
 
- 
+ 
 
 ## 3.6 GpsCoordinate & GpsPoint
 
@@ -328,13 +328,13 @@ timeSeconds, latitude, longitude (double)
 
 Đại diện một điểm GPS gắn với timestamp trong video. toCoordinate() chuyển sang GpsCoordinate.
 
- 
+ 
 
 # 4. Layout FXML (media-viewer.fxml)
 
 File FXML định nghĩa layout dạng HBox gốc (prefWidth=1100, prefHeight=700):
 
- 
+ 
 
 **Vùng**
 
@@ -354,17 +354,17 @@ ScrollPane chứa ImageView (ảnh), StackPane video với controls overlay, lab
 
 Video Controls
 
-Slider timeline, nút &minus;30s/&minus;5s/Play/+5s/+30s, label thời gian, ComboBox tốc độ, slider âm lượng.
+Slider timeline, nút −30s/−5s/Play/+5s/+30s, label thời gian, ComboBox tốc độ, slider âm lượng.
 
 Status Bar (HBox)
 
 Tên file (trái), dimension, dung lượng, zoom level (phải).
 
- 
+ 
 
 # 5. Luồng điều hướng
 
-Danh sách truyền vào viewer đã được lọc ch��� gi��� file viewable. Controller giữ currentIndex và mediaList. Khi điều hướng:
+Danh sách truyền vào viewer đã được lọc chỉ giữ file viewable. Controller giữ currentIndex và mediaList. Khi điều hướng:
 
 onPrev() / onNext(): cập nhật currentIndex, gọi loadCurrent().
 
@@ -372,7 +372,7 @@ loadCurrent(): cập nhật nav buttons (disable khi ở đầu/cuối), cập n
 
 onLoadFile được set từ MediaViewerService, dispatch đến controller.loadImage() hoặc controller.loadVideo() tuỳ type.
 
- 
+ 
 
 # 6. Dependency & Thư viện
 

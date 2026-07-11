@@ -3,7 +3,7 @@
 **Page ID**: 32899073  
 **Version**: 1  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/32899073
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/32899073
 
 ---
 
@@ -26,7 +26,7 @@ Date Reported
 
 Reporter
 
- 
+[Dinh Nhan](https://ducviet.atlassian.net/wiki/people/70121:52166504-9fa8-44ba-969f-16f03f3dc4d6?ref=confluence) 
 
 Severity
 
@@ -153,7 +153,9 @@ Date
 
 Reporter
 
- 
+[Dinh Nhan](https://ducviet.atlassian.net/wiki/people/70121:52166504-9fa8-44ba-969f-16f03f3dc4d6?ref=confluence) 
+
+04 Jun 2026
 
 PM
 

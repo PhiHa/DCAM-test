@@ -3,7 +3,7 @@
 **Page ID**: 27165258  
 **Version**: 2  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/27165258
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/27165258
 
 ---
 
@@ -82,9 +82,16 @@ Feature branches are used for individual features or development tasks.
 
 ## Naming Convention
 
-text]]>## Examples
+```
+feature/<feature-name>
+```
 
-text### Rules
+## Examples
+
+feature/multi-device-sync
+feature/backup-manager
+feature/device-detection
+### Rules
 
 One feature per branch
 
@@ -100,9 +107,15 @@ Bugfix branches are used for non-critical issue fixes.
 
 ## Naming Convention
 
-text]]>## Examples
+```
+bugfix/<issue-name>
+```
 
-text### Rules
+## Examples
+
+bugfix/storage-leak
+bugfix/database-timeout
+### Rules
 
 Merge into `develop`
 
@@ -116,11 +129,22 @@ Hotfix branches are used for urgent production fixes.
 
 ## Naming Convention
 
-text]]>## Examples
+```
+hotfix/<issue-name>
+```
 
-text## Workflow
+## Examples
 
-text### Rules
+hotfix/startup-crash
+hotfix/sync-corruption
+## Workflow
+
+main
+↓
+hotfix/*
+↓
+main + develop
+### Rules
 
 Hotfix branches must start from `main`
 
@@ -134,9 +158,17 @@ Release branches may be used in the future if release complexity increases.
 
 ## Naming Convention
 
-text]]>## Example
+```
+release/<version>
+```
 
-textCurrently, release branches are optional for the BDMA project.
+## Example
+
+```
+release/v1.2.0
+```
+
+Currently, release branches are optional for the BDMA project.
 
 # Pull Request Workflow
 
@@ -144,7 +176,18 @@ All significant code changes should use Pull Requests.
 
 ## Pull Request Template
 
-text# Code Review Process
+## Summary
+What changed?
+
+## Testing
+How was this tested?
+
+## Risks
+Any known risks?
+
+## Notes
+Additional notes
+# Code Review Process
 
 Code Review is required before merging important changes.
 
@@ -209,7 +252,22 @@ Direct commits allowed only when necessary
 
 ## Standard Development Flow
 
-text# Operational Principles
+Task Created
+↓
+Create feature branch
+↓
+Development
+↓
+Code Review
+↓
+Merge into develop
+↓
+Testing
+↓
+Merge into main
+↓
+Release
+# Operational Principles
 
 The BDMA Git workflow prioritizes:
 
