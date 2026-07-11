@@ -3,7 +3,7 @@
 **Page ID**: 25264297  
 **Version**: 5  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/25264297
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/25264297
 
 ---
 
@@ -74,7 +74,11 @@ thì AI sẽ không thể hỗ trợ team hiệu quả.
 
 OSd giúp chuyển operational knowledge thành:
 
-textwide760# 🚀 Vision dài hạn của OSd
+```
+AI-readable operational system
+```
+
+# 🚀 Vision dài hạn của OSd
 
 OSd không chỉ là process improvement.
 
@@ -172,7 +176,12 @@ AI-readable context cho future automation
 
 Chuẩn hóa trạng thái task:
 
-textwide760Mục tiêu:
+To Do
+→ In Progress
+→ Code Review
+→ Testing
+→ Done
+Mục tiêu:
 
 visibility tốt hơn
 
@@ -335,7 +344,11 @@ AI-assisted PM workflow
 
 OSd là bước đầu tiên để xây dựng:
 
-textwide760# 🔗 Related Documents
+```
+AI-Native Software Operation
+```
+
+# 🔗 Related Documents
 
 Jira Workflow Standard
 

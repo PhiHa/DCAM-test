@@ -3,7 +3,7 @@
 **Page ID**: 46825510  
 **Version**: 9  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/46825510
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/46825510
 
 ---
 
@@ -82,7 +82,10 @@ Cập nhật onboarding để developer biết DCAM hiện có offline user mana
 
 Tài liệu này **không mô tả kiến trúc chính thức của DCAM**. Kiến trúc chính thức của dự án được quản lý trong bộ tài liệu **Software Architecture** dưới:
 
-textTrong đó các nội dung về architecture, module, data flow, BDMA boundary, logging, diagnostics, platform strategy, Android dedicated-device/kiosk policy và các TBD kỹ thuật sẽ được quản lý qua các trang SAD/Technical Design như:
+04 - Technical Documentation
+└── 4.1 - Software Architecture
+    └── DCAM Architecture Home
+Trong đó các nội dung về architecture, module, data flow, BDMA boundary, logging, diagnostics, platform strategy, Android dedicated-device/kiosk policy và các TBD kỹ thuật sẽ được quản lý qua các trang SAD/Technical Design như:
 
 01 - Architecture Overview.
 
@@ -380,7 +383,24 @@ Device Owner / DPC enrollment test device
 
 Required for developers working on kiosk policy.
 
-text## 6. Java on Android
+Android Studio Installed
+    ↓
+JDK Configured
+    ↓
+Android SDK Installed
+    ↓
+Platform Tools Installed
+    ↓
+BodyCamera Connected
+    ↓
+ADB Device Detected
+    ↓
+Sample App Installed
+    ↓
+Logcat Working
+    ↓
+Kiosk policy POC device available if assigned to Device Owner/Lock Task work
+## 6. Java on Android
 
 Dự án **DCAM sử dụng Java** để phù hợp với năng lực hiện tại của đội phát triển và giảm thời gian chuyển đổi từ BDMA Desktop sang Android.
 
@@ -602,7 +622,14 @@ Ghi chú: trong kiến trúc hiện tại, BDMA đọc dữ liệu DCAM và đ�
 
 Developer cần nắm các decision sau trước khi implement UI/logic liên quan recording:
 
-textImplementation detail thuộc **DCAM Android Operation Design**, **DCAM Android Device Owner & Kiosk Policy Design**, **DCAM Recording & Capture Design**, **DCAM SQLite Database Design** và **DCAM Security & Encryption Design**.
+DCAM startup shows login screen if no valid same-boot operator session exists.
+Normal recording/capture evidence requires active operator session.
+Emergency recording can use EMERGENCY_OVERRIDE_ADMIN when no operator is logged in.
+Session has no timeout.
+Background/foreground does not logout operator.
+Device reboot requires login again.
+System tracking, monitoring, logging, recovery, policy verification and capability detection can run before login.
+Implementation detail thuộc **DCAM Android Operation Design**, **DCAM Android Device Owner & Kiosk Policy Design**, **DCAM Recording & Capture Design**, **DCAM SQLite Database Design** và **DCAM Security & Encryption Design**.
 
 ## 11. Camera Framework Overview
 
@@ -1194,4 +1221,7 @@ Tài liệu này chỉ nên giữ ở mức **training and onboarding**. Các qu
 
 Developer được giao việc liên quan Device Owner / Lock Task / User Restrictions phải đọc:
 
-text
+DCAM Android Device Owner & Kiosk Policy Design
+DCAM Android Operation Design
+DCAM Android Development Standard
+DCAM Device POC & Hardware Validation Report

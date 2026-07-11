@@ -14,11 +14,11 @@ import java.util.Set;
 
 /** Filesystem implementation of the managed-media repository. */
 public final class LocalMediaRepositoryImpl implements MediaRepository {
-    private final File root;
+    private final DcamStorage storage;
     private final Set<String> allowedRoots = new LinkedHashSet<>();
 
     public LocalMediaRepositoryImpl(DcamStorage storage) {
-        root = storage.rootDirectory();
+        this.storage = storage;
         for (DcamFileType type : DcamFileType.values()) allowedRoots.add(type.getFolder());
     }
 
@@ -57,6 +57,7 @@ public final class LocalMediaRepositoryImpl implements MediaRepository {
     }
 
     private File resolveInsideRoot(String relativePath) throws Exception {
+        File root = storage.rootDirectory();
         File canonicalRoot = root.getCanonicalFile();
         File candidate = new File(canonicalRoot, relativePath).getCanonicalFile();
         String rootPath = canonicalRoot.getPath() + File.separator;

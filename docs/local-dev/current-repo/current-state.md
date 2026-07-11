@@ -1,6 +1,6 @@
 # Current repository state
 
-This page describes the refactored code visible on 2026-07-09. It records implementation reality and compares it with the approved Data Contract baseline now refreshed to 1.6; it is not a substitute for the contract or formal requirements.
+This page describes the refactored code visible on 2026-07-11. It records implementation reality and compares it with the approved Data Contract baseline now refreshed to 1.6; it is not a substitute for the contract or formal requirements.
 
 ## Build and platform
 
@@ -56,19 +56,55 @@ The source-level map and dependency rules live in `app/src/main/java/com/dvid/dc
 - CameraX events are mapped to domain capture events before they update UI state.
 - SOS handoff serializes stop/finalize/start rather than overlapping CameraX recordings.
 - Active video/SOS recording starts an Android foreground service and persistent notification.
-- Opt-in developer feature gates are persisted in Android SharedPreferences. Ordinary new features work normally without registration; only surfaces deliberately made developer-disableable receive a gate. On a fresh install, the MVP profile enables image capture, video recording, and the read-only Files browser; standalone audio and unfinished/demo settings surfaces default off.
+- Opt-in developer feature gates are persisted in Android SharedPreferences. Ordinary new features work normally without registration; only surfaces deliberately made developer-disableable receive a gate. On a fresh install, the MVP profile enables image capture, video recording, the read-only Files browser, and the operational Storage settings surface; standalone audio and unfinished/demo settings surfaces default off.
 - The menu is driven by `MainMenuModel`, keeps the declared order, hides disabled feature tiles, and falls back to Menu when a disabled screen is requested. About remains visible.
 - Physical hardware capture keys now consult the same feature gates before invoking photo, video/SOS, or audio commands.
 - A hidden Developer settings screen can toggle the surfaces explicitly made developer-disableable; it is reached from About through the local developer unlock gesture.
 - Password-first login, local/developer user provisioning, logout, and boot-scoped operator-session restoration are implemented. Credentials are persisted only as uniquely salted PBKDF2-HMAC-SHA256 hashes; normal screen navigation and hardware capture starts require an active session.
-- The settings home presents a three-column launcher with 12 categories when the corresponding gates are enabled. Draft/demo setting controls are not counted as completed operational settings.
+- The settings home presents a three-column launcher with 12 categories when the corresponding gates are enabled. Storage-mode selection is operational; remaining draft/demo controls are not counted as completed operational settings.
 - Files is a read-only explorer limited to contract media roots `Video`, `IMP`, `Image`, and `Audio`. It supports folder navigation and opens media through a temporary FileProvider grant.
-- Battery percentage, available app-storage bytes, and GPS capability/enabled state flow through `DeviceRepository`, a refresh use case, and ViewModel state.
+- Battery percentage, available bytes on the resolved capture root, and GPS capability/enabled state flow through `DeviceRepository`, a refresh use case, and ViewModel state.
 - Language selection is implemented through a settings use case and Android SharedPreferences; changing language recreates the Activity with the localized context.
+- Storage selection is persisted through a settings use case. Changing it recreates the Activity so the next media session resolves one stable root before capture.
 
 ## Current storage behavior
 
-`storage.mode` still accepts the prototype values `APP_DATA` (default) and `PUBLIC_DCIM`. The approved Internal/External/Auto behavior and Auto fallback are not implemented because physical root mapping and operational-settings persistence still require design.
+The operator media policy supports `INTERNAL`, `EXTERNAL`, and `AUTO`; `AUTO` is the fresh-install
+default. All roots are Android app-specific directories—no public `DCIM` root is used:
+
+- Logical Internal maps to the primary app-specific external-files directory and falls back to the
+  private files directory if Android does not provide it.
+- Logical External considers secondary/removable app-specific external-files directories.
+- External and Auto prefer the first mounted, writable external candidate with enough free space
+  and refresh removable-volume discovery when storage becomes available after startup.
+- A system `MEDIA_MOUNTED` receiver reruns staged-media recovery immediately after Android regains
+  removable-storage access; application startup remains the fallback recovery trigger.
+  for capture, otherwise they resolve to Internal before the new capture starts.
+- An explicit Internal selection never selects External.
+- Root selection never changes during an active file.
+
+The selected mode is persisted locally and mirrored to operational settings as requested/resolved
+values. Exact production-device physical-root mapping, BDMA/ADB visibility, removal behavior, and
+sustained write speed still require the planned BodyCamera POC.
+
+All media starts use the resolved root and one capacity policy. Build 0.1 requires free space for an
+estimated 30-minute 10 Mbps recording plus a 500 MiB finalization reserve. Starts are rejected when
+the root is unavailable, unwritable, or below that threshold. CameraX video receives a file-size
+limit that preserves the reserve; storage exhaustion is reported as a controlled failure and the
+staged artifact is preserved for later finalization/recovery.
+
+Visual-media completion now uses a filesystem readiness boundary. A completed staged artifact is
+copied to a hidden non-contract publication file in the final directory, flushed, size-verified and
+renamed into the approved `Media/*` folder without overwriting an existing file. Publication failure
+preserves staging. Once per process startup, playable unencrypted contract-named artifacts left in
+`Temp` are finalized conservatively; invalid, encrypted, duplicate or ambiguous artifacts remain in
+`Temp`. No per-media database row gates Build 0.1 BDMA discovery.
+
+On the BWC `KF5OF2126040802193`, a forced app termination after approximately 30 seconds left a
+75,080,663-byte playable staged MP4 with a 30.104-second movie duration; startup recovery validated
+and published it. A reboot at approximately 30 seconds preserved a 69,600,557-byte staged MP4 with a
+27.400-second movie duration. The rebooted BWC USB-shares removable storage, so recovery must be
+re-run when Android receives the volume again. Repeated trials and a true power-cut test remain open.
 
 | Type | Folder | Extension |
 |---|---|---|
@@ -93,7 +129,7 @@ MP4 MD5 generation is not implemented. The contract fixes its scope and sidecar 
 
 - Local Logcat plus `Logs/logs.txt` under the existing app-storage root, with dated `logs-YYYY-MM-DD.txt` rotation and 14-day retention. The filename now matches the contract, but final internal-root mapping, ADB exposure, and BDMA read-only enforcement remain unverified.
 - Context includes version, thread, source, hardware ID, model, and camera/account ID.
-- Room-backed `dcam.db` currently contains pending logs, device identity, remote config, operational settings, user profiles, hashed authentication methods, and operator sessions. It still lacks the planned runtime, media-session, recording-lease, finalization, recovery, import and BDMA-safe write-back tables.
+- Room-backed `dcam.db` currently contains pending logs, device identity, remote config, operational settings, user profiles, hashed authentication methods, and operator sessions. Per-media/session/finalization rows are intentionally deferred for Build 0.1 because their exact schema and retention policy remain unresolved; the broader runtime, recovery, import and BDMA-safe write-back schema also remains future work.
 - `LogSink` isolates capture/audio application-facing diagnostics from `DcamLogger`.
 - Loggly remains a concrete provider inside the logging adapter package. Logging is always-on infrastructure and is not controlled by the Cloud settings surface; actual remote delivery still requires provider configuration. A full provider-neutral diagnostics design is future work.
 
@@ -110,14 +146,15 @@ Private workflow instructions for local-property handling belong in `application
 ## Remaining gaps
 
 - Each approved menu feature still needs its own XML/ViewBinding screen and feature ViewModel/use cases beyond the feature-gated launcher/shell.
-- `DemoSettingsState` and draft/demo setting controls are local UI scaffolding, not accepted implementation evidence.
+- `DemoSettingsState` still contains local UI scaffolding for draft controls; storage-mode selection is
+  now backed by its own settings use case and persistence adapter.
 - CameraX is lifecycle-owned by the Activity adapter; the foreground service does not yet own/recover recording after process death.
 - HandlerThread/vendor-SDK serialization is scaffolded by architecture, but CameraX currently uses its lifecycle/main-executor contract.
 - No GPS/location implementation or metadata integration yet.
-- Device status currently covers battery, available app storage, and GPS capability/enabled state; richer network/firmware/USB status remains future work.
+- Device status currently covers battery, available selected-root storage, and GPS capability/enabled state; richer network/firmware/USB status remains future work.
 - No persistent media status/recovery state machine.
 - Authentication has no failed-attempt throttling/lockout policy yet, and PBKDF2 latency still requires measurement on target hardware. Existing development installs using the older unshipped Room v1 plaintext schema must clear app data or reinstall.
-- Data Contract media folders/naming, important-media mapping, AAC output, active log filename, and local AES-256-CTR transforms are implemented locally. Storage modes/physical roots, device-information-only CSON, app/contract metadata, DB-backed settings, MP4 MD5, embedded metadata, final key handling, BDMA permissions, import results, cleanup, and E2E proof remain open.
+- Data Contract media folders/naming, important-media mapping, AAC output, active log filename, local AES-256-CTR transforms, logical storage-mode resolution, and capacity safety are implemented locally. Production physical-root proof, device-information-only CSON, app/contract metadata, fully DB-owned settings, MP4 MD5, embedded metadata, final key handling, BDMA permissions, import results, cleanup, and E2E proof remain open.
 - Android Device Operation: existing permission/foreground-notification behavior is present, and system bars are intentionally visible. Boot receiver, Home/Launcher role, managed kiosk/exit control, exact dedicated-screen behavior, screen/power policy, durable service ownership, and crash/reboot recovery remain pending Technical Design/device policy.
 - No streaming, PTT, or update implementation. Cloud/remote config remains an early no-op/local-state boundary, while Device/User auth is an incomplete MVP foundation rather than a finished feature.
 - Real BodyCamera POC and hardware matrix validation remain mandatory.
@@ -126,7 +163,7 @@ Private workflow instructions for local-property handling belong in `application
 
 After refactoring:
 
-- `test`: passed on 2026-07-09 across `:app` and `:core`; the current source contains 55 local `@Test` methods, including focused core-module, password-hashing, and no-plaintext-schema regression tests.
-- `assembleDebug`: passed on 2026-07-09 with `:app` consuming the compiled `:core` JAR.
+- `test`: passed on 2026-07-11 across `:app` and `:core`; the current source contains 76 local `@Test` methods, including focused storage resolution/capacity/failure, core-module, password-hashing, and no-plaintext-schema regression tests.
+- `assembleDebug`: passed on 2026-07-11 with `:app` consuming the compiled `:core` JAR.
 - `lintDebug`: last verified as succeeding on 2026-07-06; the final 2026-07-07 re-run was blocked when the sandboxed Gradle wrapper attempted a network download.
 - Generated `BuildConfig`: intentionally contains all application and local-property fields.

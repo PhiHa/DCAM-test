@@ -3,7 +3,7 @@
 **Page ID**: 47710226  
 **Version**: 3  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/47710226
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47710226
 
 ---
 
@@ -36,7 +36,7 @@ Document version
 
 Prepared By
 
- 
+[Dinh Nhan](https://ducviet.atlassian.net/wiki/people/70121:52166504-9fa8-44ba-969f-16f03f3dc4d6?ref=confluence) 
 
 Approved By
 
@@ -216,9 +216,9 @@ Report the issue to development team.
 
 [BDMA-153 — Add Bookmark Feature for Files](https://ducviet.atlassian.net/browse/BDMA-153)
 
-Bookmark Feature Overview
+[Bookmark Feature Overview](/wiki/spaces/DVID/pages/46170139/Bookmark+Feature+Overview)
 
-Previous Release — BDMA v1.0.127
+[Previous Release — BDMA v1.0.127](/wiki/spaces/DVID/pages/41746454/BDMA+v1.0.127)
 
 [GitHub Release v1.0.133](https://github.com/DucVietTech/bdma/releases/tag/v1.0.133)
 

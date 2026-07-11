@@ -3,36 +3,96 @@ package com.dvid.dcam.platform.storage;
 import android.content.Context;
 import android.os.Environment;
 import com.dvid.dcam.BuildConfig;
+import com.dvid.dcam.feature.settings.domain.StorageMode;
 import java.io.File;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 public final class DcamStorage {
-    private final DcamStorageMode mode;
-    private final File root;
+    private final StorageMode requestedMode;
+    private final Context context;
+    private final File internalRoot;
+    private volatile List<File> externalRoots;
+    private final DcamStorageCapacityPolicy capacityPolicy;
+    private volatile StorageMode resolvedMode;
+    private volatile File root;
 
-    public DcamStorage() { this(DcamStorageMode.PUBLIC_DCIM, Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM)); }
-    public DcamStorage(File root) { this(DcamStorageMode.PUBLIC_DCIM, root); }
-    public DcamStorage(DcamStorageMode mode, File root) { this.mode = mode; this.root = root; }
-
-    public static DcamStorage from(Context context) {
-        DcamStorageMode mode = DcamStorageMode.from(BuildConfig.STORAGE_MODE);
-        File root;
-        if (mode == DcamStorageMode.PUBLIC_DCIM) root = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
-        else {
-            root = context.getExternalFilesDir(null);
-            if (root == null) root = context.getFilesDir();
-        }
-        return new DcamStorage(mode, root);
+    public DcamStorage(File root) {
+        this(null, StorageMode.INTERNAL, StorageMode.INTERNAL, root, root,
+                List.of(), new DcamStorageCapacityPolicy());
     }
 
-    public DcamStorageMode getMode() { return mode; }
-    public boolean isPublicDcim() { return mode == DcamStorageMode.PUBLIC_DCIM; }
+    public DcamStorage(StorageMode mode, File root) {
+        this(null, mode, mode == StorageMode.AUTO ? StorageMode.INTERNAL : mode,
+                root, root, List.of(), new DcamStorageCapacityPolicy());
+    }
+
+    public DcamStorage(
+            StorageMode requestedMode,
+            StorageMode resolvedMode,
+            File internalRoot,
+            File root,
+            DcamStorageCapacityPolicy capacityPolicy) {
+        this(null, requestedMode, resolvedMode, internalRoot, root, List.of(), capacityPolicy);
+    }
+
+    private DcamStorage(
+            Context context,
+            StorageMode requestedMode,
+            StorageMode resolvedMode,
+            File internalRoot,
+            File root,
+            List<File> externalRoots,
+            DcamStorageCapacityPolicy capacityPolicy) {
+        this.context = context;
+        this.requestedMode = requestedMode;
+        this.resolvedMode = resolvedMode;
+        this.internalRoot = internalRoot;
+        this.root = root;
+        this.externalRoots = List.copyOf(externalRoots);
+        this.capacityPolicy = capacityPolicy;
+    }
+
+    public static DcamStorage from(Context context) {
+        return from(context, StorageMode.from(BuildConfig.STORAGE_MODE));
+    }
+
+    public static DcamStorage from(Context context, StorageMode requestedMode) {
+        File[] appRoots = context.getExternalFilesDirs(null);
+        File internalRoot = appRoots.length > 0 && appRoots[0] != null
+                ? appRoots[0]
+                : context.getFilesDir();
+        DcamStorageCapacityPolicy policy = new DcamStorageCapacityPolicy();
+        DcamStorageCandidate internal = candidate(StorageMode.INTERNAL, internalRoot, true);
+        List<DcamStorageCandidate> external = new ArrayList<>();
+        for (int i = 1; i < appRoots.length; i++) {
+            if (appRoots[i] != null) {
+                external.add(candidate(StorageMode.EXTERNAL, appRoots[i], false));
+            }
+        }
+        DcamStorageResolution resolution =
+                new DcamStorageRootResolver(policy).resolve(requestedMode, internal, external);
+        List<File> externalRootFiles = new ArrayList<>();
+        for (DcamStorageCandidate candidate : external) {
+            externalRootFiles.add(candidate.getRoot());
+        }
+        return new DcamStorage(context.getApplicationContext(), requestedMode, resolution.getResolvedMode(),
+                internalRoot, resolution.getRoot(), externalRootFiles, policy);
+    }
+
+    public StorageMode getRequestedMode() { return requestedMode; }
+    public StorageMode getMode() { return resolvedMode; }
+    public boolean isFallback() { return requestedMode != StorageMode.INTERNAL && resolvedMode == StorageMode.INTERNAL; }
+    public boolean isPublicDcim() { return false; }
+    public File captureRoot() { return root; }
     public File rootDirectory() { return new File(root, "Media"); }
+    public File tempDirectory() { return new File(root, "Temp"); }
 
     public void ensureFolders() {
         for (DcamFileType type : DcamFileType.values())
             new File(rootDirectory(), type.getFolder()).mkdirs();
-        new File(root, "Temp").mkdirs();
+        tempDirectory().mkdirs();
     }
 
     public File outputFile(DcamFileType type, String accountUserId, String policeUserId,
@@ -42,7 +102,9 @@ public final class DcamStorage {
 
     public DcamMediaFile mediaFile(DcamFileType type, String accountUserId, String policeUserId,
                                    LocalDateTime at, boolean encrypted) {
-        File dir = new File(rootDirectory(), type.getFolder());
+        File dir = stagesBeforePublication(type)
+                ? tempDirectory()
+                : new File(rootDirectory(), type.getFolder());
         String fileName = DcamFileName.build(type, accountUserId, policeUserId, at, encrypted);
         return new DcamMediaFile(type, fileName, new File(dir, fileName), at);
     }
@@ -53,7 +115,90 @@ public final class DcamStorage {
         return mediaFile.getFile();
     }
 
-    public File configsFile() { return new File(new File(root, "Config"), "dcam_config.cson"); }
+    public File finalFile(DcamMediaFile mediaFile) {
+        File stagingParent = mediaFile.getFile().getParentFile();
+        File mediaRoot = stagingParent != null && "Temp".equals(stagingParent.getName())
+                ? new File(stagingParent.getParentFile(), "Media")
+                : rootDirectory();
+        return new File(new File(mediaRoot, mediaFile.getType().getFolder()),
+                mediaFile.getFileName());
+    }
 
-    public File legacyConfigsFile() { return new File(root, "configs.cson"); }
+    public List<File> recoveryTempDirectories() {
+        refreshExternalRoots();
+        List<File> directories = new ArrayList<>();
+        addDistinct(directories, new File(internalRoot, "Temp"));
+        for (File externalRoot : externalRoots) {
+            addDistinct(directories, new File(externalRoot, "Temp"));
+        }
+        return List.copyOf(directories);
+    }
+
+    public synchronized CaptureStorageCheck checkCaptureReady() {
+        refreshExternalRoots();
+        resolveRootForNextCapture();
+        boolean mounted = root != null && (root.exists() || root.mkdirs());
+        boolean writable = mounted && prepareDirectory(tempDirectory()) && root.canWrite();
+        long availableBytes = mounted ? root.getUsableSpace() : 0L;
+        return capacityPolicy.check(mounted, writable, availableBytes);
+    }
+
+    public long recordingFileSizeLimit() {
+        return capacityPolicy.recordingFileSizeLimit(Math.max(0L, root.getUsableSpace()));
+    }
+
+    public File configsFile() { return new File(new File(internalRoot, "Config"), "dcam_config.cson"); }
+
+    public File legacyConfigsFile() { return new File(internalRoot, "configs.cson"); }
+
+    private boolean stagesBeforePublication(DcamFileType type) {
+        return type == DcamFileType.VIDEO || type == DcamFileType.SOS || type == DcamFileType.IMAGE;
+    }
+
+    private void resolveRootForNextCapture() {
+        if (requestedMode == StorageMode.INTERNAL) {
+            resolvedMode = StorageMode.INTERNAL;
+            root = internalRoot;
+            return;
+        }
+        DcamStorageCandidate internal = candidate(StorageMode.INTERNAL, internalRoot, true);
+        List<DcamStorageCandidate> external = new ArrayList<>();
+        for (File externalRoot : externalRoots) {
+            external.add(candidate(StorageMode.EXTERNAL, externalRoot, false));
+        }
+        DcamStorageResolution resolution =
+                new DcamStorageRootResolver(capacityPolicy).resolve(requestedMode, internal, external);
+        resolvedMode = resolution.getResolvedMode();
+        root = resolution.getRoot();
+    }
+
+    private void refreshExternalRoots() {
+        if (context == null) return;
+        File[] appRoots = context.getExternalFilesDirs(null);
+        List<File> refreshed = new ArrayList<>();
+        for (int i = 1; i < appRoots.length; i++) {
+            if (appRoots[i] != null) addDistinct(refreshed, appRoots[i]);
+        }
+        externalRoots = List.copyOf(refreshed);
+    }
+
+    private static DcamStorageCandidate candidate(StorageMode mode, File root, boolean internal) {
+        boolean mounted = root != null && (internal
+                || Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState(root)));
+        boolean writable = mounted && prepareDirectory(new File(root, "Temp")) && root.canWrite();
+        long availableBytes = mounted ? root.getUsableSpace() : 0L;
+        return new DcamStorageCandidate(mode, root, mounted, writable, availableBytes);
+    }
+
+    private static boolean prepareDirectory(File directory) {
+        return directory.isDirectory() || directory.mkdirs();
+    }
+
+    private static void addDistinct(List<File> directories, File candidate) {
+        String path = candidate.getAbsolutePath();
+        for (File directory : directories) {
+            if (directory.getAbsolutePath().equals(path)) return;
+        }
+        directories.add(candidate);
+    }
 }

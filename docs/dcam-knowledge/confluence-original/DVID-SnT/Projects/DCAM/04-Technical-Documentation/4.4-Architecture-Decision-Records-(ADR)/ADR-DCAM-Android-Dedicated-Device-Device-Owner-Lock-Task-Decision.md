@@ -3,7 +3,7 @@
 **Page ID**: 49774787  
 **Version**: 4  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/49774787
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/49774787
 
 ---
 
@@ -62,15 +62,30 @@ Bộ tài liệu DCAM hiện tại đã định nghĩa device identity, Web Port
 
 Current identity baseline:
 
-textTuy nhiên, production deployment cũng yêu cầu bản thân Android device phải hoạt động như một dedicated/kiosk device. Full screen UI và Home/Launcher behavior không đủ để ngăn user thoát khỏi app, mở system surfaces chưa được approve, thay đổi device settings, uninstall apps hoặc làm gián đoạn recording operation.
+serial_number = Hardware Identity / primary recovery key
+dcam_cloud_device_id = Cloud Identity / primary cloud device id
+serial_lookup/{serial_number} = approved recovery lookup path
+ANDROID_ID / android_id_hash / device_lookup/{android_id_hash} = không dùng trong current production baseline
+Tuy nhiên, production deployment cũng yêu cầu bản thân Android device phải hoạt động như một dedicated/kiosk device. Full screen UI và Home/Launcher behavior không đủ để ngăn user thoát khỏi app, mở system surfaces chưa được approve, thay đổi device settings, uninstall apps hoặc làm gián đoạn recording operation.
 
 ## 2. Decision
 
 DCAM production deployment hướng tới Android dedicated-device operation.
 
-textSource of truth cho detailed policy behavior là:
+DCAM deployment mode = Android Fully Managed / Dedicated Device
 
-text## 3. Important Boundary
+DCAM Android runtime phải support:
+1. Device Owner / DPC-capable policy enforcement, hoặc integration với approved external DPC/EMM.
+2. Lock Task Mode cho normal field operation.
+3. Approved User Restrictions cho kiosk hardening.
+4. Controlled Admin / Maintenance Mode cho support và service workflows.
+Source of truth cho detailed policy behavior là:
+
+```
+DCAM Android Device Owner & Kiosk Policy Design
+```
+
+## 3. Important Boundary
 
 ADR này tách rõ hai provisioning concepts:
 
@@ -164,4 +179,11 @@ Treat `serial_number` / `serial_lookup/{serial_number}` as current production ba
 
 ## 6. Decision Summary
 
-text
+DCAM không chỉ là fullscreen Android application.
+DCAM production deployment là dedicated-device/kiosk deployment.
+Device Owner / DPC policy, Lock Task Mode và User Restrictions là platform-level controls.
+DCAM business provisioning tách biệt với Android Enterprise Device Owner enrollment.
+DCAM business provisioning dùng serial_number và serial_lookup/{serial_number} để create/restore dcam_cloud_device_id.
+Detailed policy behavior thuộc DCAM Android Device Owner & Kiosk Policy Design.
+Các tài liệu khác phải reference design đó và chỉ mô tả local impact.
+All DCAM documents must reference this ADR for the No-EMM/No-AMAPI/No-Managed-GP decision instead of repeating the full block.

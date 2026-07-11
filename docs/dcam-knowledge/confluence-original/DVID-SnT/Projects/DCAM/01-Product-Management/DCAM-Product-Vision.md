@@ -1,9 +1,9 @@
 # DCAM Product Vision
 
 **Page ID**: 41648238  
-**Version**: 7  
+**Version**: 8  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/41648238
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/41648238
 
 ---
 
@@ -24,7 +24,7 @@ Product Vision
 
 Version
 
-Approved 2.3
+Approved 2.4
 
 Status
 
@@ -52,7 +52,7 @@ PM/BA, Product Owner, Tech Lead, Developers, QA, Stakeholders
 
 Last Updated
 
-2026-07-03
+2026-07-10
 
 Related Jira
 
@@ -60,7 +60,7 @@ None
 
 Related Documents
 
-DCAM Project Charter, DCAM Roadmap, DCAM MVP Scope, DCAM 9-Month Development Plan, DCAM Documentation Governance
+DCAM Project Charter, DCAM Roadmap, DCAM MVP Scope, DCAM 9-Month Development Plan, DCAM Release & Build Applicability Matrix, DCAM Requirements Home, DCAM Architecture Home, DCAM Documentation Governance
 
 ## 1. Executive Summary
 
@@ -74,7 +74,7 @@ Mục tiêu dài hạn của DCAM là trở thành ứng dụng camera ổn đ�
 
 DCAM hướng tới việc trở thành ứng dụng camera chuyên dụng cho BodyCamera, giúp người dùng ghi nhận video/hình ảnh tại hiện trường một cách tin cậy, đồng thời tạo ra dữ liệu media có cấu trúc, có metadata rõ ràng và tương thích với BDMA Desktop.
 
-Vision của DCAM không chỉ là "ghi hình được", mà là tạo ra một nền tảng dữ liệu BodyCamera ổn định, có thể mở rộng cho các năng lực nâng cao như Live Streaming, Push-to-Talk, Remote Device Management, Advanced User Management, Advanced Encryption và Full GPS Tracking Route.
+Vision của DCAM không chỉ là “ghi hình được”, mà là tạo ra một nền tảng dữ liệu BodyCamera ổn định, có thể mở rộng cho các năng lực nâng cao như Live Streaming, Push-to-Talk, Remote Device Management, Advanced User Management, Advanced Encryption và Full GPS Tracking Route.
 
 ## 3. Product Positioning
 
@@ -110,7 +110,14 @@ Nếu ứng dụng ghi hình trên thiết bị không chuẩn hóa file, metada
 
 DCAM được định vị là lớp ứng dụng trên thiết bị BodyCamera, chịu trách nhiệm tạo dữ liệu đúng chuẩn ngay từ đầu.
 
-textwide760## 5. Target Users & Personas
+BodyCamera Android Device
+        ↓
+DCAM
+        ↓ tạo video / image / metadata / logs
+        ↓
+BDMA Desktop
+        ↓ ingest / index / view / backup / export / report
+## 5. Target Users & Personas
 
 User Group
 
@@ -270,7 +277,9 @@ Thiết kế phải dựa trên giới hạn thực tế của BodyCamera: pin, 
 
 ## 9. Product Capability Direction
 
-Mục này mô tả định hướng năng lực sản phẩm ở mức tổng quan. Các chi tiết triển khai cụ thể như folder structure, metadata fields, status values, schema version, user stories và acceptance criteria sẽ được quản lý trong các tài liệu chuyên biệt như **DCAM MVP Scope**, **DCAM Functional Requirements** và **DCAM-BDMA Data Contract**.
+Mục này mô tả định hướng năng lực sản phẩm ở mức tổng quan. Các chi tiết triển khai cụ thể như folder structure, metadata fields, status values, schema version, user stories và acceptance criteria được quản lý trong các tài liệu chuyên biệt như **DCAM MVP Scope**, **DCAM Requirements Home**, các Functional Requirements pages và **DCAM-BDMA Data Contract**.
+
+Build/phase applicability không được suy luận từ Product Vision. **DCAM Release & Build Applicability Matrix** là source of truth để xác định capability nào đang required, conditional, deferred hoặc not applicable cho từng build.
 
 ### 9.1 Core Capture
 
@@ -339,6 +348,8 @@ Future Platform
 Fleet management, cloud integration, analytics, advanced monitoring, OTA and extended operations.
 
 DCAM mở rộng thành nền tảng capture/communication/device management cho BodyCamera.
+
+Applicability của từng stage/build được quản lý tại **DCAM Release & Build Applicability Matrix**.
 
 ## 11. Relationship with BDMA Ecosystem
 
@@ -432,7 +443,7 @@ Boundary
 
 MVP vs Future
 
-MVP tập trung vào capture, storage, metadata, logs và BDMA compatibility; advanced capabilities được triển khai theo roadmap.
+MVP tập trung vào capture, storage, metadata, logs và BDMA compatibility; advanced capabilities được triển khai theo roadmap và applicability matrix.
 
 BodyCamera Scope
 
@@ -476,6 +487,18 @@ DCAM 9-Month Development Plan
 
 Kế hoạch triển khai roadmap thành sprint, phase, buffer và deliverables.
 
+DCAM Release & Build Applicability Matrix
+
+Source of truth cho feature/requirement/test applicability của từng build.
+
+DCAM Requirements Home
+
+Trang điều hướng Functional Requirements 01–10 và Requirements-level documents.
+
+DCAM Architecture Home
+
+Kiến trúc chính thức, module, data flow, Technical Design và ADR navigation.
+
 DCAM Android Training & Architecture Onboarding
 
 Tài liệu onboarding Android cho team Java/Desktop.
@@ -484,26 +507,22 @@ DCAM-BDMA Data Contract
 
 Chuẩn dữ liệu giữa DCAM Android và BDMA Desktop.
 
-DCAM Functional Requirements
-
-Chi tiết yêu cầu chức năng.
-
 DCAM Non-functional Requirements
 
-Yêu cầu hiệu năng, bảo mật, độ ổn định, storage, battery, GPS.
-
-DCAM System Architecture & Technical Notes
-
-Kiến trúc chính thức, module, data flow và technical notes riêng của DCAM.
+Yêu cầu hiệu năng, bảo mật, độ ổn định, storage, battery và GPS.
 
 DCAM Security & Encryption Design
 
 Thiết kế bảo mật và mã hóa.
 
-DCAM Live Streaming & PTT Design
+DCAM QA Test Strategy & Test Matrix
 
-Thiết kế live streaming và Push-to-Talk.
+QA strategy, release validation và applicable test groups.
 
-DCAM Release Plan
+## 15. Practical Conclusion
 
-Kế hoạch build, versioning, release và pilot.
+Product Vision defines long-term product direction.
+DCAM Requirements Home owns requirement navigation.
+DCAM Architecture Home owns architecture/technical navigation.
+DCAM Release & Build Applicability Matrix decides when a capability becomes mandatory for a build.
+Current active build is DCAM MVP Internal Build 0.1 with Working Recording Slice as the delivery gate.

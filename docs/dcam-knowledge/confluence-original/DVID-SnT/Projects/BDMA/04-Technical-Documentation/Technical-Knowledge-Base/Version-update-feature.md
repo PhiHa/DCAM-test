@@ -3,16 +3,16 @@
 **Page ID**: 28672007  
 **Version**: 2  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/28672007
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/28672007
 
 ---
 
 
 # 1. Tổng quan tính năng
 
-Tính năng App Update cho phép BDMA tự động phát hiện phiên bản mới trên GitHub Releases và cung cấp trải nghiệm nâng cấp một bước: thông báo &rarr; tải file cài đặt &rarr; khởi chạy installer &rarr; thoát app.
+Tính năng App Update cho phép BDMA tự động phát hiện phiên bản mới trên GitHub Releases và cung cấp trải nghiệm nâng cấp một bước: thông báo → tải file cài đặt → khởi chạy installer → thoát app.
 
- 
+ 
 
 Hai luồng chính:
 
@@ -20,7 +20,7 @@ Kiểm tra định kỳ (startup): mỗi tuần một lần, chạy ngầm khi k
 
 Kiểm tra thủ công: người dùng bấm nút "Kiểm tra cập nhật" trong màn hình Settings.
 
- 
+ 
 
 # 2. Kiến trúc & Các lớp liên quan
 
@@ -34,7 +34,7 @@ Luồng phụ thuộc từ ngoài vào trong:
 
 AdminSettingsDialogController
 
-Màn hình Settings (sau login). Wires btnUpdate &rarr; AppUpdateController.onCheckUpdateManual().
+Màn hình Settings (sau login). Wires btnUpdate → AppUpdateController.onCheckUpdateManual().
 
 PreLoginSettingsPopupHelper
 
@@ -98,7 +98,7 @@ resources/views/common
 
 1
 
-shouldCheckThisWeek() đọc KEY_LAST_CHECK_DATE từ app-config.json. Nếu đã check trong tuần ISO hiện tại &rarr; bỏ qua.
+shouldCheckThisWeek() đọc KEY_LAST_CHECK_DATE từ app-config.json. Nếu đã check trong tuần ISO hiện tại → bỏ qua.
 
 2
 
@@ -106,19 +106,19 @@ saveCheckDate() ghi ngày hôm nay vào config.
 
 3
 
-Tạo Task<AppUpdateInfo> chạy trên background thread &rarr; gọi AppUpdateService.checkLatestVersion().
+Tạo Task<AppUpdateInfo> chạy trên background thread → gọi AppUpdateService.checkLatestVersion().
 
 4
 
-Nếu info == null hoặc !info.hasUpdate() &rarr; kết thúc yên lặng.
+Nếu info == null hoặc !info.hasUpdate() → kết thúc yên lặng.
 
 5
 
-Đọc KEY_SKIPPED_VERSION. Nếu phiên bản mới trùng với version đã skip &rarr; không hiện dialog.
+Đọc KEY_SKIPPED_VERSION. Nếu phiên bản mới trùng với version đã skip → không hiện dialog.
 
 6
 
-Platform.runLater() &rarr; showUpdateDialog(info).
+Platform.runLater() → showUpdateDialog(info).
 
 ## 3.2. Kiểm tra thủ công (onCheckUpdateManual)
 
@@ -134,19 +134,19 @@ Gọi callback onCheckStart (ví dụ: disable nút, spinner) và cập nhật s
 
 2
 
-Chạy Task<AppUpdateInfo> nền &rarr; checkLatestVersion().
+Chạy Task<AppUpdateInfo> nền → checkLatestVersion().
 
 3a
 
-Task thành công, !hasUpdate &rarr; onCheckEnd + status "Đang dùng phiên bản mới nhất".
+Task thành công, !hasUpdate → onCheckEnd + status "Đang dùng phiên bản mới nhất".
 
 3b
 
-Task thành công, hasUpdate &rarr; onCheckEnd + status "Có bản mới: vX.Y.Z" + showUpdateDialog.
+Task thành công, hasUpdate → onCheckEnd + status "Có bản mới: vX.Y.Z" + showUpdateDialog.
 
 3c
 
-Task thất bại &rarr; onCheckEnd + status "Kiểm tra thất bại" + log.warn.
+Task thất bại → onCheckEnd + status "Kiểm tra thất bại" + log.warn.
 
 ## 3.3. Hộp thoại cập nhật (showUpdateDialog)
 
@@ -176,7 +176,7 @@ File lưu tại: %USERPROFILE%\Downloads\BDMA-{version}.exe
 
 Kết nối HTTP với connectTimeout = 10 giây.
 
-Sau khi tải xong: hiện Alert thông báo &rarr; khởi chạy installer bằng ProcessBuilder &rarr; Platform.exit().
+Sau khi tải xong: hiện Alert thông báo → khởi chạy installer bằng ProcessBuilder → Platform.exit().
 
 # 4. Logic kiểm tra phiên bản
 
@@ -190,7 +190,7 @@ System property app.version – có thể truyền qua jpackage launcher.
 
 Fallback: chuỗi "dev" – dùng khi chạy trong IDE.
 
-Chuẩn hóa: luôn có tiền tố "v" (ví dụ: "1.2.3" &rarr; "v1.2.3"). Môi trường dev trả về "dev" nguyên văn để tránh false positive.
+Chuẩn hóa: luôn có tiền tố "v" (ví dụ: "1.2.3" → "v1.2.3"). Môi trường dev trả về "dev" nguyên văn để tránh false positive.
 
 ## 4.2. Lấy phiên bản mới nhất (GitHub API)
 
@@ -198,9 +198,9 @@ Endpoint: AppConstants.GITHUB_API (dạng [https://api.github.com/repos/{owner}/
 
 OkHttpClient với connectTimeout = 5 giây, readTimeout = 5 giây.
 
-Parse JSON array &rarr; lấy phần tử đầu tiên (release mới nhất) &rarr; tag_name.
+Parse JSON array → lấy phần tử đầu tiên (release mới nhất) → tag_name.
 
-Tìm asset có tên kết thúc bằng .exe &rarr; lấy browser_download_url.
+Tìm asset có tên kết thúc bằng .exe → lấy browser_download_url.
 
 hasUpdate = !latestVersion.equals(currentVersion).
 

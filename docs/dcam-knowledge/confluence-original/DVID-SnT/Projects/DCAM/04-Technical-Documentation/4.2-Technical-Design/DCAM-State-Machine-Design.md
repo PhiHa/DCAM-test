@@ -3,7 +3,7 @@
 **Page ID**: 48496753  
 **Version**: 10  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/48496753
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/48496753
 
 ---
 
@@ -68,7 +68,14 @@ Related Documents
 
 Current baseline:
 
-textTài liệu này không duplicate mọi detailed state từ từng domain design. Trang này reference các authoritative runtime-state documents và định nghĩa cách các state machines đó phối hợp an toàn.
+No external EMM.
+No Android Management API.
+No Managed Google Play policy-driven update.
+DCAM-as-DPC / local Device Owner is preferred if target firmware supports it.
+Primary update path = DCAM Self Update / APK update.
+Controlled Maintenance Mode requires Maintenance Password Gate.
+Full Android unrestricted mode is not supported.
+Tài liệu này không duplicate mọi detailed state từ từng domain design. Trang này reference các authoritative runtime-state documents và định nghĩa cách các state machines đó phối hợp an toàn.
 
 ## 2. State Ownership Boundary
 
@@ -160,7 +167,19 @@ Reference only when fallback is enabled and capability-approved.
 
 Feature eligibility state names được định nghĩa bởi **DCAM Device Capability & Feature Eligibility Design**.
 
-text`SUPPORTED` không được dùng làm runtime/eligibility state. Dùng `ENABLED` khi feature thực sự có thể chạy.
+Runtime state machines may start only for:
+- ENABLED
+- approved DEGRADED
+
+Runtime state machines must not start normal runtime flow for:
+- DISABLED_BY_POLICY
+- DISABLED_BY_PERMISSION
+- UNSUPPORTED_HARDWARE
+- UNSUPPORTED_PERFORMANCE
+- TEMPORARILY_UNAVAILABLE
+- PRUNED
+- ERROR
+`SUPPORTED` không được dùng làm runtime/eligibility state. Dùng `ENABLED` khi feature thực sự có thể chạy.
 
 ## 4. Runtime State Reference Map
 
@@ -304,7 +323,16 @@ Diagnostics / support operation
 
 Production field operation có thể yêu cầu DCAM-as-DPC / local Device Owner policy, Lock Task Mode và User Restrictions.
 
-textRules:
+App Startup / Resume
+    ↓
+DevicePolicyGuard
+    ├── Required policy present and valid
+    │       → allow startup to continue
+    ├── Required policy partially valid
+    │       → enter POLICY_DEGRADED; allow only approved degraded path
+    └── Required policy missing or invalid
+            → enter DEVICE_POLICY_REQUIRED; block normal field operation
+Rules:
 
 Rule
 
@@ -344,7 +372,18 @@ External EMM / Android Management API / Managed Google Play state is not a curre
 
 ## 7. Controlled Maintenance Guard
 
-textRules:
+Admin / Maintenance request
+    ↓
+MaintenanceGuard
+    ├── Runtime unsafe
+    │       → reject/defer with reason
+    ├── Role not allowed
+    │       → reject CONSOLE_ACCESS_DENIED
+    ├── Maintenance Password Gate failed/locked
+    │       → reject MAINTENANCE_AUTH_FAILED
+    └── Authenticated and safe
+            → enter MAINTENANCE_MODE with approved targets only
+Rules:
 
 Rule
 
@@ -378,9 +417,27 @@ On timeout/exit/resume/reboot/crash recovery, policy restore must be attempted.
 
 Normal recording/capture evidence phải được guard bằng authenticated operator session.
 
-textEmergency recording có override path riêng:
+Normal Start Recording
+    ↓
+DevicePolicyGuard if production profile requires it
+    ↓
+OperatorAuthenticatedRecordingGuard
+    ├── Required policy state is invalid
+    │       → reject POLICY_REQUIRED or POLICY_DEGRADED_BLOCKED
+    ├── Active operator session exists
+    │       → allow Recording Precheck
+    └── No active operator session
+            → reject OPERATOR_AUTH_REQUIRED
+Emergency recording có override path riêng:
 
-textRules:
+Emergency Start Recording
+    ↓
+EmergencyRecordingGuard
+    ├── Active operator session exists
+    │       → use active operator snapshot
+    └── No active operator session
+            → use EMERGENCY_OVERRIDE_ADMIN system operator
+Rules:
 
 Rule
 
@@ -418,7 +475,20 @@ User disabled by BDMA sync không được interrupt active recording; new recor
 
 Current baseline uses Self Update / APK update as primary path.
 
-textRules:
+Update request
+    ↓
+UpdateGuard
+    ├── Managed Google Play requested
+    │       → reject/not applicable for current baseline
+    ├── Recording/Emergency/Finalizing active
+    │       → defer update
+    ├── DB/Storage/Policy recovery active
+    │       → defer update
+    ├── APK validation failed
+    │       → reject package
+    └── Preconditions valid and package safe
+            → enter UPDATING
+Rules:
 
 Rule
 
@@ -520,7 +590,22 @@ Console setting changes must not bypass recording, policy or update guards.
 
 ## 11. Capability Evaluation and Runtime Registration
 
-textRuntime registration decision:
+App Start / Boot
+        ↓
+Android Operation Startup
+        ↓
+Device Policy State Detection if required
+        ↓
+Device Capability Evaluation including update and Play Store fallback capability
+        ↓
+Feature Eligibility Result
+        ↓
+State Machine Registration
+        ↓
+Only ENABLED or approved DEGRADED runtime modules start
+        ↓
+Login gate controls only features that require operator identity
+Runtime registration decision:
 
 Eligibility State
 
@@ -636,8 +721,31 @@ State-machine coordination logs nên reference domain logs thay vì duplicate.
 
 Required examples:
 
-textDetailed recording, storage, DB, Android operation, kiosk policy, auth/security, update và analytics logs được định nghĩa trong các authoritative design pages tương ứng và Logging Requirements.
+[STATE] Runtime registration started
+[STATE] Feature pruned by eligibility result
+[STATE] Device policy guard rejected normal operation
+[STATE] Lock task failure routed to policy recovery
+[STATE] Maintenance auth required
+[STATE] Maintenance target blocked
+[STATE] Operator auth guard rejected recording
+[STATE] Emergency override guard accepted recording
+[STATE] Global guard rejected command: RECORDING_ACTIVE
+[STATE] Self update deferred by guard: FINALIZING
+[STATE] Self update rejected: MANAGED_GOOGLE_PLAY_NOT_APPLICABLE
+[STATE] Emergency priority active
+[STATE] Recovery mode required before normal startup
+Detailed recording, storage, DB, Android operation, kiosk policy, auth/security, update và analytics logs được định nghĩa trong các authoritative design pages tương ứng và Logging Requirements.
 
 ## 14. Practical Conclusion
 
-textTrang này reference runtime states và enforce coordination rules. Trang này không duplicate mọi domain-specific state machine.
+State Machine Design owns cross-runtime coordination and guard rules.
+Current baseline has no external EMM, Android Management API or Managed Google Play policy-driven update.
+Android Operation owns app operating modes, policy verification, login screen, update runtime and session lifecycle.
+Kiosk Policy Design owns Device Owner/DPC, Lock Task, User Restrictions, Maintenance Mode and policy recovery behavior.
+In-App Console owns Setting hub, read-only File/Media, Maintenance Password Gate and controlled targets.
+Self Update owns primary APK update flow and update validation.
+Recording Design owns recording session states and operator attribution.
+SQLite Database Design owns operator_session/user/auth persistence.
+Storage Design owns file/storage readiness states.
+Device Capability Design owns feature eligibility states.
+Trang này reference runtime states và enforce coordination rules. Trang này không duplicate mọi domain-specific state machine.

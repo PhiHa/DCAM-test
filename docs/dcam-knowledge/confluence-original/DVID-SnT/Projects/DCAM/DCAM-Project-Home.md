@@ -1,9 +1,9 @@
 # DCAM Project Home
 
 **Page ID**: 41648280  
-**Version**: 51  
+**Version**: 60  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/41648280
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/41648280
 
 ---
 
@@ -24,7 +24,7 @@ Project Home / Chỉ mục tài liệu
 
 Version
 
-Approved 3.22
+Approved 3.29
 
 Status
 
@@ -52,7 +52,7 @@ PM/BA, Tech Lead, Android Developers, AI/ML Engineer, BDMA Team, Cloud/WebServer
 
 Last Updated
 
-2026-07-09
+2026-07-10
 
 Related Jira
 
@@ -60,7 +60,7 @@ None
 
 Related Documents
 
-DCAM Requirements Home, DCAM Architecture Home, DCAM Documentation Governance, DCAM QA Test Strategy & Test Matrix, DCAM Factory Provisioning & Device Production SOP, DCAM DSetup Factory Tool Design, DCAM Device POC & Hardware Validation Report, 04 - Device Configuration Requirements, 05 - User & Device Operation Requirements, 09 - System Settings Requirements, 10 - Android Device Operation Requirements, 06 - Cloud Services, Update & Configuration Architecture, DCAM Web Portal & Device API Contract, DCAM Device Provisioning Web Portal Design, DCAM Device Provisioning Web Portal App Design, DCAM Android Device Owner & Kiosk Policy Design, DCAM In-App Operation, Device Settings & Media Console Design, ADR - DCAM Android Dedicated Device / Device Owner / Lock Task Decision, ADR - DCAM Device Identity Baseline: serial_number + dcam_cloud_device_id, DCAM State Machine Design, DCAM Device Capability & Feature Eligibility Design, DCAM Android Operation Design, DCAM Recording & Capture Design, DCAM SQLite Database Design, DCAM Storage Design, DCAM Self Update Design, DCAM Security & Encryption Design, DCAM Non-functional Requirements, DCAM-BDMA Data Contract
+DCAM Requirements Home, 07 - Logging & Diagnostics Requirements, DCAM Architecture Home, DCAM Architecture Delivery Profile, DCAM Documentation Governance, DCAM QA Test Strategy & Test Matrix, DCAM Factory Provisioning & Device Production SOP, DCAM DSetup Factory Tool Design, DCAM Device POC & Hardware Validation Report, DCAM Device Provisioning Web Portal Design, DCAM Device Provisioning Web Portal App Design, DCAM Device Provisioning Web Portal Implementation Design, DCAM Web Portal & Device API Contract, ADR - DCAM Device Identity Baseline: serial_number + dcam_cloud_device_id, ADR - DCAM Android Dedicated Device / Device Owner / Lock Task Decision, DCAM Android Device Owner & Kiosk Policy Design, DCAM Android Operation Design, DCAM Logging & Diagnostics Design, DCAM Performance Budget & Resource Constraints, DCAM Concurrency & Threading Model Design, DCAM Security & Encryption Design, DCAM Self Update Design, DCAM-BDMA Data Contract
 
 ## 1. Purpose
 
@@ -68,402 +68,474 @@ Trang này là landing page chính cho toàn bộ bộ tài liệu **DCAM**.
 
 Mục tiêu:
 
-Giúp team tìm nhanh tài liệu theo nhóm.
+Phản ánh hierarchy Confluence hiện tại.
 
-Phản ánh đúng cấu trúc Confluence hiện tại.
+Giúp team tìm nhanh source of truth theo domain.
 
-Xác định baseline tài liệu đã có để chuẩn bị cho development, QA, release readiness, factory production, BDMA integration, user/operator management, continuous monitoring, realtime AI detection, device capability handling, remote config, Web Portal provisioning, Android dedicated-device/kiosk policy, in-app console và update strategy.
+Ghi nhận các decision hiện hành mà tài liệu chi tiết phải tuân theo.
 
-Định hướng **source of truth** để tránh copy trùng lặp rule/principle giữa nhiều tài liệu.
+Tránh copy rule giữa nhiều page theo **DCAM Documentation Governance**.
 
-Ghi nhận quyết định cloud storage baseline: **Firebase Cloud Firestore là backend storage baseline; Firebase Realtime Database không dùng cho current storage baseline**.
+Phân biệt rõ Architecture, Requirements, Technical Design, Implementation Design, QA và Factory SOP.
 
-Ghi nhận quyết định identity baseline theo **DCAM Factory Provisioning & Device Production SOP Draft 1.1**: `serial_number` là Hardware Identity / primary recovery key, `dcam_cloud_device_id` là Cloud Identity / primary cloud device id, SD Identity File là recovery cache trên thẻ nhớ ngoài, không dùng `ANDROID_ID`, `android_id_hash` hoặc `device_lookup/{android_id_hash}` trong current production baseline.
+Current cross-project baselines:
 
-Ghi nhận quyết định Web Portal/API baseline: **DCAM business provisioning tạo/restore** `devices/{dcam_cloud_device_id}` bằng `serial_lookup/{serial_number}` trong Cloud Firestore.
+Identity:
+    serial_number = Hardware Identity / primary recovery key
+    dcam_cloud_device_id = Cloud Identity / primary cloud device id
+    serial_lookup/{serial_number} = cloud create/restore lookup
+    SD Identity File = recovery cache
 
-Ghi nhận quyết định kiosk baseline hiện tại: **DCAM-as-Device-Owner/DPC-capable app nếu khả thi, Lock Task Mode, User Restrictions, Controlled Maintenance Mode, Maintenance Password Gate, current device baseline per ADR: No external EMM / No Android Management API / No Managed Google Play**.
+Cloud:
+    Firebase Cloud Firestore = current storage baseline
+    Firebase Realtime Database = not used
 
-Ghi nhận quyết định update baseline hiện tại: **DCAM Self Update / APK update là primary path; Google Play Store chỉ là optional manual maintenance fallback nếu thiết bị có GMS/Play Store**.
+Dedicated Device:
+    No external EMM
+    No Android Management API
+    No Managed Google Play policy-driven update
+    DCAM Self Update / approved APK update = primary update path
 
-Ghi nhận factory baseline: **raw/factory-reset BodyCamera chỉ được marked READY_TO_SHIP sau khi pass SOP sản xuất, DSetup Device Owner setup, serial recovery/scan/injection, business provisioning, kiosk policy, recording/storage, BDMA nếu required và Self Update capability checks**.
+Web Portal:
+    User-facing account type = Factory Worker only
+    Screens = Login and Workspace only
+    serial_number source = provisioning QR displayed by DCAM
+    serial_number behavior = read-only
+    no manual serial entry
+    no direct serial barcode scan
+    frontend = Firebase Hosting
+    authentication = Firebase Authentication
+    backend = Firebase Cloud Functions
+    storage = Firebase Cloud Firestore
 
+DSetup:
+    exactly one ADB device at a time
+    completes when DCAM confirms imported_serial_number == expected serial_number
+    no official production record
+    no PASS / FAIL / QUARANTINED / READY_TO_SHIP decision
+
+Logging:
+    Operational Logging → Loggly through local-first queue and authenticated Backend Relay
+    Crash & Stability Monitoring → Firebase Crashlytics
+    internal active/rotated logs and upload queue = implementation-private
+    Logs/logs.txt = stable sanitized BDMA-facing artifact
+
+Factory Wi-Fi:
+    Current project decision keeps factory Wi-Fi SSID/password hardcoded in approved DCAM APK
+    Wi-Fi password must not appear in logs, Crashlytics, QR, API payload, production records or evidence
 ## 2. Current Documentation Structure
 
-This section reflects the current Confluence hierarchy under the DCAM root page.
+DCAM
+├── DCAM Project Home
+├── 01 - Product Management
+│   ├── DCAM Project Charter
+│   ├── DCAM Roadmap
+│   ├── DCAM Product Vision
+│   └── DCAM MVP Scope
+├── 02 - Sprint Operations
+│   ├── DCAM 9-Month Development Plan
+│   └── DCAM Documentation Governance
+├── 03 - Requirements
+│   ├── DCAM-BDMA Data Contract
+│   ├── DCAM Requirements Home
+│   │   ├── 01 - Recording & Capture Requirements
+│   │   ├── 02 - Media Storage Requirements
+│   │   ├── 03 - Media Management Requirements
+│   │   ├── 04 - Device Configuration Requirements
+│   │   ├── 05 - User & Device Operation Requirements
+│   │   ├── 06 - BDMA Integration Requirements
+│   │   ├── 07 - Logging & Diagnostics Requirements
+│   │   ├── 08 - Security & Encryption Requirements
+│   │   ├── 09 - System Settings Requirements
+│   │   └── 10 - Android Device Operation Requirements
+│   └── DCAM Non-functional Requirements
+├── 04 - Technical Documentation
+│   ├── 4.1 - Software Architecture
+│   │   └── DCAM Architecture Home
+│   │       ├── DCAM Architecture Delivery Profile
+│   │       ├── 01 - Architecture Overview
+│   │       ├── 02 - Architecture Principles
+│   │       ├── 03 - Android Platform & Compatibility Strategy
+│   │       ├── 04 - Application & Module Architecture
+│   │       ├── 05 - Data, Storage & BDMA Architecture
+│   │       ├── 06 - Cloud Services, Update & Configuration Architecture
+│   │       ├── 07 - Logging, Diagnostics, Performance & Security
+│   │       └── 08 - DCAM-BDMA Integration Boundary
+│   ├── 4.2 - Technical Design
+│   │   ├── DCAM Android Operation Design
+│   │   ├── DCAM State Machine Design
+│   │   ├── DCAM SQLite Database Design
+│   │   ├── DCAM Recording & Capture Design
+│   │   ├── DCAM Storage Design
+│   │   ├── DCAM BDMA Integration Technical Design
+│   │   ├── DCAM Self Update Design
+│   │   ├── DCAM Security & Encryption Design
+│   │   ├── DCAM Sensor & Location Monitoring Design
+│   │   ├── DCAM Realtime AI Detection Design
+│   │   ├── DCAM Device Capability & Feature Eligibility Design
+│   │   ├── DCAM Device Provisioning Web Portal Design
+│   │   │   ├── DCAM Device Provisioning Web Portal App Design
+│   │   │   └── DCAM Device Provisioning Web Portal Implementation Design
+│   │   ├── DCAM Android Device Owner & Kiosk Policy Design
+│   │   ├── DCAM In-App Operation, Device Settings & Media Console Design
+│   │   ├── DCAM Web Portal & Device API Contract
+│   │   ├── DCAM Concurrency & Threading Model Design
+│   │   ├── DCAM Performance Budget & Resource Constraints
+│   │   └── DCAM Logging & Diagnostics Design
+│   ├── 4.3 - Android Development
+│   │   ├── DCAM Android Training & Architecture Onboarding
+│   │   ├── DCAM Android Development Standard
+│   │   └── DCAM Device POC & Hardware Validation Report
+│   └── 4.4 - Architecture Decision Records (ADR)
+│       ├── ADR - DCAM Android Dedicated Device / Device Owner / Lock Task Decision
+│       └── ADR - DCAM Device Identity Baseline: serial_number + dcam_cloud_device_id
+├── 05 - Release Management
+│   ├── DCAM QA Test Strategy & Test Matrix
+│   └── DCAM Factory Provisioning & Device Production SOP
+│       └── DCAM DSetup Factory Tool Design
+└── 06 - Incident Log
+Draft page trống trong ADR folder không được liệt kê trong structure chính.
 
-textwide760Notes:
-
-textwide760## 3. Authoritative Rule Ownership Matrix
-
-Các rule/principle dùng chung chỉ định nghĩa đầy đủ tại tài liệu authoritative. Các tài liệu khác chỉ reference kèm summary ngắn để tránh lệch nội dung giữa nhiều page.
+## 3. Authoritative Rule Ownership Matrix
 
 Rule / Principle
 
 Authoritative Document
 
-Reference Style in Other Docs
+Ownership Summary
 
-Documentation governance, source-of-truth rule and anti-duplication rule
+Documentation governance
 
 DCAM Documentation Governance
 
-Define once; reference elsewhere.
+Define once, reference elsewhere; approval dependencies and change triggers.
 
-Factory provisioning, DSetup, serial recovery/scan/injection, SD Identity File recovery cache and ready-to-ship decision
+MVP vs Target Architecture
 
-DCAM Factory Provisioning & Device Production SOP
+DCAM Architecture Delivery Profile
 
-Source of truth cho thao tác factory/admin để biến BodyCamera raw/factory-reset thành thiết bị DCAM ready-to-ship.
-
-DSetup tool behavior, single-device scan mode, ADB/Device Owner setup helper and factory tooling boundary
-
-DCAM DSetup Factory Tool Design
-
-Tool design supports Factory SOP; SOP owns production procedure.
+Working Recording Slice đi trước platform expansion.
 
 Device identity baseline
 
-ADR - DCAM Device Identity Baseline: serial_number + dcam_cloud_device_id + DCAM Factory Provisioning & Device Production SOP + 04 - Device Configuration Requirements
+ADR - DCAM Device Identity Baseline: serial_number + dcam_cloud_device_id
 
-`serial_number` = Hardware Identity / recovery key; `dcam_cloud_device_id` = Cloud Identity; SD Identity File = recovery cache; không dùng Android ID/hash.
+Serial, cloud ID, lookup và SD recovery cache.
 
-Device config file scope and identity requirement
+Factory production procedure and final acceptance
 
-04 - Device Configuration Requirements
+DCAM Factory Provisioning & Device Production SOP
 
-Reference rule về device identity; không định nghĩa lại chi tiết storage/write.
+Production steps, official record, `READY_TO_SHIP` và `QUARANTINED`.
 
-Firebase Cloud Firestore storage baseline and cloud architecture boundary
+DSetup behavior
 
-06 - Cloud Services, Update & Configuration Architecture
+DCAM DSetup Factory Tool Design
 
-Reference architecture decision; API/path/schema belongs to API Contract.
+Single-device ADB helper flow đến imported serial verification.
 
-Web Portal provisioning API/data contract, `serial_lookup/{serial_number}`, `devices/{dcam_cloud_device_id}`, config/update/status/factory record API and Firestore collection/document direction
-
-DCAM Web Portal & Device API Contract
-
-Source of truth cho Android/Web Portal/Backend/Cloud Firestore request/schema/error boundary.
-
-Web Portal provisioning business flow, screens, admin actions and UI behavior
+Web Portal business flow
 
 DCAM Device Provisioning Web Portal Design
 
-Source of truth cho Web Portal provisioning user/admin flow. API schema belongs to API Contract.
+Factory Worker QR-based provisioning flow.
 
-Web Portal app implementation design, screen/component structure and app-side execution detail for provisioning UI
+Web Portal app model
 
 DCAM Device Provisioning Web Portal App Design
 
-Child design under Web Portal Provisioning Design; parent page owns business flow, API Contract owns schema.
+`Login`, `Workspace`, panels/states và user-facing behavior.
 
-DCAM business provisioning vs Android Device Owner setup
+Web Portal implementation
 
-ADR - DCAM Android Dedicated Device / Device Owner / Lock Task Decision + DCAM Factory Provisioning & Device Production SOP + DCAM Device Provisioning Web Portal Design + DCAM Web Portal & Device API Contract + DCAM Android Device Owner & Kiosk Policy Design
+DCAM Device Provisioning Web Portal Implementation Design
 
-Web Portal QR không tự biến app thành Device Owner.
+Firebase Hosting/Auth/Functions/frontend/backend modules.
 
-No external EMM / No Android Management API / No Managed Google Play decision
+Web Portal/Device API
 
-ADR - DCAM Android Dedicated Device / Device Owner / Lock Task Decision
+DCAM Web Portal & Device API Contract
 
-Current device baseline: No external EMM / No Android Management API / No Managed Google Play. Other docs reference this ADR instead of repeating the full decision block.
+Request, response, path, schema, reason code, auth context và Firestore.
 
-Device Owner/DPC policy, Lock Task Mode, User Restrictions, Home/Launcher policy, Maintenance Mode and policy recovery
+Device Owner / kiosk policy
 
 DCAM Android Device Owner & Kiosk Policy Design
 
-Source of truth cho dedicated-device/kiosk policy. Local docs only describe runtime/update/UI impact.
+Device Owner, Lock Task, User Restrictions và Maintenance Mode.
 
-In-app console navigation, Setting hub, Record/Live View default screen, Login Settings, User Settings, File/Media read-only, Controlled Maintenance Mode UX
-
-DCAM In-App Operation, Device Settings & Media Console Design
-
-Source of truth cho app console/UX behavior.
-
-Controlled Exit Kiosk temporarily, Maintenance Password Gate, approved target list, no full Android unrestricted mode
-
-DCAM In-App Operation, Device Settings & Media Console Design + Kiosk Policy Design + Security Design
-
-Reference full rule; related docs only state local impact.
-
-DCAM Self Update / APK update as primary update path
-
-DCAM Self Update Design
-
-Source of truth cho artifact/download/validation/install flow. API check/result schema belongs to API Contract.
-
-Optional manual Google Play Store fallback under Controlled Maintenance Mode
-
-DCAM In-App Operation, Device Settings & Media Console Design + DCAM Self Update Design
-
-Only if device has GMS/Play Store and approved maintenance/factory Google account.
-
-Remote config validation, cache and apply policy
-
-09 - System Settings Requirements
-
-Reference setting/apply ownership; API schema belongs to API Contract.
-
-Android startup identity restore and provisioning-required runtime state
+Android runtime
 
 DCAM Android Operation Design
 
-Reference startup/provisioning orchestration.
+Startup, identity application, provisioning state và recovery.
 
-Device identity/provisioning/kiosk/security constraints
+Concurrency/threading
 
-DCAM Security & Encryption Design
+DCAM Concurrency & Threading Model Design
 
-Reference security constraints; không copy lại security rules.
+Execution lanes, critical path và concurrency guardrails.
 
-User/operator management requirement, login policy, emergency override
+Performance/resource constraints
 
-05 - User & Device Operation Requirements
+DCAM Performance Budget & Resource Constraints
 
-Reference full requirement; không định nghĩa lại trong architecture/dev docs.
+Measurable budgets and release thresholds.
 
-Recording operator gate and emergency override attribution
+Logging provider ownership
 
-DCAM Recording & Capture Design
+07 - Logging, Diagnostics, Performance & Security
 
-Reference RecordingController behavior và media attribution.
+Loggly and Crashlytics provider roles.
 
-User/auth/session DB schema, operator session persistence
+Logging requirements
 
-DCAM SQLite Database Design
+07 - Logging & Diagnostics Requirements
 
-Reference tables và transaction boundaries only.
+Required events, local-first behavior, provider failure and sensitive logging requirements.
 
-Feature eligibility states, device capability, runtime pruning
+Operational Logging implementation
 
-DCAM Device Capability & Feature Eligibility Design
+DCAM Logging & Diagnostics Design
 
-Reference kèm summary ngắn only.
+Internal files/rotation, event schema, local queue, Loggly relay, Crashlytics boundary và sanitization.
 
-Cross-runtime guard rules and state ownership boundary
-
-DCAM State Machine Design
-
-Reference guard/coordination only.
-
-Media naming, folders, MD5, BDMA cleanup baseline
+BDMA logs artifact
 
 DCAM-BDMA Data Contract
 
-Reference only; storage/BDMA docs chỉ thêm implementation notes.
+Stable `Logs/logs.txt`, record boundary and read-only BDMA access.
 
-Sensitive logging rules
-
-07 - Logging & Diagnostics Requirements + DCAM Security & Encryption Design
-
-Reference; Security docs định nghĩa security rationale.
-
-QA test strategy, master test matrix, regression set and exit criteria
+Logging validation
 
 DCAM QA Test Strategy & Test Matrix
 
-Reference QA coverage và release readiness baseline.
+Local queue, relay, providers, outage, sanitization, non-GMS and BDMA tests.
 
-BodyCamera hardware validation, device POC results and real-device decision evidence
+Security
+
+DCAM Security & Encryption Design
+
+Credentials, worker authorization, QR security, factory Wi-Fi exception and sensitive data.
+
+Media/BDMA contract
+
+DCAM-BDMA Data Contract
+
+Naming, files, MD5, import/write-back and interoperability.
+
+QA/release readiness
+
+DCAM QA Test Strategy & Test Matrix
+
+Master test matrix, regression and exit criteria.
+
+Real-device evidence
 
 DCAM Device POC & Hardware Validation Report
 
-Reference actual validation results để chốt Technical Design TBD và factory SOP decisions.
+Hardware/firmware/provider validation evidence.
 
-## 4. Cross-document Duplication Rule
+## 4. Web Portal Baseline
 
-textwide760Cách reference được chấp nhận:
+### 4.1 Document Ownership
 
-textwide760 for the full rule.
-This document only applies that rule to .]]>## 5. Technical Design Baseline
+DCAM Device Provisioning Web Portal Design
+    → business flow
+
+DCAM Device Provisioning Web Portal App Design
+    → user-facing app and Workspace behavior
+
+DCAM Device Provisioning Web Portal Implementation Design
+    → frontend/backend implementation
+
+DCAM Web Portal & Device API Contract
+    → API and data contract
+### 4.2 Approved Direction
+
+Factory Worker opens Web Portal
+    ↓
+Login through Firebase Authentication
+    ↓
+Workspace
+    ↓
+Scan QR displayed by DCAM
+    ↓
+Review read-only serial_number and device context
+    ↓
+Enter owner_name and manufacture_date
+    ↓
+Inline review and submit inside Workspace
+    ↓
+Cloud Functions/backend validates worker and creates/restores dcam_cloud_device_id
+    ↓
+Workspace displays Created / Restored / Error / Support Required
+Forbidden:
+
+manual serial_number entry
+direct serial barcode scan
+multiple user-facing roles
+separate Confirmation screen
+separate Result screen
+worker override of duplicate/rebind/conflict
+PASS / FAIL / QUARANTINED / READY_TO_SHIP decision
+direct frontend write to provisioning collections
+## 5. Factory and DSetup Baseline
+
+Factory SOP owns complete production flow and acceptance.
+DSetup is only a helper tool inside that flow.
+DSetup completion:
+
+```
+imported_serial_number == expected serial_number
+```
+
+Out of DSetup scope:
+
+Official production record
+Factory acceptance
+Recording/storage/BDMA/update acceptance checks
+PASS / FAIL / QUARANTINED
+READY_TO_SHIP
+## 6. Logging and Diagnostics Baseline
+
+### 6.1 Channel Ownership
+
+Operational Logging
+    → primary operational observability channel
+    → centralized provider = Loggly
+
+Crash & Stability Monitoring
+    → fatal crash, ANR, unexpected non-fatal and stability
+    → provider = Firebase Crashlytics
+### 6.2 Artifact Boundary
+
+Internal active/rotated structured logs
+        ↓
+Persistent upload queue
+        ↓
+Authenticated Backend Relay
+        ↓
+Loggly
+Separately:
+
+Internal logs
+        ↓ sanitized export
+Logs/logs.txt
+        ↓ read-only ADB access
+BDMA diagnostics
+Rules:
+
+Internal rotated logs are not BDMA contract artifacts.
+Local upload queue is not logs.txt.
+Loggly delivery state is not a BDMA artifact.
+Crashlytics report/cache is not logs.txt.
+Provider failure must not block core DCAM operation.
+## 7. Current Document Versions / Status
 
 Document
-
-Purpose
 
 Current Version / Status
 
 Notes
 
-04 - Device Configuration Requirements
+DCAM Documentation Governance
 
-Xác định scope của device config file, serial, SD Identity File và identity requirement.
+Approved 1.11
 
-Approved 1.4
+Registers App/Implementation ownership, approval dependencies and logging artifact boundaries.
 
-`serial_number` là Hardware Identity/recovery key; identity dùng `dcam_cloud_device_id`; không dùng Android ID/hash.
+07 - Logging & Diagnostics Requirements
 
-09 - System Settings Requirements
+Approved 1.3
 
-System settings, app operation settings, remote config, kiosk requested-policy settings, AutoUpdate preconditions and no-EMM update boundary.
+Two channels, local-first, bounded queue, provider failure and sensitive logging requirements.
 
-Approved 1.15
+DCAM-BDMA Data Contract
 
-Remote config fetch by `dcam_cloud_device_id`; identity recovery uses `serial_lookup/{serial_number}`.
+Approved 1.8
 
-06 - Cloud Services, Update & Configuration Architecture
+Stable sanitized `Logs/logs.txt` artifact; internal rotated logs/queue excluded.
 
-Cloud Firestore storage baseline, WebServer identity, Web Portal provisioning boundary, remote config, update provider and future WebServer direction.
+DCAM QA Test Strategy & Test Matrix
 
-Approved 3.1
+Approved 1.8
 
-Firebase Cloud Firestore is selected; `serial_lookup/{serial_number}` is create/restore path. Remote config groups are defined; exact payload schema remains TBD.
+Explicit Loggly/Crashlytics/local queue/provider failure/non-GMS/BDMA tests.
+
+DCAM Logging & Diagnostics Design
+
+Draft 0.2
+
+Internal structured files/rotation, BDMA export, relay and Crashlytics implementation.
+
+DCAM Architecture Delivery Profile
+
+Approved 1.1
+
+MVP subset and Working Recording Slice guardrail.
 
 DCAM Web Portal & Device API Contract
-
-API/data contract between Android, Web Portal and Backend/Cloud Firestore for serial lookup, device record, config, update, heartbeat and factory record.
-
-Draft 0.5
-
-Source of truth for API/path/schema/error code and Firestore collection/document direction. Uses `serial_lookup/{serial_number}`.
-
-DCAM Device Provisioning Web Portal Design
-
-Provisioning business flow, Web Portal screens, optional QR/serial flow, admin actions, states, audit and error handling.
-
-Draft 0.8
-
-Source of truth cho DCAM business provisioning UI/flow; not Android Device Owner setup; API schema belongs to API Contract.
-
-DCAM Device Provisioning Web Portal App Design
-
-Web Portal app implementation design for provisioning UI, app/page structure and app-side behavior.
-
-Draft
-
-Child page under Web Portal Provisioning Design; supports UI implementation while parent owns business flow.
-
-DCAM Android Device Owner & Kiosk Policy Design
-
-Device Owner/DPC-capable policy, Lock Task Mode, User Restrictions, Home/Launcher, Controlled Maintenance Mode, Maintenance Password Gate and policy recovery.
 
 Draft 0.6
 
-Current device baseline references ADR for No external EMM / No Android Management API / No Managed Google Play.
+Factory Worker auth context and API/data ownership.
 
-DCAM In-App Operation, Device Settings & Media Console Design
+DCAM Device Provisioning Web Portal Design
 
-Record/Live View default screen, Setting hub, Back behavior, App Operation Settings, Device/System proxy, read-only File/Media, Login Settings, User Settings, Controlled Exit Kiosk, Play Store fallback.
+Approved 1.0
+
+Factory Worker, QR-only, Login/Workspace business flow.
+
+DCAM Device Provisioning Web Portal App Design
+
+Approved 1.1
+
+Two-screen app and Workspace behavior.
+
+DCAM Device Provisioning Web Portal Implementation Design
+
+Approved 1.1
+
+Firebase implementation direction.
+
+DCAM DSetup Factory Tool Design
 
 Draft 1.0
 
-Source of truth for in-app console and controlled maintenance UX.
+Stops at imported serial verification.
 
-DCAM Android Operation Design
+DCAM Factory Provisioning & Device Production SOP
 
-Android startup, serial-based identity restore, provisioning state, login/session lifecycle, foreground service, kiosk policy verification, console module readiness and recovery.
+Draft 1.2
 
-Draft 1.7
-
-Runtime baseline aligned with SOP Draft 1.1 and ADR references.
-
-DCAM State Machine Design
-
-Cross-runtime coordination, global guard rules, operator auth guard, kiosk policy states and maintenance/update states.
-
-Approved
-
-Includes maintenance auth, controlled update states and no-EMM baseline.
-
-DCAM SQLite Database Design
-
-`dcam.db` schema direction, identity/provisioning/cache, user/auth/session, console settings, optional policy snapshot, audit, update state and recovery.
-
-Draft 1.3
-
-Includes `serial_number`, `dcam_cloud_device_id`, optional SD identity sync state and non-sensitive audit boundaries.
-
-DCAM Recording & Capture Design
-
-Recording/capture state machine, operator gate, emergency override, finalization and recovery.
-
-Draft
-
-Recording remains primary feature and must block unsafe settings/update/maintenance transitions.
-
-DCAM Storage Design
-
-Android-side storage mechanics, path validation, temp/final movement, BDMA readiness and storage recovery.
-
-Draft
-
-File/Media viewer is read-only and must use finalized media state.
-
-DCAM Self Update Design
-
-Primary update path for current no-EMM baseline: APK artifact/version manifest/validation/install and policy restore.
-
-Draft 0.9
-
-Play Store is optional manual fallback only if GMS/approved maintenance account exists.
+Factory/QA owns final acceptance.
 
 DCAM Security & Encryption Design
 
-Identity security, provisioning security, auth/security, kiosk security, Maintenance Password Gate, update/package validation and sensitive logging.
+Draft 1.2
 
-Draft 1.1
+Worker/QR security and factory Wi-Fi exception.
 
-Must not allow personal Google account or plaintext maintenance/update secrets.
+DCAM Performance Budget & Resource Constraints
 
-DCAM Device Capability & Feature Eligibility Design
+Draft
 
-Authoritative source cho eligibility states and runtime pruning.
+Numeric budget and POC validation.
 
-Draft 0.5
+DCAM Concurrency & Threading Model Design
 
-Includes GMS/Play Store availability and update capability categories.
+Draft
 
-DCAM Android Development Standard
-
-Implementation standard for Android code, module boundary, policy managers and service interfaces.
-
-Approved
-
-Source of truth cho coding style, module boundary, policy manager boundary and PR checklist.
+Runtime concurrency source of truth.
 
 DCAM Device POC & Hardware Validation Report
 
-Evidence baseline for BodyCamera behavior and real device decisions.
-
 Draft
 
-Must validate Device Owner feasibility, no-EMM update path, GMS/Play Store fallback and controlled maintenance.
+Real-device evidence.
 
-DCAM QA Test Strategy & Test Matrix
-
-QA baseline for release readiness.
-
-Approved 1.6
-
-Must include no-EMM/self-update/controlled-maintenance/API/provisioning/factory SOP-related acceptance checks.
-
-DCAM Factory Provisioning & Device Production SOP
-
-Factory/admin procedure to prepare a BodyCamera for shipment.
-
-Draft 1.1
-
-Source of truth for DSetup, Device Owner setup, serial recovery/scan/injection, SD Identity File, ready-to-ship and quarantine decisions.
-
-DCAM DSetup Factory Tool Design
-
-Factory tooling design for DSetup single-device scan mode, ADB/device-owner helper flow, serial recovery/scan/injection support and production tool behavior.
-
-Draft
-
-Child page under Factory SOP; supports SOP execution, but SOP remains procedure source of truth.
-
-DCAM-BDMA Data Contract
-
-DCAM/BDMA/WebServer data contract boundary.
-
-Approved
-
-No change unless maintenance/update/factory flow affects BDMA import/user sync contract.
-
-## 6. Android Development / Device Validation Baseline
+## 8. QA / Release Management Baseline
 
 Document
 
@@ -471,67 +543,31 @@ Purpose
 
 Current Version / Status
 
-Notes
-
-DCAM Android Training & Architecture Onboarding
-
-Developer onboarding cho Android newcomers và team chuyển từ Java/Desktop sang Android.
-
-Approved
-
-Should reference In-App Console/Kiosk/Self Update/API baseline for developers assigned to these areas.
-
-DCAM Android Development Standard
-
-Project-specific Android implementation standard.
-
-Approved
-
-Source of truth cho coding style, module boundary, service interface, policy manager boundary and PR checklist.
-
-DCAM Device POC & Hardware Validation Report
-
-BodyCamera thật để chốt hardware/platform/storage/camera/service/sensor/update/kiosk policy decisions.
-
-Draft
-
-Must validate no external EMM baseline, DCAM-as-DPC feasibility, self-update install path, optional Play Store fallback and factory SOP assumptions.
-
-## 7. QA / Release Management Baseline
-
-Document
-
-Purpose
-
-Current Version / Status
-
-Notes
-
 DCAM QA Test Strategy & Test Matrix
 
-QA strategy, test level, environment matrix, device test matrix, master test matrix, regression set and exit criteria.
+QA strategy, logging/performance coverage, regression and exit criteria.
 
-Approved 1.6
-
-Must include controlled maintenance, maintenance password, read-only file/media, no unrestricted Android, no-EMM self-update, API/provisioning, factory acceptance and optional Play Store fallback coverage.
+Approved 1.8
 
 DCAM Factory Provisioning & Device Production SOP
 
-Factory/admin production flow from raw/factory-reset device to ready-to-ship device.
+Physical production procedure and acceptance.
 
-Draft 1.1
-
-Must be used for pilot/production device preparation after Device POC and release package approval.
+Draft 1.2
 
 DCAM DSetup Factory Tool Design
 
-DSetup tool design supporting Factory SOP execution.
+Factory helper tool behavior.
 
-Draft
+Draft 1.0
 
-Defines factory tool behavior; does not replace SOP acceptance gates.
+Release rules:
 
-## 8. Important Current Decisions
+DSetup completion alone does not make a device production-ready.
+Web Portal Created/Restored result alone does not make a device production-ready.
+Logging provider outage is diagnostics degradation, not automatically a recording/production failure when local diagnostics remain valid.
+READY_TO_SHIP requires Factory SOP and QA/release acceptance.
+## 9. Important Current Decisions
 
 Decision Area
 
@@ -539,140 +575,91 @@ Current Decision
 
 Offline-first
 
-Core recording, local storage, local emergency clip, local user authentication and BDMA readiness must work without cloud/WebServer after device has valid provisioned local state.
+Core recording, local storage, local auth and BDMA readiness work without cloud after provisioning.
 
-Firebase Storage Baseline
+Identity
 
-Firebase Cloud Firestore is the selected backend storage baseline. Firebase Realtime Database is not used for current storage baseline.
+Serial = Hardware Identity; cloud ID = Cloud Identity; SD file = recovery cache.
 
-Device Identity Baseline
+Cloud Storage
 
-`serial_number` is Hardware Identity / primary recovery key. `dcam_cloud_device_id` is Cloud Identity / primary cloud device id. SD Identity File is recovery cache on external SD card.
+Firestore current baseline; Realtime Database not used.
 
-Web Portal API Baseline
+Web Portal
 
-DCAM business provisioning uses `serial_lookup/{serial_number}` to create/restore `devices/{dcam_cloud_device_id}`. Do not use `ANDROID_ID`, `android_id_hash` or `device_lookup/{android_id_hash}` in the current production baseline.
+Factory Worker; Login/Workspace; QR-only serial; read-only serial.
 
-Web Portal App Design
+Web Portal Stack
 
-Web Portal provisioning business flow is owned by the parent Web Portal Provisioning Design; app/page implementation details are captured in DCAM Device Provisioning Web Portal App Design; API/schema remains in API Contract.
+Firebase Hosting + Authentication + Cloud Functions + Firestore.
 
-Kiosk Deployment Baseline
+DSetup
 
-DCAM production deployment is a dedicated-device/kiosk deployment. DCAM should use DCAM-as-Device-Owner/DPC-capable policy if feasible on selected BodyCamera firmware. Current device baseline per ADR: No external EMM / No Android Management API / No Managed Google Play.
+Stops after imported serial verification; no acceptance decision.
 
-Factory Device Owner Setup
+Factory Acceptance
 
-Factory SOP current baseline uses DSetup: factory reset / clean state &rarr; DSetup install approved DCAM APK &rarr; ADB/factory `dpm set-device-owner` &rarr; verify Device Owner &rarr; inject serial. QR is not used for Device Owner setup.
+Factory/QA owns production record and `READY_TO_SHIP / QUARANTINED`.
 
-DSetup Factory Tool
+Factory Wi-Fi
 
-DSetup is the factory tool supporting single-device scan mode, SD Identity File recovery, barcode scan fallback, approved APK install/update, Device Owner setup helper, serial injection and production result capture.
+SSID/password hardcoded in approved APK; password excluded from logs/API/records/evidence.
 
-Lock Task / Restrictions
+Dedicated Device
 
-Normal field operation uses Lock Task Mode and approved User Restrictions. Back/Home/Recents must not expose Android launcher/system UI.
+No external EMM, Android Management API or Managed Google Play baseline.
 
-In-App Console
+Update
 
-`Record / Live View` is the default main screen. `Setting` is the console hub. Back on Record opens Setting; Back on Setting returns Record; Back inside child modules returns Setting.
+Self Update / approved APK update is primary.
 
-File/Media Manager
+Operational Logging
 
-File Manager and Media Viewer are read-only/view-only. They must not delete, edit, mark important, export or share media files.
+Local-first and delivered to Loggly through authenticated Backend Relay.
 
-Login/User Settings
+Crash Monitoring
 
-Login Settings supports approved current-user auth settings; User Settings is Admin-only and must preserve historical attribution.
+Crashlytics handles crash/ANR/unexpected non-fatal context.
 
-Controlled Maintenance
+BDMA Logs
 
-Admin / Maintenance is the only approved path to Enter Maintenance Mode / Exit Kiosk temporarily. Maintenance Password Gate is required. Full Android unrestricted mode is not supported.
+BDMA reads stable sanitized `Logs/logs.txt` only; no internal archive/queue dependency.
 
-Approved Maintenance Targets
+Performance
 
-Controlled Mode may open only approved Android settings screens or approved maintenance/support apps. Unrestricted launcher/app drawer/settings browsing is not supported.
+Critical paths follow Performance Budget and Concurrency Model.
 
-App Update Baseline
+BDMA Media/User Sync
 
-Current device baseline per ADR has no external EMM / Android Management API / Managed Google Play. Primary update path is DCAM Self Update / APK update.
+Remains ADB-initiated.
 
-Google Play Store Fallback
+## 10. Current Alignment Notes
 
-Manual Google Play Store update is optional fallback only if target BodyCamera has GMS/Play Store and approved maintenance/factory Google account. Personal Google account usage is not supported.
+Group 1 alignment completed:
+    Factory SOP / DSetup / Project Home / Web Portal Business Flow
 
-Factory Production Baseline
+Group 2 alignment completed:
+    Web Portal Business Flow / App Design / Implementation Design / Security / API Contract
 
-A device is not ready to ship just because DCAM APK is installed. It must pass Factory SOP checks including approved APK, DSetup Device Owner verification, serial recovery/scan/injection, SD Identity File result if required, business provisioning, kiosk policy verification, maintenance protection, recording/storage check, BDMA readiness if required, Self Update capability and production record.
+Group 3 alignment completed:
+    Logging Requirements / QA / Data Contract / Logging Design / Documentation Governance
+Current logging documents now agree that:
 
-Android Enterprise vs DCAM Business Provisioning
+Loggly owns centralized Operational Logging.
+Crashlytics owns Crash & Stability Monitoring.
+Operational Logging is local-first and bounded.
+Logs/logs.txt is the BDMA-facing artifact.
+Internal rotated logs and upload queue are implementation-private.
+QA owns explicit end-to-end provider and artifact verification.
+## 11. Practical Conclusion
 
-Android Device Owner setup is separate from DCAM Web Portal/Firebase business provisioning. DCAM business provisioning creates/restores `dcam_cloud_device_id`, `serial_number`, `owner_name`, `manufacture_date` and initial metadata.
-
-Device Cloud Identity
-
-Cloud Firestore/WebServer primary device key is `dcam_cloud_device_id`.
-
-Identity Recovery
-
-`serial_number` is the recovery key. Cloud restore uses `serial_lookup/{serial_number}`. SD Identity File may cache serial on external SD card for DSetup recovery after factory reset.
-
-Serial Number
-
-`serial_number` is Hardware Identity, stored locally, mirrored to `dcam_config.cson`/`dcam.db`, synced with Cloud Firestore/WebServer and cached in SD Identity File if feature enabled.
-
-Advertising ID
-
-Advertising ID is not used as DCAM identity key.
-
-Remote Config
-
-Remote config fetch/cache/apply baseline and initial setting groups are defined; exact field-level payload schema remains TBD. Fetch by `dcam_cloud_device_id`, cache in `dcam.db`, validate/apply only when runtime guard allows. Kiosk policy config is requested policy. API schema belongs to API Contract.
-
-CSON
-
-`dcam_config.cson` only stores device information. Operational settings are stored in `dcam.db`.
-
-User Management
-
-DCAM and BDMA both manage user/operator data; sync is two-way through ADB.
-
-Operator Login
-
-Normal recording/capture evidence requires active operator session.
-
-Emergency Override
-
-Emergency recording can run without login using system operator `EMERGENCY_OVERRIDE_ADMIN`; it is not a real Admin and cannot enter Maintenance.
-
-Login Session
-
-Session has no timeout; background/foreground does not logout; device reboot requires login again.
-
-System Modules Before Login
-
-Tracking, sensor, GPS, logging, recovery, identity/provisioning checks, kiosk policy verification, console capability pruning and capability detection can run without operator login when safe.
-
-AutoUpdate Preconditions
-
-System Settings owns full AutoUpdate preconditions. Self Update owns artifact/install flow. Kiosk Policy owns policy-safe update constraints. In-App Console owns manual Play Store fallback UX. API Contract owns update check/result schema.
-
-Device POC
-
-Device POC is required to validate real BodyCamera behavior before release and before Factory SOP is approved for production.
-
-QA / Release Readiness
-
-QA Test Strategy & Test Matrix is release readiness baseline. Factory SOP acceptance checks contribute to ready-to-ship decision.
-
-BDMA Boundary
-
-Media import/user sync is ADB-based and BDMA-initiated; WebServer identity/provisioning does not replace BDMA ingest/user-sync boundary.
-
-## 9. Practical Conclusion
-
-DCAM documentation should be maintained as a set of architecture documents with clear source-of-truth ownership.
-
-textwide760Runtime + production baseline hiện tại là:
-
-textwide760
+DCAM Project Home is the navigation and alignment source for the document set.
+Factory SOP owns production procedure and final acceptance.
+DSetup stops at imported serial_number verification.
+Web Portal uses Factory Worker, Login/Workspace and QR-only serial source.
+Backend creates/restores dcam_cloud_device_id through serial_lookup/{serial_number}.
+Factory Wi-Fi credentials remain hardcoded in the approved APK by current project decision, but must never be exposed.
+Operational Logging uses Loggly through local-first queue and Backend Relay.
+Crash & Stability Monitoring uses Firebase Crashlytics.
+Logs/logs.txt is the stable sanitized BDMA-facing diagnostics artifact.
+Technical details remain owned by their authoritative documents according to DCAM Documentation Governance.

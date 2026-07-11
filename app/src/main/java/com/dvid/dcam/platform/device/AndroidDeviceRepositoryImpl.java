@@ -11,13 +11,24 @@ import com.dvid.dcam.feature.device.domain.DeviceInfo;
 import com.dvid.dcam.feature.device.domain.DeviceStatus;
 import java.io.File;
 import java.lang.reflect.Method;
+import java.util.function.Supplier;
 
 /** Android implementation of the device repository. */
 public final class AndroidDeviceRepositoryImpl implements DeviceRepository {
     private final Context context;
+    private final Supplier<File> storageRoot;
 
     public AndroidDeviceRepositoryImpl(Context context) {
+        this(context, () -> context.getExternalFilesDir(null));
+    }
+
+    public AndroidDeviceRepositoryImpl(Context context, File storageRoot) {
+        this(context, () -> storageRoot);
+    }
+
+    public AndroidDeviceRepositoryImpl(Context context, Supplier<File> storageRoot) {
         this.context = context.getApplicationContext();
+        this.storageRoot = storageRoot;
     }
 
     @Override public DeviceInfo readInfo() {
@@ -36,7 +47,7 @@ public final class AndroidDeviceRepositoryImpl implements DeviceRepository {
             if (battery != null) batteryPercent = battery.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
         } catch (RuntimeException ignored) {}
         try {
-            File storage = context.getExternalFilesDir(null);
+            File storage = storageRoot.get();
             if (storage == null) storage = context.getFilesDir();
             availableBytes = new StatFs(storage.getAbsolutePath()).getAvailableBytes();
         } catch (RuntimeException ignored) {}

@@ -3,7 +3,7 @@
 **Page ID**: 47710574  
 **Version**: 5  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/47710574
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47710574
 
 ---
 
@@ -260,7 +260,17 @@ Approved
 
 Normal recording gate:
 
-text## 5. Emergency Override Requirement
+StartRecordingRequested
+    ↓
+Check active operator session
+    ↓
+If active operator exists:
+    continue Recording Precheck
+    ↓
+If no active operator:
+    reject OPERATOR_AUTH_REQUIRED
+    show Login Screen
+## 5. Emergency Override Requirement
 
 Emergency recording phải có khả năng hoạt động khi chưa có operator logged in, nhưng vẫn phải có attribution/audit rõ ràng.
 
@@ -308,9 +318,26 @@ Approved
 
 Required emergency system identity:
 
-textEmergency recording gate:
+user_id = SYSTEM_EMERGENCY_OVERRIDE
+operator_code = EMERGENCY_OVERRIDE_ADMIN
+display_name = Emergency Override Admin
+user_type = SYSTEM
+role = SYSTEM_ADMIN
+status = ACTIVE
+Emergency recording gate:
 
-text## 6. Login Session Requirements
+EmergencyRecordingRequested
+    ↓
+Check active operator session
+    ↓
+If active operator exists:
+    use active operator attribution
+    ↓
+If no active operator exists:
+    use EMERGENCY_OVERRIDE_ADMIN attribution
+    ↓
+Continue emergency recording precheck
+## 6. Login Session Requirements
 
 Operator session policy của DCAM được thiết kế cho dedicated BodyCamera device.
 
@@ -370,7 +397,13 @@ Approved
 
 Session behavior summary:
 
-text## 7. Login Method Requirements
+App background → keep session
+App foreground → reuse valid session
+Screen off/on → keep session
+Process recreate without reboot → restore if same boot and valid
+Device reboot → require login again
+Manual logout/admin revoke → end session according to policy
+## 7. Login Method Requirements
 
 DCAM hỗ trợ nhiều login methods theo device capability và security policy.
 
@@ -418,7 +451,10 @@ Approved
 
 Rules:
 
-text## 8. User / Operator Data Sync Requirements
+Login method availability depends on Device Capability and Security Design.
+Credential/auth sensitive data must follow Security & Encryption Design.
+Unsupported login methods must be hidden, disabled or marked unavailable.
+## 8. User / Operator Data Sync Requirements
 
 User/operator data phải sync được giữa DCAM và BDMA, nhưng Android runtime vẫn là owner của active runtime state.
 
@@ -484,7 +520,14 @@ Approved Direction
 
 Sync direction:
 
-text## 9. Media Attribution Requirements
+BDMA user/operator database
+    ↕ ADB sync
+DCAM dcam.db user/operator tables
+    ↓
+Android validation + runtime guard
+    ↓
+Applied user/auth/session availability
+## 9. Media Attribution Requirements
 
 Mọi normal recording/capture evidence cần có operator attribution rõ ràng.
 
@@ -526,7 +569,14 @@ Approved
 
 Required attribution fields:
 
-textOperator resolution states:
+operator_user_id
+operator_code_snapshot
+operator_name_snapshot
+operator_badge_snapshot
+operator_session_id
+operator_auth_method
+operator_resolution_state
+Operator resolution states:
 
 State
 
@@ -584,4 +634,14 @@ DCAM State Machine Design
 
 ## 11. Practical Conclusion
 
-text
+DCAM uses offline-first user/operator management.
+Normal recording and evidence capture require active authenticated operator session.
+Emergency recording can run without login using EMERGENCY_OVERRIDE_ADMIN.
+Operator session has no time-based timeout.
+Background/foreground and screen off/on do not logout operator.
+Device reboot requires login again.
+DCAM and BDMA both manage user/operator data.
+BDMA syncs user/operator data with DCAM through ADB.
+Active operator_session runtime state is Android-owned.
+Media sessions must store operator attribution snapshot.
+Emergency override must be auditable and distinguishable from real operator attribution.

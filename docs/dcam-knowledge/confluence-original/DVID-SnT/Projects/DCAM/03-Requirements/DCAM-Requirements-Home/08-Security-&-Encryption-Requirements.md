@@ -3,7 +3,7 @@
 **Page ID**: 47710594  
 **Version**: 6  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/47710594
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47710594
 
 ---
 
@@ -258,8 +258,16 @@ Emergency override không được attribute vào real Admin user.
 
 Required system operator:
 
-textBDMA và DCAM phải audit được recording được tạo bởi real authenticated operator hay bởi emergency override.
+operator_code = EMERGENCY_OVERRIDE_ADMIN
+user_id = SYSTEM_EMERGENCY_OVERRIDE
+user_type = SYSTEM
+BDMA và DCAM phải audit được recording được tạo bởi real authenticated operator hay bởi emergency override.
 
 ## 6. Practical Conclusion
 
-text
+Security Requirements xác định những gì phải được protect.
+User Requirements xác định login/session policy.
+Security & Encryption Design xác định cách implementation protection.
+SQLite Database Design xác định user/auth/session persistence.
+Data Contract là source of truth cho external sync và file/import rules.
+Logging Requirements là source of truth cho sensitive logging rules.

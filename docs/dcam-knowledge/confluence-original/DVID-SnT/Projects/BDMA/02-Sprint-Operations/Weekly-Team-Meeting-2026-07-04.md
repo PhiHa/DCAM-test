@@ -3,7 +3,7 @@
 **Page ID**: 47808589  
 **Version**: 2  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/47808589
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47808589
 
 ---
 
@@ -271,13 +271,13 @@ Khuyến khích học kiến trúc, tư duy sản phẩm, kỹ năng phân tích
 
 Team đã duy trì được nhịp release BDMA trong 3 tuần liên tiếp. Đây là điểm tích cực cần tiếp tục phát huy.
 
-Tuy nhiên, các vấn đề phát sinh trong task marker/map cho thấy cần cải thiện quy trình từ requirement &rarr; design &rarr; implementation &rarr; test.
+Tuy nhiên, các vấn đề phát sinh trong task marker/map cho thấy cần cải thiện quy trình từ requirement → design → implementation → test.
 
 Với các task có ảnh hưởng nhiều màn hình hoặc trạng thái giao diện, cần đánh giá impact kỹ hơn trước khi bắt đầu code.
 
 Bước chuyển sang Android Phase 2 cần được thực hiện có kiểm soát, không bỏ rơi các vấn đề vận hành của BDMA.
 
-Tư duy cần chuyển từ "hoàn thành code" sang "hoàn thành sản phẩm có thể vận hành ổn định".
+Tư duy cần chuyển từ “hoàn thành code” sang “hoàn thành sản phẩm có thể vận hành ổn định”.
 
 # 7. Action Items
 

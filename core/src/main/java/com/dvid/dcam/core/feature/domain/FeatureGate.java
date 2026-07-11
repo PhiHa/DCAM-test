@@ -9,7 +9,7 @@ public enum FeatureGate {
     RECORDING_SETTINGS(false),
     CAMERA_SETTINGS(false),
     AUDIO_SETTINGS(false),
-    STORAGE_SETTINGS(false),
+    STORAGE_SETTINGS(true),
     DEVICE_SETTINGS(false),
     GPS(false),
     SECURITY_SETTINGS(false, "SECURITY_ENCRYPTION"),

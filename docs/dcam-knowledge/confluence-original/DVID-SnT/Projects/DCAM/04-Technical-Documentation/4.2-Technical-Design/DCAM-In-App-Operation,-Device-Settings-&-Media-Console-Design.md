@@ -3,7 +3,7 @@
 **Page ID**: 49840330  
 **Version**: 10  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/49840330
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/49840330
 
 ---
 
@@ -70,19 +70,38 @@ Vì vậy DCAM phải cung cấp một **in-app device console** để vận hà
 
 Tài liệu này là source of truth cho các nhóm màn hình/tính năng bên trong DCAM app:
 
-textChi tiết Device Owner / Lock Task / User Restrictions vẫn thuộc **DCAM Android Device Owner & Kiosk Policy Design**. Tài liệu này chỉ định nghĩa UI/UX, permission/access level, runtime guard và apply behavior bên trong app.
+App Operation Settings
+Device / System Settings proxy
+File / Storage Manager / Media Viewer
+Login Settings
+User Settings (Admin only)
+Admin / Maintenance with Maintenance Password Gate
+Controlled Google Play Store update target if GMS/Play Store is available
+DCAM Self Update as primary non-EMM update path
+Emergency Settings
+Server Connection / Live Stream / PTT / AI Mode placeholders
+Chi tiết Device Owner / Lock Task / User Restrictions vẫn thuộc **DCAM Android Device Owner & Kiosk Policy Design**. Tài liệu này chỉ định nghĩa UI/UX, permission/access level, runtime guard và apply behavior bên trong app.
 
 ## 2. Core Decision
 
-textDCAM không được phụ thuộc vào unrestricted Android Settings, external file manager, gallery app hoặc launcher app cho normal field operation.
+Trong kiosk mode, DCAM không chỉ là recording app.
+DCAM cũng là controlled in-app console cho các chức năng operation, device, storage, media, login, user-management và maintenance được phép.
+DCAM không được phụ thuộc vào unrestricted Android Settings, external file manager, gallery app hoặc launcher app cho normal field operation.
 
 Việc thoát normal kiosk operation phải được bảo vệ và kiểm soát:
 
-textCurrent device baseline: No external EMM / No Android Management API / No Managed Google Play. (per ADR - Dedicated Device / Device Owner / Lock Task Decision)
+Enter Maintenance Mode / Exit Kiosk temporarily requires Maintenance Password Gate.
+Exit Kiosk temporarily means controlled maintenance access only.
+Full Android unrestricted mode is not supported.
+Current device baseline: No external EMM / No Android Management API / No Managed Google Play. (per ADR - Dedicated Device / Device Owner / Lock Task Decision)
 
 Update decision for current baseline:
 
-text## 3. Scope
+Primary update path = DCAM Self Update / APK update.
+Optional fallback = Manual Google Play Store update trong Controlled Maintenance Mode nếu device có GMS/Play Store và approved maintenance/factory account.
+Not supported = Managed Google Play / Android Management API policy-driven update cho current baseline.
+Not supported = Personal Google account cho production maintenance.
+## 3. Scope
 
 ### 3.1 In Scope
 
@@ -294,11 +313,38 @@ Managed Google Play / policy-driven update: not applicable (per ADR).
 
 `Setting` là in-app console hub. Màn này chứa các nút/card nhỏ để đi vào các console modules còn lại.
 
-text### 5.2 Back Button Behavior
+DCAM Runtime Navigation
+├── Record / Live View                 ← Default Main Screen
+└── Setting                            ← Console Hub Screen
+    ├── Media / Files
+    ├── Storage
+    ├── App Operation Settings
+    ├── Device / System Settings
+    ├── Login Settings
+    ├── User Settings (Admin only)
+    ├── Emergency Settings (TBD)
+    ├── Server / Connection (Future)
+    ├── Live Stream / PTT (Future)
+    ├── AI Mode (Future)
+    ├── Diagnostics / Support
+    └── Admin / Maintenance
+        ├── Enter Maintenance Mode / Exit Kiosk temporarily
+        │   └── Maintenance Password Gate
+        ├── DCAM Self Update / APK update
+        └── Optional approved Google Play Store manual update if enabled
+### 5.2 Back Button Behavior
 
 Trong kiosk mode, Android Back phải được DCAM navigation kiểm soát. Back không được exit DCAM hoặc làm lộ Android launcher/system UI.
 
-textDetailed behavior:
+Record / Live View
+    └── Back → Setting
+
+Setting
+    └── Back → Record / Live View
+
+Setting → Any child module
+    └── Back → Setting
+Detailed behavior:
 
 Current Screen
 
@@ -604,7 +650,11 @@ Device/System Settings là các controlled device functions cần thiết vì us
 
 Important boundary:
 
-text
+Device/System Settings UI là controlled proxy.
+Điều này không có nghĩa DCAM expose unrestricted Android Settings.
+Một số settings yêu cầu Device Owner / DPC authority hoặc Maintenance Mode.
+Một số settings chỉ được mở restricted system panel nếu approved bởi policy.
+
 Setting / Function
 
 Direction
@@ -1201,11 +1251,41 @@ Flow này phải được bảo vệ bằng **Maintenance Password Gate**.
 
 DCAM chỉ hỗ trợ một maintenance exit model:
 
-textDCAM **không** hỗ trợ:
+```
+Exit Kiosk temporarily — Controlled Mode only
+```
 
-text### 11.1 Controlled Maintenance Entry Flow
+DCAM **không** hỗ trợ:
 
-text### 11.2 Controlled Mode Boundary
+Full Android unrestricted mode
+Unrestricted launcher access
+Unrestricted app drawer access
+Unrestricted Android Settings access
+User-driven free navigation outside approved maintenance scope
+### 11.1 Controlled Maintenance Entry Flow
+
+Setting
+    ↓
+Admin / Maintenance
+    ↓
+Select Enter Maintenance Mode / Exit Kiosk temporarily
+    ↓
+Validate current user is Admin or approved Maintenance role
+    ↓
+Maintenance Password Gate
+    ↓
+Validate runtime guard is safe
+    ↓
+Stop Lock Task temporarily and/or relax only approved restrictions
+    ↓
+Open only approved Android Settings/system screen or approved maintenance app
+    ↓
+Return to DCAM
+    ↓
+Restore User Restrictions / Lock Task policy
+    ↓
+Return to normal kiosk operation
+### 11.2 Controlled Mode Boundary
 
 Area
 
@@ -1679,17 +1759,91 @@ Live Stream/PTT không được interrupt emergency/recording/finalization.
 
 Tất cả console setting changes phải pass runtime guard.
 
-textBlocked/deferred states:
+User/Admin changes setting
+    ↓
+Validate access level
+    ↓
+Validate schema/value range
+    ↓
+Validate device capability and policy support
+    ↓
+Check runtime guard
+    ↓
+If safe: persist requested/applied state and apply
+If unsafe: defer or reject with reason code
+    ↓
+Audit result
+Blocked/deferred states:
 
-textAdditional auth/user-management guard:
+recording active
+emergency active
+post-record/finalizing active
+storage recovery active
+DB recovery/migration active
+policy recovery active
+update/install active
+unsafe low storage/thermal state
+Additional auth/user-management guard:
 
-textAdditional maintenance guard:
+Login/User setting changes
+    ↓
+Validate caller role and re-authentication requirement
+    ↓
+Validate account safety rule
+    ↓
+Validate credential/biometric security rule
+    ↓
+Persist only safe non-sensitive state
+    ↓
+Audit safe reason/result
+Additional maintenance guard:
 
-textAdditional update guard for current no-EMM baseline:
+Enter Maintenance Mode / Exit Kiosk temporarily
+    ↓
+Validate Admin or approved Maintenance role
+    ↓
+Validate Maintenance Password Gate
+    ↓
+Validate runtime safe state
+    ↓
+Temporarily stop Lock Task / relax only approved restrictions
+    ↓
+Open only approved apps/settings screens
+    ↓
+Audit maintenance entry result
+Additional update guard for current no-EMM baseline:
 
-textOptional Play Store fallback guard:
+App update request
+    ↓
+Prefer DCAM Self Update / APK update
+    ↓
+Validate package identity, signature, checksum and version
+    ↓
+Validate runtime guard
+    ↓
+Install/update only through approved update path
+    ↓
+Verify update result where applicable
+    ↓
+Restore kiosk policy
+Optional Play Store fallback guard:
 
-text## 15. Persistence Direction
+Manual Google Play Store update fallback
+    ↓
+Validate device has GMS/Play Store support
+    ↓
+Validate Play Store is approved maintenance target
+    ↓
+Validate approved maintenance/factory Google account if sign-in is required
+    ↓
+Update only DCAM / approved apps
+    ↓
+Return to DCAM
+    ↓
+Verify update result where applicable
+    ↓
+Restore kiosk policy
+## 15. Persistence Direction
 
 Data Type
 
@@ -2145,4 +2299,31 @@ TBD
 
 ## 18. Practical Conclusion
 
-text
+Kiosk mode khiến DCAM phải chịu trách nhiệm cung cấp các in-app operation và device control surfaces được phép.
+Record / Live View là default main screen.
+Setting là in-app console hub.
+Back trên Record / Live View mở Setting.
+Back trên Setting quay lại Record / Live View.
+Back trong bất kỳ child module nào quay lại Setting.
+Back không được exit DCAM khi kiosk mode active.
+Recording vẫn là primary feature.
+Tuy nhiên DCAM cũng phải cung cấp controlled settings, storage/media review, login settings, admin-only user settings và support/admin workflows.
+Login Settings cho phép approved current-user self-service auth changes như password/login method/face auth enrollment.
+User Settings là Admin-only và hỗ trợ add/edit/delete-disable user với audit và historical attribution preservation.
+Admin / Maintenance là approved path duy nhất để Enter Maintenance Mode / Exit Kiosk temporarily.
+Enter Maintenance Mode / Exit Kiosk temporarily yêu cầu Maintenance Password Gate.
+Exit Kiosk temporarily nghĩa là Controlled Mode only.
+Controlled Mode chỉ được mở approved Android settings screens và approved maintenance/support apps.
+Current device baseline per ADR: No external EMM / No Android Management API / No Managed Google Play.
+Primary update path là DCAM Self Update / APK update.
+Manual Google Play Store update chỉ là optional fallback nếu device có GMS/Play Store và approved maintenance/factory Google account.
+Personal Google account usage và unapproved Play Store browsing/install không được hỗ trợ.
+Full Android unrestricted mode is not supported.
+Maintenance secret values không được hardcoded, stored plaintext hoặc logged.
+Maintenance session phải restore User Restrictions và Lock Task policy sau exit/timeout/recovery.
+App Operation Settings control recording/app behavior.
+Device/System Settings là controlled proxies, không phải unrestricted Android Settings.
+File Manager và Media Viewer là read-only/view-only.
+File Manager không được delete, edit, mark important, export hoặc share media files.
+Emergency Settings, Server Connection, Live Stream, PTT và AI Mode vẫn là TBD/future groups.
+Tất cả changes phải pass role/access, capability, policy, security và runtime guards.

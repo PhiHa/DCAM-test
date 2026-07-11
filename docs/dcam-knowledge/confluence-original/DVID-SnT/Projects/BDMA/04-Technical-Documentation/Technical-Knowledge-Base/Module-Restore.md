@@ -3,7 +3,7 @@
 **Page ID**: 29360133  
 **Version**: 3  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/29360133
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/29360133
 
 ---
 
@@ -16,7 +16,7 @@ Restore đọc tất cả file từ Backup Dir, sao chép sang Sync Dir, đồng
 
 Quá trình chạy trên background thread, không block UI. Progress được cập nhật real-time mỗi 3 giây.
 
-Hỗ trợ retry cho các file bị lỗi ở lần restore trước thông qua bảng backup_restore_failures. 
+Hỗ trợ retry cho các file bị lỗi ở lần restore trước thông qua bảng backup_restore_failures. 
 
 ## 1.1. Các Trạng Thái Restore
 
@@ -152,7 +152,7 @@ Validate: backupPath và dataPath không được rỗng. Kiểm tra getStorageB
 
 **Controller**
 
-Hiện dialog confirm. Nếu user xác nhận &rarr; gọi runStorageRecoveryOperation(adminSettingsService::restore).
+Hiện dialog confirm. Nếu user xác nhận → gọi runStorageRecoveryOperation(adminSettingsService::restore).
 
 **3**
 
@@ -176,7 +176,7 @@ AtomicBoolean lock (compareAndSet). Lấy backupDir và dataDir từ FolderManag
 
 **RestoreService scanFiles()**
 
-Unlock folder &rarr; Files.walk() &rarr; filter regular files, bỏ .sha256 sidecar và .tmp &rarr; lock lại folder.
+Unlock folder → Files.walk() → filter regular files, bỏ .sha256 sidecar và .tmp → lock lại folder.
 
 **7**
 
@@ -200,7 +200,7 @@ Vòng lặp từng [file: validat](#)e checksum, so sánh size, copyWithRetry(),
 
 **RestoreService copyWithRetry()**
 
-Copy sang file .tmp trước, verify size, atomic move sang đích. Retry tối đa MAX_RETRY lần. Nếu disk full &rarr; throw DiskFullException.
+Copy sang file .tmp trước, verify size, atomic move sang đích. Retry tối đa MAX_RETRY lần. Nếu disk full → throw DiskFullException.
 
 **11**
 
@@ -224,7 +224,7 @@ invalidateCache() DriveResolverService. Trả về BackupSyncResult.
 
 **Controller (Platform.runLater)**
 
-Dừng progress scheduler. Cập nhật label màu xanh/đỏ. Nếu thành công &rarr; tự ẩn sau 3 giây. Nếu lỗi &rarr; hiện nút Retry.
+Dừng progress scheduler. Cập nhật label màu xanh/đỏ. Nếu thành công → tự ẩn sau 3 giây. Nếu lỗi → hiện nút Retry.
 
 ## 3.2. Luồng Retry Failed
 
@@ -244,7 +244,7 @@ Gọi runStorageRecoveryOperation(adminSettingsService::retryFailed).
 
 **RestoreService retryFailed()**
 
-Đọc danh sách file lỗi từ RestoreFailureRepository. Nếu rỗng &rarr; trả về success(0).
+Đọc danh sách file lỗi từ RestoreFailureRepository. Nếu rỗng → trả về success(0).
 
 **3**
 
@@ -262,13 +262,13 @@ Sau retry: xóa các file đã thành công khỏi failure table (deleteByPaths)
 
 Kiểm tra xem có luồng nào đang chạy không theo thứ tự:
 
-restoreService.isRunning() &rarr; đang có restore/retry chạy
+restoreService.isRunning() → đang có restore/retry chạy
 
-deviceSyncQueue.isActive() &rarr; đang sync thiết bị
+deviceSyncQueue.isActive() → đang sync thiết bị
 
-dataBackupQueue.isActive() &rarr; đang backup data
+dataBackupQueue.isActive() → đang backup data
 
-Nếu bất kỳ điều kiện nào đúng &rarr; hiện notice lỗi, không chạy restore.
+Nếu bất kỳ điều kiện nào đúng → hiện notice lỗi, không chạy restore.
 
 # 4. Cơ Chế Progress Tracking
 
@@ -312,7 +312,7 @@ Số file bị bỏ qua khi disk full và không recover được
 
 ## 4.2. Progress Updater
 
-Controller spawn một ScheduledExecutorService cập nhật label trên mỗi 3 giây trên Platform.runLater() trong quá trình restore. 
+Controller spawn một ScheduledExecutorService cập nhật label trên mỗi 3 giây trên Platform.runLater() trong quá trình restore. 
 
 ## 4.3. Trạng Thái Label UI
 
@@ -364,7 +364,7 @@ hideProgressUI() – label ẩn hoàn toàn
 
 Copy thành công
 
-ATOMIC_MOVE .tmp &rarr; dest
+ATOMIC_MOVE .tmp → dest
 
 incrementSuccess()
 
@@ -372,7 +372,7 @@ IOException thường
 
 Retry tối đa MAX_RETRY lần, xóa .tmp
 
-Sau hết retry &rarr; addFailure, incrementFailed()
+Sau hết retry → addFailure, incrementFailed()
 
 Disk full (No space left / not enough space)
 
@@ -394,7 +394,7 @@ Retry lại, xóa .tmp
 
 ## 5.2. Checksum Validation – shouldSkipFile()
 
-Trước khi restore, mỗi file được kiểm tra xem file có hợp lệ không 
+Trước khi restore, mỗi file được kiểm tra xem file có hợp lệ không 
 
 ## 5.3. Disk Full Recovery
 
@@ -408,7 +408,7 @@ Trước khi restore, mỗi file được kiểm tra xem file có hợp lệ kh�
 
 **RestoreService**
 
-Gặp DiskFullException &rarr; extractDriveLetter(destPath)
+Gặp DiskFullException → extractDriveLetter(destPath)
 
 **2**
 
@@ -432,7 +432,7 @@ Xử lý recovery, publish StorageDirRestoredEvent hoặc StorageRecoveryDeferre
 
 **RestoreService @EventListener**
 
-onStorageDirRestored &rarr; notifyAll, recoveryDeferred = false; hoặc onStorageDirRecoveryDeferred &rarr; notifyAll, recoveryDeferred = true
+onStorageDirRestored → notifyAll, recoveryDeferred = false; hoặc onStorageDirRecoveryDeferred → notifyAll, recoveryDeferred = true
 
 **6**
 
@@ -445,7 +445,7 @@ Nếu recovered: lấy syncDir mới, thử copy lại. Nếu deferred: incremen
 Đầu mỗi lần restore mới: clearAll() xóa toàn bộ record cũ.
 Cuối mỗi lần restore: saveAll(failures) ghi tất cả file lỗi.
 Cuối retry: deleteByPaths(successPaths) xóa file đã thành công, giữ lại file còn lỗi.
-Khi user thay đổi thư mục Backup hoặc Sync: clearAll() + hideProgressUI() (reset trạng thái). 
+Khi user thay đổi thư mục Backup hoặc Sync: clearAll() + hideProgressUI() (reset trạng thái). 
 
 # 6. UI Components (FXML)
 
@@ -497,7 +497,7 @@ Label
 
 Cảnh báo khi Sync và Backup cùng ổ đĩa. Ẩn mặc định.
 
- Khi restore đang chạy: btnRestore, btnChooseSaveFolder, btnChooseBackupFolder, btnChooseExportFolder đều bị disable.
+ Khi restore đang chạy: btnRestore, btnChooseSaveFolder, btnChooseBackupFolder, btnChooseExportFolder đều bị disable.
 storageActionBox chỉ visible khi có progress đang chạy hoặc có failure cần retry.
 lblDriveConflictWarning hiện khi Sync Dir và Backup Dir cùng root drive (cảnh báo, không block).
 

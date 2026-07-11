@@ -3,7 +3,7 @@
 **Page ID**: 30539808  
 **Version**: 1  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/30539808
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/30539808
 
 ---
 
@@ -84,7 +84,7 @@ Tăng cường trao đổi, nghiên cứu tài liệu kỹ thuật.
 
 Cho phép chuyển trạng thái từ **Testing** về **In Progress** khi phát hiện lỗi trong quá trình kiểm thử.
 
-**Workflow mục tiêu:** To Do &rarr; In Progress &rarr; Code Review &rarr; Testing &rarr; Done. Testing &rarr; In Progress khi phát hiện lỗi.
+**Workflow mục tiêu:** To Do → In Progress → Code Review → Testing → Done. Testing → In Progress khi phát hiện lỗi.
 
 **Owner:** PM
 
@@ -100,7 +100,7 @@ Thời hạn
 
 PM
 
-Cập nhật Jira Workflow hỗ trợ Testing &rarr; In Progress
+Cập nhật Jira Workflow hỗ trợ Testing → In Progress
 
 Sprint 5.5
 

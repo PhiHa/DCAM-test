@@ -3,7 +3,7 @@
 **Page ID**: 47775837  
 **Version**: 1  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/47775837
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47775837
 
 ---
 
@@ -14,13 +14,13 @@ Bản tóm tắt ngắn gọn, sẵn sàng chia sẻ cho cấp quản lý về s
 
 **Sprint:** BDMA-4 Release Management
 
-**Thời gian:**  &rarr;  (kế hoạch), đóng thực tế 
+**Thời gian:** 08 Jun 2025 → 29 Jun 2025 (kế hoạch), đóng thực tế 04 Jul 2025
 
 **Mục tiêu sprint:** Phát hành chính thức phần mềm và hỗ trợ dịch vụ
 
-**Kết quả:** Đạt mục tiêuGreen — phát hành BDMA v1.0.133 vào 
+**Kết quả:** ĐẠT MỤC TIÊU — phát hành BDMA v1.0.133 vào 04 Jul 2025
 
-Sprint hoàn thành 18/18 issue, bao gồm 15 Task và 3 Bug; toàn bộ phạm vi cam kết đã được bàn giao.
+ Sprint hoàn thành 18/18 issue, bao gồm 15 Task và 3 Bug; toàn bộ phạm vi cam kết đã được bàn giao.
 
 # Thành tựu chính
 
@@ -30,9 +30,9 @@ Sprint hoàn thành 18/18 issue, bao gồm 15 Task và 3 Bug; toàn bộ phạm 
 
 # Blocker và rủi ro chính
 
-**Lỗi installer được phát hiện muộn:** [BDMA-156](https://ducviet.atlassian.net/browse/BDMA-156) được phát hiện vào , gần cuối sprint. Nguyên nhân là quá trình cài đặt thất bại khi file `.exe` bị đổi tên. Lỗi đã được xử lý vào . **Tác động:** kéo dài thời gian kiểm tra và xác nhận bản phát hành, góp phần làm sprint đóng muộn.
+**Lỗi installer được phát hiện muộn:** [BDMA-156](https://ducviet.atlassian.net/browse/BDMA-156) được phát hiện vào 27 Jun 2025, gần cuối sprint. Nguyên nhân là quá trình cài đặt thất bại khi file `.exe` bị đổi tên. Lỗi đã được xử lý vào 29 Jun 2025. **Tác động:** kéo dài thời gian kiểm tra và xác nhận bản phát hành, góp phần làm sprint đóng muộn.
 
-**Hoàn tất hạng mục trọng yếu vào ngày đóng sprint:** Tab Vị trí tại [BDMA-136](https://ducviet.atlassian.net/browse/BDMA-136) và Bookmark tại [BDMA-153](https://ducviet.atlassian.net/browse/BDMA-153) chỉ hoàn thành vào . **Tác động:** sprint vượt kế hoạch 5 ngày trước khi có thể chốt hoàn toàn.
+**Hoàn tất hạng mục trọng yếu vào ngày đóng sprint:** Tab Vị trí tại [BDMA-136](https://ducviet.atlassian.net/browse/BDMA-136) và Bookmark tại [BDMA-153](https://ducviet.atlassian.net/browse/BDMA-153) chỉ hoàn thành vào 04 Jul 2025. **Tác động:** sprint vượt kế hoạch 5 ngày trước khi có thể chốt hoàn toàn.
 
 # Thay đổi phạm vi
 

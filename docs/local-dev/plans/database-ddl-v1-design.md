@@ -2,6 +2,14 @@
 
 Status: proposed design for review  
 Prepared against repository state: 2026-07-09  
+
+> Build 0.1 implementation note (2026-07-11): this proposed DDL is not the media-readiness source of
+> truth for the Working Recording Slice. BDMA discovers contract files from `Media/*` and ignores
+> `Temp`; safe filesystem publication is the Build 0.1 readiness boundary. Per-media/session tables
+> remain deferred until their exact schema, consumer, audit purpose and bounded retention/deletion
+> policy are approved. This note does not remove the proposed recovery/audit design for a later
+> build.
+
 Companion SQL: [database-ddl-v1.sql](database-ddl-v1.sql)  
 Authority: Approved DCAM–BDMA Data Contract 1.6 plus the MVP codebase guide
 

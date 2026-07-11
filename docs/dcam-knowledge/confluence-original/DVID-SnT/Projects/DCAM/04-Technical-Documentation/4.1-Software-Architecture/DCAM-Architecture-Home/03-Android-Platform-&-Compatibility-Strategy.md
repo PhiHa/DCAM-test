@@ -3,7 +3,7 @@
 **Page ID**: 47120437  
 **Version**: 11  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/47120437
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47120437
 
 ---
 
@@ -70,7 +70,13 @@ DCAM phải chạy trên nhiều model BodyCamera khác nhau, bao gồm thiết 
 
 Current baseline:
 
-text## 2. Compatibility Principles
+No external EMM.
+No Android Management API.
+No Managed Google Play policy-driven update.
+DCAM-as-DPC / local Device Owner is preferred if target firmware supports it.
+Primary update path = DCAM Self Update / APK update.
+Manual Google Play Store update = optional controlled maintenance fallback only if GMS/Play Store exists and approved process allows it.
+## 2. Compatibility Principles
 
 Principle
 
@@ -128,7 +134,20 @@ Approved Direction
 
 ## 3. Android / Device Capability Strategy
 
-text
+App Start / Boot
+        ↓
+Detect Android version, device hardware and local device policy state
+        ↓
+Build Device Capability Profile
+        ↓
+Build Device Policy Capability Profile if production profile requires it
+        ↓
+Detect update capability including Self Update install capability and optional GMS/Play Store availability
+        ↓
+Evaluate Feature Eligibility
+        ↓
+Initialize only eligible runtime modules and approved policy managers
+
 Capability Area
 
 Detection Direction
@@ -311,7 +330,11 @@ Define fallback in Android Operation and QA.
 
 Settings, capability and device policy must be evaluated separately.
 
-textRemote config hoặc user setting có thể request một feature/policy, nhưng không được force một hardware path hoặc Android policy path bị thiếu hoặc không an toàn.
+```
+Final runtime decision = Setting + Device Capability + Permission + Device Policy Capability + Safety Policy
+```
+
+Remote config hoặc user setting có thể request một feature/policy, nhưng không được force một hardware path hoặc Android policy path bị thiếu hoặc không an toàn.
 
 Examples:
 
@@ -465,4 +488,15 @@ GMS/Play Store presence, approved account/process and ability to prevent unappro
 
 Android platform compatibility không chỉ là Android version support. Nó còn bao gồm hardware, sensor, storage, compute, permission capability, local Device Owner/DPC feasibility, Lock Task behavior, User Restrictions, update install behavior and optional GMS/Play Store fallback availability.
 
-text
+Detect capability early
+Detect device policy state early
+Do not assume external EMM / Android Management API / Managed Google Play
+Prefer DCAM-as-DPC / local Device Owner if target firmware supports it
+Use Self Update / APK update as primary update path
+Treat Play Store as optional controlled fallback only
+Do not initialize unsupported modules
+Do not enter unrestricted production mode when required kiosk policy is missing
+Degrade only when approved
+Keep recording and emergency evidence stable
+Use adapter abstractions for platform-specific and policy-specific access
+Validate Device Owner / Lock Task / User Restrictions / Self Update on real BodyCamera firmware

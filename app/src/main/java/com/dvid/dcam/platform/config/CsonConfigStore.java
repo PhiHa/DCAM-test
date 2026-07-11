@@ -56,7 +56,7 @@ public final class CsonConfigStore {
         }
         String police = valueAfter(text, "police.user_id", DcamConfig.DEFAULT_POLICE_USER_ID);
         boolean encrypted = "1".equals(valueAfter(text, "video.file.encryption",
-                valueAfter(text, "file.encryption", "1")));
+                valueAfter(text, "file.encryption", DcamConfig.DEFAULT_VIDEO_ENCRYPTED ? "1" : "0")));
         String password = valueAfter(text, "video.file.encrypt_password",
                 valueAfter(text, "file.encrypt_password", defaultMediaEncryptionPassword));
         return new DcamConfig(account, police, encrypted, password);

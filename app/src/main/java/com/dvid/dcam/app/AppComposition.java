@@ -3,6 +3,7 @@ package com.dvid.dcam.app;
 import android.content.Context;
 import android.view.View;
 import androidx.activity.ComponentActivity;
+import com.dvid.dcam.BuildConfig;
 import com.dvid.dcam.app.feature.DeveloperFeatureToggles;
 import com.dvid.dcam.core.config.application.port.ConfigurationRepository;
 import com.dvid.dcam.core.config.application.repository.ConfigurationRepositoryImpl;
@@ -22,11 +23,10 @@ import com.dvid.dcam.feature.auth.application.usecase.OperatorSessionUseCaseImpl
 import com.dvid.dcam.feature.capture.application.usecase.AudioRecordingUseCase;
 import com.dvid.dcam.feature.capture.application.usecase.AudioRecordingUseCaseImpl;
 import com.dvid.dcam.feature.capture.application.usecase.CaptureEventUseCase;
-import com.dvid.dcam.feature.capture.application.usecase.CaptureEventUseCaseImpl;
 import com.dvid.dcam.feature.capture.application.usecase.PhotoCaptureUseCase;
 import com.dvid.dcam.feature.capture.application.usecase.PhotoCaptureUseCaseImpl;
+import com.dvid.dcam.feature.capture.application.usecase.SerializedRecordingCoordinator;
 import com.dvid.dcam.feature.capture.application.usecase.VideoRecordingUseCase;
-import com.dvid.dcam.feature.capture.application.usecase.VideoRecordingUseCaseImpl;
 import com.dvid.dcam.feature.cloud.application.port.RemoteConfigGateway;
 import com.dvid.dcam.feature.cloud.application.port.OperationalSettingsStore;
 import com.dvid.dcam.feature.cloud.application.usecase.InitializeCloudIdentityUseCase;
@@ -48,6 +48,8 @@ import com.dvid.dcam.feature.settings.application.usecase.LanguageSettingsUseCas
 import com.dvid.dcam.feature.settings.application.usecase.LanguageSettingsUseCaseImpl;
 import com.dvid.dcam.feature.settings.application.usecase.MediaEncryptionSettingsUseCase;
 import com.dvid.dcam.feature.settings.application.usecase.MediaEncryptionSettingsUseCaseImpl;
+import com.dvid.dcam.feature.settings.application.usecase.StorageSettingsUseCase;
+import com.dvid.dcam.feature.settings.application.usecase.StorageSettingsUseCaseImpl;
 import com.dvid.dcam.platform.audio.AndroidAudioRecorderImpl;
 import com.dvid.dcam.platform.auth.AndroidBootIdentitySourceImpl;
 import com.dvid.dcam.platform.auth.RoomOperatorAuthRepositoryImpl;
@@ -59,6 +61,7 @@ import com.dvid.dcam.platform.cloud.RoomOperationalSettingsStoreImpl;
 import com.dvid.dcam.platform.cloud.RoomRemoteConfigStoreImpl;
 import com.dvid.dcam.platform.config.AndroidLanguagePreferenceStoreImpl;
 import com.dvid.dcam.platform.config.AndroidMediaEncryptionPreferenceStoreImpl;
+import com.dvid.dcam.platform.config.AndroidStorageModePreferenceStoreImpl;
 import com.dvid.dcam.platform.config.CsonConfigurationSourceImpl;
 import com.dvid.dcam.platform.database.AppDatabase;
 import com.dvid.dcam.platform.device.AndroidDeviceRepositoryImpl;
@@ -85,14 +88,17 @@ public final class AppComposition {
     private final FeatureGateSettingsUseCase featureGateSettings;
     private final DeveloperFeatureToggles developerFeatureToggles;
     private final MediaEncryptionSettingsUseCase mediaEncryptionSettings;
+    private final StorageSettingsUseCase storageSettings;
     private final AuthenticateOperatorUseCase authenticateOperator;
     private final OperatorSessionUseCase operatorSession;
     private final ManageOperatorUsersUseCase manageUsers;
 
     private AppComposition(Context context) {
-        storage = DcamStorage.from(context);
+        storageSettings = new StorageSettingsUseCaseImpl(
+                new AndroidStorageModePreferenceStoreImpl(context, BuildConfig.STORAGE_MODE));
+        storage = DcamStorage.from(context, storageSettings.currentMode());
 
-        DeviceRepository deviceRepository = new AndroidDeviceRepositoryImpl(context);
+        DeviceRepository deviceRepository = new AndroidDeviceRepositoryImpl(context, storage::captureRoot);
         DeviceInfo deviceInfo = deviceRepository.readInfo();
         initialDeviceStatus = deviceRepository.readStatus();
         featureGateSettings = AndroidFeatureGateSettingsFactory.create(context);
@@ -115,6 +121,10 @@ public final class AppComposition {
                 new AndroidMediaEncryptionPreferenceStoreImpl(context, config));
         mediaEncryptionSettings = rawMediaEncryptionSettings;
         mediaOutput = new DcamMediaOutputImpl(storage);
+        mediaOutput.recoverStaged(report -> logSink.info(
+                "Staged media recovery: recovered=" + report.getRecovered()
+                        + ", preserved=" + report.getPreserved()
+                        + ", duplicates=" + report.getDuplicates()));
         AppDatabase database = AppDatabase.get(context);
         OperatorAuthRepository authRepository =
                 new RoomOperatorAuthRepositoryImpl(database.operatorAuth());
@@ -140,6 +150,7 @@ public final class AppComposition {
         return developerFeatureToggles;
     }
     public MediaEncryptionSettingsUseCase mediaEncryptionSettingsUseCase() { return mediaEncryptionSettings; }
+    public StorageSettingsUseCase storageSettingsUseCase() { return storageSettings; }
     public AuthenticateOperatorUseCase authenticateOperatorUseCase() { return authenticateOperator; }
     public OperatorSessionUseCase operatorSessionUseCase() { return operatorSession; }
     public ManageOperatorUsersUseCase manageOperatorUsersUseCase() { return manageUsers; }
@@ -151,7 +162,9 @@ public final class AppComposition {
                 AppDatabase database = AppDatabase.get(appContext);
                 OperationalSettingsStore operationalSettings =
                         new RoomOperationalSettingsStoreImpl(database.cloudState());
-                operationalSettings.put("storage.mode", storage.getMode().name());
+                operationalSettings.put("storage.mode", storage.getRequestedMode().name());
+                operationalSettings.put("storage.mode.requested", storage.getRequestedMode().name());
+                operationalSettings.put("storage.mode.resolved", storage.getMode().name());
                 operationalSettings.put("media.encryption.enabled.default", String.valueOf(config.isVideoEncrypted()));
                 InitializeCloudIdentityUseCase initializeIdentity =
                         new InitializeCloudIdentityUseCaseImpl(
@@ -180,15 +193,18 @@ public final class AppComposition {
     }
 
     public CaptureRuntime createCaptureRuntime(ComponentActivity owner) {
-        CaptureEventUseCase captureEvents = new CaptureEventUseCaseImpl();
+        SerializedRecordingCoordinator recordingCoordinator =
+                new SerializedRecordingCoordinator(owner::runOnUiThread);
+        CaptureEventUseCase captureEvents = recordingCoordinator;
         AudioRecorder audioRecorder = new AndroidAudioRecorderImpl(owner, mediaOutput, logSink,
                 mediaEncryptionSettings, operatorSession);
         CameraXPreviewView cameraPreview = new CameraXPreviewView(owner);
         CameraXCameraGatewayImpl camera = new CameraXCameraGatewayImpl(
                 owner, owner, config, mediaOutput, logSink, captureEvents,
                 mediaEncryptionSettings, operatorSession, cameraPreview);
+        recordingCoordinator.bindCamera(camera);
         PhotoCaptureUseCase photos = new PhotoCaptureUseCaseImpl(camera);
-        VideoRecordingUseCase videos = new VideoRecordingUseCaseImpl(camera, captureEvents);
+        VideoRecordingUseCase videos = recordingCoordinator;
         AudioRecordingUseCase audio = new AudioRecordingUseCaseImpl(audioRecorder, config);
         return new CaptureRuntime(camera, cameraPreview, audioRecorder, photos, videos, audio, captureEvents);
     }

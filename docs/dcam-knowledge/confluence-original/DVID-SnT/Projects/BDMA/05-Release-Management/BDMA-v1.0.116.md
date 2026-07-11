@@ -3,7 +3,7 @@
 **Page ID**: 37847105  
 **Version**: 3  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/37847105
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/37847105
 
 ---
 
@@ -24,11 +24,15 @@ v1.0.116
 
 Release Date
 
+20 Jun 2026
+
 Release Type
 
 Minor / Feature Release
 
 Prepared By
+
+[Dinh Nhan](https://ducviet.atlassian.net/wiki/people/70121:52166504-9fa8-44ba-969f-16f03f3dc4d6?ref=confluence)
 
 Approved By
 
@@ -126,7 +130,7 @@ External Storage Sync
 
 Fixed sync not working when external storage is unavailable.
 
-FixedGreen
+FIXED
 
 # 🔐 Security Updates
 
@@ -222,7 +226,7 @@ To be confirmed before deployment
 
 # 🔄 Upgrade / Migration Notes
 
-Recommend backing up existing application database in "\AppData\Local\bdma" before installing this release.
+Recommend backing up existing application database in “\AppData\Local\bdma” before installing this release.
 
 # 📊 Operational Notes
 

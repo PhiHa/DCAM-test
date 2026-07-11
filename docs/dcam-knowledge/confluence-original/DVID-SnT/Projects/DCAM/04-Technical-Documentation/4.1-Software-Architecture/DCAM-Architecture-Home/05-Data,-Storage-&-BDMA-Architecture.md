@@ -3,7 +3,7 @@
 **Page ID**: 47185950  
 **Version**: 9  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/47185950
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47185950
 
 ---
 
@@ -74,7 +74,9 @@ Trang này phải khớp với:
 
 Nguyên tắc chính:
 
-textChi tiết chính thức về folder structure, file naming, MD5 cho video `.mp4`, AES-256 suffix, CSON, SQLite DB, logs và cleanup policy nằm trong **DCAM-BDMA Data Contract**.
+DCAM creates and exposes local data.
+BDMA reads, imports, updates allowed data and performs cleanup according to Data Contract.
+Chi tiết chính thức về folder structure, file naming, MD5 cho video `.mp4`, AES-256 suffix, CSON, SQLite DB, logs và cleanup policy nằm trong **DCAM-BDMA Data Contract**.
 
 ## 2. Data Architecture Boundary
 
@@ -100,7 +102,32 @@ BDMA không tạo media gốc trên Android, nhưng được phép update `dcam_
 
 ## 3. High-Level Data Flow
 
-text## 4. Data Categories
+Record / Capture on BodyCamera
+    ↓
+DCAM generates media file
+    ↓
+DCAM embeds media metadata if supported by media format
+    ↓
+DCAM optionally generates matching .md5 file for .mp4 video only
+    ↓
+DCAM saves media in Internal or External DCAM Media Root
+    ↓
+DCAM maintains dcam_config.cson, dcam.db and logs.txt in Internal Storage
+    ↓
+User connects BodyCamera to BDMA Desktop
+    ↓
+BDMA detects device through ADB
+    ↓
+BDMA scans External then Internal DCAM Media Root
+    ↓
+BDMA verifies .md5 for .mp4 video if available
+    ↓
+BDMA imports media and reads allowed config/database/logs
+    ↓
+BDMA updates allowed CSON/DB data if needed
+    ↓
+BDMA performs source media cleanup according to policy
+## 4. Data Categories
 
 Data Type
 
@@ -246,13 +273,35 @@ Operational logs và diagnostics.
 
 DCAM dùng hai logical storage roots:
 
-textPhysical path thực tế là device-specific và phải được validate trên BodyCamera thật.
+DCAM Internal Storage Root
+DCAM External Storage Root
+Physical path thực tế là device-specific và phải được validate trên BodyCamera thật.
 
 ### 5.1 Internal DCAM Storage Root
 
-text### 5.2 External DCAM Storage Root
+Internal DCAM Storage Root
+├── Media
+│   ├── Video
+│   ├── Image
+│   ├── Audio
+│   └── IMP
+├── Config
+│   └── dcam_config.cson
+├── Database
+│   └── dcam.db
+├── Logs
+│   └── logs.txt
+└── Temp
+### 5.2 External DCAM Storage Root
 
-text### 5.3 Storage Location Strategy
+External DCAM Storage Root
+├── Media
+│   ├── Video
+│   ├── Image
+│   ├── Audio
+│   └── IMP
+└── Temp
+### 5.3 Storage Location Strategy
 
 Data
 
@@ -280,7 +329,26 @@ Auto mode
 
 ## 6. Media Lifecycle Direction
 
-textFinal import/readiness behavior được định nghĩa bởi **DCAM-BDMA Data Contract**. Architecture page này không nên tạo source-side status model riêng gây conflict với contract.
+New Recording / Capture
+    ↓
+Temporary file or in-progress file
+    ↓
+Media file completed
+    ↓
+Metadata embedded in media if supported
+    ↓
+Optional .md5 generated only if completed media is .mp4 video
+    ↓
+Media available in Media/Video, Media/Image, Media/Audio or Media/IMP
+    ↓
+Ready for BDMA ADB-based discovery
+    ↓
+BDMA imports and validates according to media type
+    ↓
+BDMA stores and indexes imported copy
+    ↓
+BDMA cleans up source media according to Data Contract policy
+Final import/readiness behavior được định nghĩa bởi **DCAM-BDMA Data Contract**. Architecture page này không nên tạo source-side status model riêng gây conflict với contract.
 
 ## 7. Media Metadata Direction
 
@@ -288,7 +356,9 @@ Media metadata được DCAM tạo và BDMA consume.
 
 Theo **DCAM-BDMA Data Contract**:
 
-textImplications:
+Media metadata is embedded in media files if supported by the media format.
+Separate media metadata JSON is not part of the current contract.
+Implications:
 
 Topic
 
@@ -320,13 +390,29 @@ Media naming được định nghĩa bởi **DCAM-BDMA Data Contract**.
 
 Normal media:
 
-text]]>Important media:
+```
+DCAM_XXXXXX_ZZZZZZ_YYYYMMDD_HHMMSS.<ext>
+```
 
-text]]>Encrypted media:
+Important media:
 
-text]]>Important encrypted media:
+```
+DCAM_XXXXXX_ZZZZZZ_YYYYMMDD_HHMMSS_IMP.<ext>
+```
 
-text]]>Supported extensions:
+Encrypted media:
+
+```
+DCAM_XXXXXX_ZZZZZZ_YYYYMMDD_HHMMSS_enc.<ext>
+```
+
+Important encrypted media:
+
+```
+DCAM_XXXXXX_ZZZZZZ_YYYYMMDD_HHMMSS_IMP_enc.<ext>
+```
+
+Supported extensions:
 
 Media Type
 
@@ -570,4 +656,6 @@ BDMA Technical Documentation / Data Contract update if needed
 
 Kiến trúc dữ liệu của DCAM cần được thiết kế ngay từ đầu để phục vụ BDMA ingest, nhưng boundary về ownership phải luôn rõ ràng:
 
-textContract baseline cuối cùng hiện đã được định nghĩa trong **DCAM-BDMA Data Contract**. Tất cả tài liệu Storage Design, SQLite Database Design, Security & Encryption Design và BDMA import implementation sau này phải align với contract này, đặc biệt rule mới: `.md5` chỉ áp dụng cho video `.mp4`, không áp dụng cho `.jpg`, `.mp3`, `.aac` hoặc `.wav`.
+DCAM chịu trách nhiệm tạo dữ liệu và đảm bảo source data sẵn sàng ở local storage.
+BDMA chịu trách nhiệm đọc qua ADB, import, verify .mp4 bằng .md5 nếu có, lưu trữ, index, quản lý và hiển thị dữ liệu.
+Contract baseline cuối cùng hiện đã được định nghĩa trong **DCAM-BDMA Data Contract**. Tất cả tài liệu Storage Design, SQLite Database Design, Security & Encryption Design và BDMA import implementation sau này phải align với contract này, đặc biệt rule mới: `.md5` chỉ áp dụng cho video `.mp4`, không áp dụng cho `.jpg`, `.mp3`, `.aac` hoặc `.wav`.

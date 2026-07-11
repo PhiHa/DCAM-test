@@ -3,7 +3,7 @@
 **Page ID**: 25755735  
 **Version**: 9  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/25755735
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/25755735
 
 ---
 
@@ -11,7 +11,7 @@
 *Tính năng dành cho đội ngũ kỹ thuật thao tác trực tiếp tại chỗ/remote. Hoặc hướng dẫn khách hàng thao tác khi cần cập nhật dữ liệu.
 
 Luồng: 
-Login với tài khoản Dev &rarr; Hiển thị dialog TOTP &rarr; Xác thực &rarr; Trang Developer
+Login với tài khoản Dev → Hiển thị dialog TOTP → Xác thực → Trang Developer
 
 Chức năng:
 - Import file sql mã hoá
@@ -32,15 +32,9 @@ Bảo mật:
 - secretKey sẽ được truyền vào khi build (thông qua github secret, tránh để lộ trong source code)
 - OTP môi trường release:
 
-......
-
 - OTP môi trường IDE/local test:
 
-......
-
 - Sau 5 phút dev session sẽ hết hạn, cần cung cấp OTP để tiếp tục hoặc buộc phải đăng xuất:
-
-Tự động hiện sau mỗi 5 phút
 
 - Các chức năng nâng cao (tạo bản vá, đổi mật khẩu,..) cũng sẽ được bảo vệ bằng OTP (mở khoá chức năng cũng sẽ reset đếm ngược của session về lại 5p)
 
@@ -51,11 +45,7 @@ Tab import:
 - Cho phép select file.
 - Giải mã và validate nếu đúng sql hợp lệ thì tiến hành áp dụng vào db của máy.
 
-Màn hình Nhập bản vá
-
 Tab export:
 - Được bảo vệ bằng TOTP.
 - Gồm panel cho phép tạo SQL theo các kịch bản đơn giản, text area để nhập SQL thủ công, nút nạp SQL cho phép load nội dung file SQL lên trình soạn thảo, và nút Tạo bản vá để xuất file vá đã mã hoá, sẵn sàng giao tới khách hàng.
 - Syntax lệnh sql sẽ được kiểm tra liên tục, chỉ cho phép export nếu hợp lệ.
-
-Màn hình Tạo bản vá

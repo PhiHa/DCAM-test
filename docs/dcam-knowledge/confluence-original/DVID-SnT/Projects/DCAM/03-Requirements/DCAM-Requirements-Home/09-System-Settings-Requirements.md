@@ -1,9 +1,9 @@
 # 09 - System Settings Requirements
 
 **Page ID**: 47710614  
-**Version**: 17  
+**Version**: 18  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/47710614
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47710614
 
 ---
 
@@ -24,7 +24,7 @@ Functional Requirements
 
 Version
 
-Approved 1.15
+Approved 1.16
 
 Status
 
@@ -52,19 +52,32 @@ PM/BA, Tech Lead, Android Developers, QA, Cloud/WebServer Team
 
 Last Updated
 
-2026-07-09
+2026-07-10
 
 Related Documents
 
-DCAM Factory Provisioning & Device Production SOP, DCAM Web Portal & Device API Contract, 04 - Device Configuration Requirements, 10 - Android Device Operation Requirements, 06 - Cloud Services, Update & Configuration Architecture, DCAM Android Device Owner & Kiosk Policy Design, DCAM In-App Operation, Device Settings & Media Console Design, DCAM Android Operation Design, DCAM Recording & Capture Design, DCAM Storage Design, DCAM SQLite Database Design, DCAM Device Capability & Feature Eligibility Design, DCAM State Machine Design, DCAM Self Update Design, DCAM Security & Encryption Design
+DCAM Release & Build Applicability Matrix, DCAM Factory Provisioning & Device Production SOP, ADR - DCAM Device Identity Baseline: serial_number + dcam_cloud_device_id, DCAM Web Portal & Device API Contract, 04 - Device Configuration Requirements, 10 - Android Device Operation Requirements, 06 - Cloud Services, Update & Configuration Architecture, DCAM Android Device Owner & Kiosk Policy Design, DCAM In-App Operation, Device Settings & Media Console Design, DCAM Android Operation Design, DCAM Recording & Capture Design, DCAM Storage Design, DCAM SQLite Database Design, DCAM Device Capability & Feature Eligibility Design, DCAM State Machine Design, DCAM Self Update Design, DCAM Security & Encryption Design
 
 ## 1. Purpose
 
 Trang này định nghĩa requirement-level behavior cho system settings, app operation settings, in-app device/media console settings, remote config, config apply policy, kiosk requested-policy settings, AutoUpdate preconditions và runtime setting boundaries của DCAM.
 
-Current update and identity baseline follows **DCAM Factory Provisioning & Device Production SOP Draft 1.0**:
+Current update and identity baseline follows the current authoritative **DCAM Factory Provisioning & Device Production SOP**, **ADR - DCAM Device Identity Baseline: serial_number + dcam_cloud_device_id** and related API/technical designs. Tài liệu không hardcode version của dependent document trong requirement text.
 
-textTrang này định nghĩa remote config identity/apply baseline, storage boundary, runtime guard policy và initial setting groups. Exact field-level remote config payload schema, field names, rollout details và một số value set cụ thể vẫn để TBD cho phase design/implementation tiếp theo.
+Current DCAM device baseline has no external EMM.
+Managed Google Play / Android Management API policy-driven update is not applicable.
+Primary update path = DCAM Self Update / APK update.
+Manual Google Play Store update is optional controlled maintenance fallback only if GMS/Play Store exists and approved process/account exists.
+serial_number = Hardware Identity / primary recovery key.
+dcam_cloud_device_id = Cloud Identity / primary cloud device id.
+SD Identity File = recovery cache on external SD card, not Hardware Identity.
+Do not use ANDROID_ID, android_id_hash or device_lookup/{android_id_hash} in the current production baseline.
+Build applicability is controlled by **DCAM Release & Build Applicability Matrix**:
+
+Build 0.1 requires only local MVP settings needed for recording/storage/BDMA.
+Remote Config, full kiosk requested-policy settings and Self Update are deferred for Build 0.1.
+They become applicable from Build 0.2 according to the Matrix and approved feature scope.
+Trang này định nghĩa remote config identity/apply baseline, storage boundary, runtime guard policy và initial setting groups. Exact field-level remote config payload schema, field names, rollout details và một số value set cụ thể vẫn để TBD cho phase design/implementation tiếp theo.
 
 Chi tiết Android Device Owner / Lock Task / User Restrictions apply behavior thuộc **DCAM Android Device Owner & Kiosk Policy Design**. Chi tiết in-app console UI/feature behavior thuộc **DCAM In-App Operation, Device Settings & Media Console Design**. Chi tiết artifact/download/install flow thuộc **DCAM Self Update Design**.
 
@@ -76,11 +89,17 @@ Source of Truth
 
 Local Usage
 
+Build/phase applicability
+
+DCAM Release & Build Applicability Matrix
+
+Xác định setting group nào bắt buộc, conditional hoặc deferred cho từng build.
+
 Factory provisioning and identity recovery
 
 DCAM Factory Provisioning & Device Production SOP
 
-DSetup resolves serial from SD Identity File or barcode, injects serial, and defines identity baseline.
+DSetup resolves serial from SD Identity File or barcode, injects serial, and defines factory execution boundary.
 
 Device identity and serial/config file scope
 
@@ -244,7 +263,12 @@ Approved Direction
 
 Remote config được resolve bằng stable server-side device identity.
 
-textRules:
+Cloud Identity / Firebase-WebServer primary key = dcam_cloud_device_id
+Hardware Identity / recovery key = serial_number
+Cloud recovery/create/restore lookup = serial_lookup/{serial_number}
+Recovery cache = SD Identity File
+Not used = ANDROID_ID, android_id_hash, device_lookup/{android_id_hash}
+Rules:
 
 Rule
 
@@ -290,7 +314,7 @@ Approved
 
 SET-ID-007
 
-Nếu không tìm thấy `serial_lookup/{serial_number}`, DCAM enters `PROVISIONING_REQUIRED` hoặc approved factory/admin provisioning flow.
+Nếu không tìm thấy `serial_lookup/{serial_number}`, DCAM enters `PROVISIONING_REQUIRED` và follows approved QR-based Factory Worker Web Portal flow.
 
 Approved
 
@@ -298,7 +322,22 @@ Approved
 
 Publish một revision không trực tiếp modify device files.
 
-textApply policy:
+Server publishes config profile revision
+    ↓
+Server updates target revision
+    ↓
+Device learns about update by startup fetch, periodic fetch, optional push signal or manual check
+    ↓
+Device fetches effective config by dcam_cloud_device_id
+    ↓
+Device validates config
+    ↓
+Device stores pending_config in dcam.db
+    ↓
+Device applies only when runtime guard allows
+    ↓
+Device records applied_config_revision and reports result
+Apply policy:
 
 Case
 
@@ -498,7 +537,10 @@ Approved
 
 CSON write rule:
 
-text## 7. In-app Console Settings Boundary
+dcam_config.cson is updated only for device information fields such as serial_number.
+Operational settings, app operation settings, console settings, kiosk policy settings and update settings are stored in dcam.db.
+SD Identity File is a recovery cache for serial_number, not a remote config file.
+## 7. In-app Console Settings Boundary
 
 Kiosk mode means DCAM must expose controlled in-app settings and status surfaces.
 
@@ -828,7 +870,10 @@ Approved Direction
 
 Current baseline:
 
-textUpdate setting examples:
+Primary update path = DCAM Self Update / APK update.
+Manual Google Play Store update = optional controlled fallback only if GMS/Play Store exists and approved maintenance/factory Google account exists.
+Managed Google Play / Android Management API policy-driven update = not applicable.
+Update setting examples:
 
 Setting
 
@@ -1022,4 +1067,22 @@ TBD
 
 ## 11. Practical Conclusion
 
-text
+Remote config identity/apply baseline and initial setting groups have been defined; exact field-level payload schema remains TBD.
+Identity and apply architecture are aligned with the current authoritative Factory SOP and identity/API documents.
+Document references do not pin a mutable dependent document version.
+Build applicability is owned by DCAM Release & Build Applicability Matrix.
+dcam_cloud_device_id identifies the device on Firebase/WebServer.
+serial_number is Hardware Identity / primary recovery key.
+serial_lookup/{serial_number} is used to create/restore dcam_cloud_device_id.
+SD Identity File is recovery cache on external SD card, not Hardware Identity.
+Do not use ANDROID_ID, android_id_hash or device_lookup/{android_id_hash} in the current production baseline.
+Remote config is cached/applied through dcam.db.
+dcam_config.cson is updated only for device information fields.
+Operational settings, app operation settings, in-app console settings, kiosk policy requested settings and update settings are stored in dcam.db.
+Kiosk policy settings are requested policy only.
+Actual Device Owner / Lock Task / User Restrictions apply behavior belongs to DCAM Android Device Owner & Kiosk Policy Design.
+In-app operation/device/media console behavior belongs to DCAM In-App Operation, Device Settings & Media Console Design.
+Current DCAM device baseline has no external EMM / Android Management API / Managed Google Play policy-driven update.
+Primary update path is DCAM Self Update / APK update.
+Manual Google Play Store update is optional controlled maintenance fallback only if GMS/Play Store exists and approved process exists.
+AutoUpdate requires device policy state, console/admin transition state and Self Update artifact state to be safe before install.

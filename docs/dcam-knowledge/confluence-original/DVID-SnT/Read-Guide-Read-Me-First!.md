@@ -3,7 +3,7 @@
 **Page ID**: 42696756  
 **Version**: 9  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/42696756
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/42696756
 
 ---
 
@@ -58,7 +58,22 @@ Sau khi hiểu các tài liệu nền này, thành viên mới mới nên đọc
 
 ## 2. Onboarding Reading Flow
 
-textwide760## 3. Must-Read Documents for New Developers
+DVID Read Guide
+    ↓
+OSd Introduction & Team Alignment
+    ↓
+Agile Hierarchy - Epic vs Feature vs User Story vs Task
+    ↓
+Development Task Template Standard
+    ↓
+Jira Workflow Standard
+    ↓
+Git Workflow Standard
+    ↓
+Project Home
+    ├── BDMA Project Home
+    └── DCAM Project Home
+## 3. Must-Read Documents for New Developers
 
 Order
 
@@ -78,7 +93,7 @@ Created
 
 Hiểu cách team chuẩn hóa workflow, documentation, decision tracking và AI-readable operation.
 
-Open
+[Open](/wiki/spaces/DVID/pages/25264297/OSd+Introduction+Team+Alignment)
 
 2
 
@@ -88,7 +103,7 @@ Created
 
 Hiểu cách team phân rã công việc từ business goal xuống task kỹ thuật.
 
-Open
+[Open](/wiki/spaces/DVID/pages/27165134/Agile+Hierarchy+-+Epic+vs+Feature+vs+User+Story+vs+Task)
 
 3
 
@@ -98,7 +113,7 @@ Created
 
 Hiểu một task tốt cần có objective, requirement, acceptance criteria, technical note, estimate và QA checklist.
 
-Open
+[Open](/wiki/spaces/DVID/pages/27197540/Development+Task+Template+Standard)
 
 4
 
@@ -108,7 +123,7 @@ Created
 
 Hiểu trạng thái task chuẩn: Backlog, To Do, In Progress, Code Review, Testing, Done.
 
-Open
+[Open](/wiki/spaces/DVID/pages/25460748/Jira+Workflow+Standard)
 
 5
 
@@ -118,7 +133,7 @@ Created
 
 Hiểu branching strategy, pull request workflow, code review và merge strategy.
 
-Open
+[Open](/wiki/spaces/DVID/pages/27165258/Git+Workflow+Standard)
 
 ## 4. Why These 5 Documents Come First
 
@@ -162,13 +177,42 @@ Developers, Tech Lead
 
 ### 5.1 Developer
 
-textwide760### 5.2 QA
+OSd Introduction
+→ Agile Hierarchy
+→ Development Task Template
+→ Jira Workflow Standard
+→ Git Workflow Standard
+→ Project Home
+→ Technical Documentation
+→ Feature Specifications / Requirements
+### 5.2 QA
 
-textwide760### 5.3 PM / Product Owner
+OSd Introduction
+→ Agile Hierarchy
+→ Development Task Template
+→ Jira Workflow Standard
+→ Project Home
+→ Acceptance Criteria / Requirements
+→ Release Notes / Incident Log
+### 5.3 PM / Product Owner
 
-textwide760### 5.4 Tech Lead / Reviewer
+OSd Introduction
+→ Agile Hierarchy
+→ Development Task Template
+→ Jira Workflow Standard
+→ Project Home
+→ Product Vision / Charter / Roadmap / MVP Scope
+→ Sprint Operations / KPI Reports
+### 5.4 Tech Lead / Reviewer
 
-textwide760## 6. Project Entry Points
+OSd Introduction
+→ Jira Workflow Standard
+→ Git Workflow Standard
+→ Project Home
+→ Technical Documentation
+→ Decision Log / ADR
+→ Release Management
+## 6. Project Entry Points
 
 Sau khi đọc xong 5 tài liệu nền ở trên, thành viên mới nên đi vào project tương ứng.
 
@@ -182,69 +226,38 @@ BDMA Project Home
 
 Trang chủ điều hướng tài liệu của project BDMA.
 
-Open
+[Open](/wiki/spaces/DVID/pages/42696706/BDMA+Project+Home)
 
 DCAM Project Home
 
 Trang chủ điều hướng tài liệu của project DCAM.
 
-Open
+[Open](/wiki/spaces/DVID/pages/41648280/DCAM+Project+Home)
 
 BDMA
 
 Root page của project BDMA.
 
-Open
+[Open](/wiki/spaces/DVID/pages/25198593/BDMA)
 
 DCAM
 
 Root page của project DCAM.
 
-Open
+[Open](/wiki/spaces/DVID/pages/36536321/DCAM)
 
 ## 7. Reading Checklist for New Joiners
 
 Thành viên mới nên tick checklist này trong tuần onboarding đầu tiên.
 
-1
-742e24da-58d8-416f-8428-26c431a2c0c9
-incomplete
-Đã đọc OSd Introduction & Team Alignment.
-
-2
-c5fa2769-70ce-4d76-922f-917379158b1b
-incomplete
-Đã hiểu Agile hierarchy: Epic / Feature / User Story / Task.
-
-3
-38024279-e953-406d-bc4d-a25f9b0ce76f
-incomplete
-Đã đọc Development Task Template Standard.
-
-4
-60c2c440-bee5-4c1e-9e86-4088cb4c0da2
-incomplete
-Đã hiểu Jira workflow và definition of done.
-
-5
-0eb1778d-fa61-44de-870c-8fa785299eda
-incomplete
-Đã đọc Git Workflow Standard.
-
-6
-b10c78d1-47bf-4608-8eaa-ebd205a08c71
-incomplete
-Đã đọc Project Home của project mình tham gia.
-
-7
-8d5d8ad0-50e1-4fe7-a633-e5831dd7c368
-incomplete
-Đã biết nơi tìm Product documents, Requirements, Technical Documentation, Release Notes và Incident Log.
-
-8
-b94c2713-5cc0-4be9-ae26-6a1568bd2801
-incomplete
-Đã biết cách hỏi và cập nhật tài liệu khi phát hiện thiếu context.
+- Đã đọc OSd Introduction & Team Alignment.
+- Đã hiểu Agile hierarchy: Epic / Feature / User Story / Task.
+- Đã đọc Development Task Template Standard.
+- Đã hiểu Jira workflow và definition of done.
+- Đã đọc Git Workflow Standard.
+- Đã đọc Project Home của project mình tham gia.
+- Đã biết nơi tìm Product documents, Requirements, Technical Documentation, Release Notes và Incident Log.
+- Đã biết cách hỏi và cập nhật tài liệu khi phát hiện thiếu context.
 
 ## 8. Operating Principles
 
@@ -282,7 +295,21 @@ Tài liệu không cần dài, nhưng phải đủ rõ để người khác hi�
 
 ## 9. Documentation Map
 
-textwide760## 10. Maintenance Rules
+DVID
+├── DVID Read Guide
+├── OSd Introduction & Team Alignment
+├── SOP
+│   ├── Agile Hierarchy - Epic vs Feature vs User Story vs Task
+│   ├── Development Task Template Standard
+│   ├── Jira Workflow Standard
+│   └── Git Workflow Standard
+│
+├── BDMA
+│   └── BDMA Project Home
+│
+└── DCAM
+    └── DCAM Project Home
+## 10. Maintenance Rules
 
 Rule
 

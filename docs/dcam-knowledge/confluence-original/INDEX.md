@@ -1,6 +1,6 @@
 # Confluence Original Documentation
-Downloaded: 2026-07-09T09:42:26.172Z
-Total pages: 126
+Downloaded: 2026-07-10T09:06:28.932Z
+Total pages: 131
 
 ## Page Structure
 
@@ -88,7 +88,6 @@ Total pages: 126
         - [DCAM Documentation Governance](DVID-SnT/Projects/DCAM/02-Sprint-Operations/DCAM-Documentation-Governance.md)
             - [08 - DCAM-BDMA Integration Boundary](DVID-SnT/Projects/DCAM/04-Technical-Documentation/4.1-Software-Architecture/DCAM-Architecture-Home/08-DCAM-BDMA-Integration-Boundary.md)
           - [DCAM Architecture Home](DVID-SnT/Projects/DCAM/04-Technical-Documentation/4.1-Software-Architecture/DCAM-Architecture-Home.md)
-            - [DCAM Architecture Delivery Profile](DVID-SnT/Projects/DCAM/04-Technical-Documentation/4.1-Software-Architecture/DCAM-Architecture-Home/DCAM-Architecture-Delivery-Profile.md)
             - [05 - Data, Storage & BDMA Architecture](DVID-SnT/Projects/DCAM/04-Technical-Documentation/4.1-Software-Architecture/DCAM-Architecture-Home/05-Data,-Storage-&-BDMA-Architecture.md)
             - [07 - Logging, Diagnostics, Performance & Security](DVID-SnT/Projects/DCAM/04-Technical-Documentation/4.1-Software-Architecture/DCAM-Architecture-Home/07-Logging,-Diagnostics,-Performance-&-Security.md)
             - [04 - Application & Module Architecture](DVID-SnT/Projects/DCAM/04-Technical-Documentation/4.1-Software-Architecture/DCAM-Architecture-Home/04-Application-&-Module-Architecture.md)
@@ -128,5 +127,11 @@ Total pages: 126
           - [DCAM In-App Operation, Device Settings & Media Console Design](DVID-SnT/Projects/DCAM/04-Technical-Documentation/4.2-Technical-Design/DCAM-In-App-Operation,-Device-Settings-&-Media-Console-Design.md)
           - [DCAM Web Portal & Device API Contract](DVID-SnT/Projects/DCAM/04-Technical-Documentation/4.2-Technical-Design/DCAM-Web-Portal-&-Device-API-Contract.md)
           - [DCAM DSetup Factory Tool Design](DVID-SnT/Projects/DCAM/05-Release-Management/DCAM-Factory-Provisioning-&-Device-Production-SOP/DCAM-DSetup-Factory-Tool-Design.md)
+            - [DCAM Architecture Delivery Profile](DVID-SnT/Projects/DCAM/04-Technical-Documentation/4.1-Software-Architecture/DCAM-Architecture-Home/DCAM-Architecture-Delivery-Profile.md)
+          - [DCAM Performance Budget & Resource Constraints](DVID-SnT/Projects/DCAM/04-Technical-Documentation/4.2-Technical-Design/DCAM-Performance-Budget-&-Resource-Constraints.md)
           - [ADR - DCAM Device Identity Baseline: serial_number + dcam_cloud_device_id](DVID-SnT/Projects/DCAM/04-Technical-Documentation/4.4-Architecture-Decision-Records-(ADR)/ADR-DCAM-Device-Identity-Baseline-serial_number-+-dcam_cloud_device_id.md)
             - [DCAM Device Provisioning Web Portal App Design](DVID-SnT/Projects/DCAM/04-Technical-Documentation/4.2-Technical-Design/DCAM-Device-Provisioning-Web-Portal-Design/DCAM-Device-Provisioning-Web-Portal-App-Design.md)
+          - [DCAM Concurrency & Threading Model Design](DVID-SnT/Projects/DCAM/04-Technical-Documentation/4.2-Technical-Design/DCAM-Concurrency-&-Threading-Model-Design.md)
+            - [DCAM Device Provisioning Web Portal Implementation Design](DVID-SnT/Projects/DCAM/04-Technical-Documentation/4.2-Technical-Design/DCAM-Device-Provisioning-Web-Portal-Design/DCAM-Device-Provisioning-Web-Portal-Implementation-Design.md)
+          - [DCAM Logging & Diagnostics Design](DVID-SnT/Projects/DCAM/04-Technical-Documentation/4.2-Technical-Design/DCAM-Logging-&-Diagnostics-Design.md)
+        - [DCAM Release & Build Applicability Matrix](DVID-SnT/Projects/DCAM/02-Sprint-Operations/DCAM-Release-&-Build-Applicability-Matrix.md)

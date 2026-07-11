@@ -3,7 +3,7 @@
 **Page ID**: 27164853  
 **Version**: 1  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/27164853
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/27164853
 
 ---
 
@@ -233,45 +233,14 @@ DD/MM
 
 # Checklist trước khi kết thúc Sprint Planning
 
-1
-5c6921ac-0125-401d-93b0-cb30d82e56d0
-incomplete
-Sprint Goal rõ ràng
-
-2
-e6ccc616-1a0c-4a7a-a52e-a006fe064546
-incomplete
-Task đã được estimate
-
-3
-6c31f82a-b1c9-4685-a86b-3109226b39e7
-incomplete
-Priority được xác nhận
-
-4
-40c63d73-ce16-40d3-9859-4427bd89ae96
-incomplete
-Assignee đầy đủ
-
-5
-ddb58fbe-893f-4c97-b5dc-b448b43d6fc3
-incomplete
-Risk được identify
-
-6
-a30a47c4-601c-4944-9559-a35c3db557a6
-incomplete
-Dependency được review
-
-7
-5d2418ba-7a25-4585-ba97-c292340d843e
-incomplete
-QA scope được align
-
-8
-a03410dc-4ae8-4e23-80ab-4b4929b91267
-incomplete
-Team commit sprint scope
+- Sprint Goal rõ ràng
+- Task đã được estimate
+- Priority được xác nhận
+- Assignee đầy đủ
+- Risk được identify
+- Dependency được review
+- QA scope được align
+- Team commit sprint scope
 
 # Khuyến nghị vận hành
 
@@ -294,9 +263,9 @@ Không đưa unclear requirement vào sprint
 # Workflow đề xuất
 
 Backlog Grooming
-&rarr; Sprint Planning
-&rarr; Development
-&rarr; QA
-&rarr; Sprint Review
-&rarr; Retrospective
-&rarr; Sprint Planning tiếp theo
+→ Sprint Planning
+→ Development
+→ QA
+→ Sprint Review
+→ Retrospective
+→ Sprint Planning tiếp theo

@@ -3,7 +3,7 @@
 **Page ID**: 47120416  
 **Version**: 12  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/47120416
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47120416
 
 ---
 
@@ -272,7 +272,12 @@ Business logic không được gọi trực tiếp Android SDK, Firebase SDK ho�
 
 Business logic phải đi qua interface/service layer.
 
-textImplementation detail được quản lý bởi **DCAM Android Development Standard**.
+Use Case / Repository
+        ↓
+Platform Interface
+        ↓
+Android / Device-specific / Cloud Provider Implementation
+Implementation detail được quản lý bởi **DCAM Android Development Standard**.
 
 ## 7. Cloud Provider Abstraction
 
@@ -280,7 +285,16 @@ Cloud services phải được thiết kế theo hướng provider-agnostic.
 
 Firebase có thể là provider ban đầu, nhưng không được trở thành dependency trực tiếp của business logic.
 
-text
+Application / Use Case
+        ↓
+Cloud Service Interface
+        ↓
+Provider Implementation
+        ├── Firebase Provider
+        ├── REST API Provider
+        ├── Desktop-side Provider
+        └── Local Provider
+
 Area
 
 Direction
@@ -351,7 +365,14 @@ Configurable values không nên hardcode nếu chúng có thể thay đổi theo
 
 Priority:
 
-textOperational settings được lưu trong `dcam.db`; `dcam_config.cson` chỉ dành cho device information.
+Runtime Override
+    ↓
+Cloud Remote Config if available
+    ↓
+Local Config / dcam.db
+    ↓
+Default Config
+Operational settings được lưu trong `dcam.db`; `dcam_config.cson` chỉ dành cho device information.
 
 ## 10. Observability
 

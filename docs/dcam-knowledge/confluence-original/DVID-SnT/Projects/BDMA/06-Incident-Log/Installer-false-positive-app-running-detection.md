@@ -3,7 +3,7 @@
 **Page ID**: 41615363  
 **Version**: 4  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/41615363
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/41615363
 
 ---
 
@@ -22,9 +22,11 @@ INC-2026-06-003
 
 Date Reported
 
+27 Jun 2026
+
 Reporter
 
- 
+[Dinh Nhan](https://ducviet.atlassian.net/wiki/people/70121:52166504-9fa8-44ba-969f-16f03f3dc4d6?ref=confluence) 
 
 Severity
 
@@ -60,11 +62,19 @@ Time
 
 Event
 
+27 Jun 2026
+
 Issue identified from installer behavior review
+
+27 Jun 2026
 
 Root cause confirmed in process-name matching logic
 
+27 Jun 2026
+
 Fix implemented
+
+27 Jun 2026
 
 Incident resolved
 
@@ -76,13 +86,15 @@ The installer detected a running app by finding process name `BDMA.exe`. If the 
 
 Relevant logic:
 
-nsiswide760The check relied only on process name, which is not unique enough in this scenario. Because the installer process could share the same executable name as the installed application, the detection logic could not distinguish between the installer and the actual installed app process.
+Function EnsureAppClosed
+  nsExec::ExecToStack '$SYSDIR\cmd.exe /C tasklist /FI "IMAGENAME eq BDMA.exe" /NH | find /I "BDMA.exe"'
+The check relied only on process name, which is not unique enough in this scenario. Because the installer process could share the same executable name as the installed application, the detection logic could not distinguish between the installer and the actual installed app process.
 
 As a result, the installer interpreted its own process as evidence that the app was running and showed the force-close dialog incorrectly.
 
 # Resolution
 
-Update the running-app detection logic so that a process is considered the installed application only when its process id doesn't matches the current installer PID.
+Update the running-app detection logic so that a process is considered the installed application only when its process id doesn’t matches the current installer PID.
 
 This change removes the ambiguity caused by name-only matching and ensures that the installer ignores unrelated processes, including itself, even if they share the same executable name.
 
@@ -110,10 +122,18 @@ Date
 
 Reporter
 
- 
+[Dinh Nhan](https://ducviet.atlassian.net/wiki/people/70121:52166504-9fa8-44ba-969f-16f03f3dc4d6?ref=confluence) 
+
+27 Jun 2026
 
 PM
 
- 
+[Hoàng Ngọc Quyền](https://ducviet.atlassian.net/wiki/people/712020:e466d315-3c2d-406d-b324-8f8eb35ccb48?ref=confluence) 
+
+27 Jun 2026
 
 Reviewer
+
+[Hoàng Ngọc Quyền](https://ducviet.atlassian.net/wiki/people/712020:e466d315-3c2d-406d-b324-8f8eb35ccb48?ref=confluence) 
+
+27 Jun 2026

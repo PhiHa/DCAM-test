@@ -3,7 +3,7 @@
 **Page ID**: 27197752  
 **Version**: 4  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/27197752
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/27197752
 
 ---
 
@@ -68,7 +68,11 @@ backward compatibility
 
 Hệ thống hiện tại sử dụng:
 
-textThông tin chính:
+```
+AES-256-CTR
+```
+
+Thông tin chính:
 
 Thành phần
 
@@ -104,7 +108,20 @@ Không sử dụng
 
 # Encryption / Decryption Flow
 
-text# Key Derivation
+Bodycam Device
+    ↓
+Encrypted Media File
+    ↓
+Upload / Synchronization
+    ↓
+Backend / Client
+    ↓
+SHA256(password)
+    ↓
+AES-256-CTR Decryption
+    ↓
+Playable Media File
+# Key Derivation
 
 ## Current Implementation
 
@@ -112,15 +129,29 @@ Password được hash bằng SHA256 để tạo AES key.
 
 ### Example
 
-texttext# IV Handling
+Input Password:
+123456
+
+SHA256(password)
+↓
+32-byte AES key
+# IV Handling
 
 ## Current Behavior
 
 Hệ thống hiện tại sử dụng fixed IV:
 
-textImplementation:
+```
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+```
 
-cpp# IMPORTANT NOTES
+Implementation:
+
+```
+unsigned char iv[16] = { 0 };
+```
+
+# IMPORTANT NOTES
 
 ## Compatibility Requirement
 
@@ -138,7 +169,10 @@ Mất backward compatibility
 
 ## Decryption Process
 
-cpp# File Processing Strategy
+EVP_DecryptInit_ex()
+EVP_DecryptUpdate()
+EVP_DecryptFinal_ex()
+# File Processing Strategy
 
 ## Streaming Mode
 
@@ -146,7 +180,11 @@ File được đọc theo block để hỗ trợ file media lớn.
 
 ### Buffer Size
 
-cpp### Advantages
+```
+256 * 1024
+```
+
+### Advantages
 
 Không load toàn bộ file vào RAM
 
@@ -196,7 +234,11 @@ Video/media playback có thể lỗi hoặc fail
 
 Current implementation:
 
-text### Limitation
+```
+SHA256(password)
+```
+
+### Limitation
 
 Không có salt
 
@@ -260,7 +302,11 @@ Authentication Tag
 
 # Recommended Future File Format
 
-text# Testing Requirement
+```
+[16-byte IV][Encrypted Data][Authentication Tag]
+```
+
+# Testing Requirement
 
 ## Required Test Cases
 
@@ -298,45 +344,14 @@ Concurrent decrypt handling
 
 Before merge:
 
-8
-b0a9617b-529d-4140-9523-0c03bc6cf6df
-incomplete
-Compatibility impact checked
-
-9
-ea7147d7-83f5-4e88-934a-581e6f5c7d5c
-incomplete
-Playback flow validated
-
-10
-5f1948a6-4817-4a2c-b06d-8a52330f8d06
-incomplete
-File corruption risk reviewed
-
-11
-1d9fbf19-bb55-4981-a703-45918469b8e5
-incomplete
-Error handling validated
-
-12
-3ec4be5c-5fe7-4d07-94ab-8b3c9ab273c3
-incomplete
-Large media file tested
-
-13
-34fa6d07-bb12-4e31-85ec-d3e4823a8e2e
-incomplete
-Wrong password tested
-
-14
-3796b453-e9b0-4b14-b399-a2757fe20ca3
-incomplete
-Regression test completed
-
-15
-50583963-8901-4ea7-9ae9-5f7e3ad407d1
-incomplete
-Documentation updated
+- Compatibility impact checked
+- Playback flow validated
+- File corruption risk reviewed
+- Error handling validated
+- Large media file tested
+- Wrong password tested
+- Regression test completed
+- Documentation updated
 
 # Key Takeaways
 

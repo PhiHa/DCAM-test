@@ -3,7 +3,7 @@
 **Page ID**: 27197540  
 **Version**: 3  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/27197540
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/27197540
 
 ---
 
@@ -176,20 +176,9 @@ Cross-browser test
 
 ### Acceptance Criteria
 
-1
-7a4b0003-1c3e-49c0-a986-18ce9fd18b0f
-incomplete
-Criteria 1
-
-2
-b8d9d27a-b15a-4d70-825a-8b3778b92357
-incomplete
-Criteria 2
-
-3
-2bd7a6f8-301a-4bbf-937c-fa75ff3256c1
-incomplete
-Criteria 3
+- Criteria 1
+- Criteria 2
+- Criteria 3
 
 ### UI/UX Reference
 
@@ -213,20 +202,9 @@ Criteria 3
 
 ### QA Checklist
 
-4
-c8fe7263-fb60-4dfa-be37-f39dd2d87f55
-incomplete
-Test case 1
-
-5
-260084bd-d331-47ff-86b4-c3e9689b9246
-incomplete
-Test case 2
-
-6
-7a2cf948-a553-40b1-b14f-b65545410554
-incomplete
-Regression
+- Test case 1
+- Test case 2
+- Regression
 
 # Quy trình phối hợp đề xuất
 

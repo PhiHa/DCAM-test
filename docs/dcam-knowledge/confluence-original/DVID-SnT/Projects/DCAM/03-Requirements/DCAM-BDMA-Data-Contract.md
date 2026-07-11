@@ -1,9 +1,9 @@
 # DCAM-BDMA Data Contract
 
 **Page ID**: 47743153  
-**Version**: 8  
+**Version**: 9  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/47743153
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47743153
 
 ---
 
@@ -24,7 +24,7 @@ Data Contract / Integration Contract
 
 Version
 
-Approved 1.7
+Approved 1.8
 
 Status
 
@@ -36,7 +36,7 @@ Hoàng Ngọc Quyền
 
 Technical Reviewer
 
-Tech Lead / BDMA Lead / Security Reviewer / Cloud Lead
+Tech Lead / BDMA Lead / Security Reviewer / Cloud Lead / QA Lead
 
 Approver
 
@@ -52,7 +52,7 @@ PM/BA, Tech Lead, Android Developers, BDMA Developers, QA, Support, Cloud/WebSer
 
 Last Updated
 
-2026-07-09
+2026-07-10
 
 Related Jira
 
@@ -60,29 +60,55 @@ None
 
 Related Documents
 
-DCAM Factory Provisioning & Device Production SOP, DCAM Web Portal & Device API Contract, DCAM MVP Scope, DCAM Architecture Home, 04 - Device Configuration Requirements, 05 - User & Device Operation Requirements, 06 - Cloud Services, Update & Configuration Architecture, 09 - System Settings Requirements, DCAM SQLite Database Design, DCAM Android Operation Design, DCAM Recording & Capture Design, DCAM Storage Design, DCAM Security & Encryption Design, 05 - Data, Storage & BDMA Architecture, 08 - DCAM-BDMA Integration Boundary, DCAM Documentation Governance
+DCAM Factory Provisioning & Device Production SOP, DCAM Web Portal & Device API Contract, DCAM Device Provisioning Web Portal Design, DCAM Device Provisioning Web Portal App Design, DCAM Device Provisioning Web Portal Implementation Design, DCAM MVP Scope, DCAM Architecture Home, 04 - Device Configuration Requirements, 05 - User & Device Operation Requirements, 06 - Cloud Services, Update & Configuration Architecture, 07 - Logging & Diagnostics Requirements, 07 - Logging, Diagnostics, Performance & Security, DCAM Logging & Diagnostics Design, 09 - System Settings Requirements, DCAM SQLite Database Design, DCAM Android Operation Design, DCAM Recording & Capture Design, DCAM Storage Design, DCAM Security & Encryption Design, 05 - Data, Storage & BDMA Architecture, 08 - DCAM-BDMA Integration Boundary, DCAM QA Test Strategy & Test Matrix, DCAM Documentation Governance
 
 ## 1. Purpose
 
 Tài liệu này định nghĩa **Data Contract** giữa:
 
-**DCAM Android Application** chạy trên thiết bị **BodyCamera**.
+**DCAM Android Application** chạy trên BodyCamera.
 
-**BDMA Desktop** chạy trên máy tính **Windows/Desktop**.
+**BDMA Desktop** chạy trên Windows/Desktop.
 
-**Firebase/WebServer** quản lý device identity, Web Portal provisioning và remote config metadata.
+**Firebase/WebServer** quản lý device identity, Web Portal provisioning, remote config và backend metadata.
 
-Contract này thống nhất cách DCAM tạo, lưu trữ và expose dữ liệu để BDMA có thể read, verify, import, update, sync hoặc delete theo rule đã thống nhất.
+Contract thống nhất cách DCAM tạo, lưu trữ và expose dữ liệu để BDMA có thể read, verify, import, update, sync hoặc delete theo rule đã thống nhất.
 
-Contract này follows **DCAM Factory Provisioning & Device Production SOP Draft 1.0** cho identity baseline:
+Identity baseline:
 
-textContract này là **source of truth** cho các nhóm rule sau:
+serial_number = Hardware Identity / primary recovery key
+dcam_cloud_device_id = Cloud Identity / primary cloud device id
+SD Identity File = recovery cache on external SD card, not Hardware Identity
+Do not use ANDROID_ID, android_id_hash or device_lookup/{android_id_hash}
+Tài liệu này là source of truth cho:
 
-textRemote config payload fields không được định nghĩa trong tài liệu này. Nội dung đó vẫn TBD và thuộc **System Settings / Cloud Architecture**.
+Storage roots
+Folder structure
+Media naming
+Important / encrypted media suffix
+MD5 rule for .mp4 only
+Device config CSON scope
+Device identity and device information field boundary
+App/data/media/encoder contract version compatibility
+SQLite database file access boundary
+User/operator sync boundary
+BDMA-facing logs artifact
+BDMA import and cleanup behavior
+Logging implementation không được định nghĩa lại tại đây:
 
+DCAM Logging & Diagnostics Design
+    → owns internal structured files, rotation, local queue,
+      Backend Relay → Loggly and Crashlytics boundary
+
+This Data Contract
+    → owns only the artifact and access contract exposed to BDMA
 ## 2. System Boundary
 
-text### 2.1 DCAM Responsibilities
+DCAM Android = Offline Data Producer + Runtime Owner
+BDMA Desktop = Active Data Consumer / Importer / Administrative Sync Manager
+Firebase/WebServer = Cloud Identity + Remote Config + Web Portal Provisioning Owner
+DSetup = Factory helper tool up to imported serial_number verification
+### 2.1 DCAM Responsibilities
 
 Area
 
@@ -98,7 +124,7 @@ Tạo media theo fixed DCAM encoder behavior; BDMA không cần dynamic decoder 
 
 App/contract metadata
 
-Expose app identity, data contract version, media contract version và encoder contract version để BDMA compatibility check.
+Expose app identity, data contract version, media contract version và encoder contract version.
 
 Important media marking
 
@@ -110,7 +136,7 @@ Tạo encrypted media với suffix `_enc` hoặc `_IMP_enc` khi encryption enabl
 
 Media storage
 
-Lưu media vào Internal hoặc External storage theo user setting / Auto fallback.
+Lưu media vào Internal hoặc External storage theo setting / Auto fallback.
 
 MD5 generation
 
@@ -130,15 +156,19 @@ Sync app-private `serial_number` ra SD Identity File làm recovery cache nếu f
 
 SQLite database
 
-Tạo và maintain `dcam.db` cho user/operator, settings, runtime state, media state, tracking, import/write-back state, identity và config cache.
+Tạo và maintain `dcam.db` cho user/operator, settings, runtime, media, identity, config cache và sync state.
 
 User/operator runtime
 
-Quản lý operator login session offline trên DCAM.
+Quản lý operator login session offline.
 
-Logs
+Operational logging
 
-Ghi operational logs vào `logs.txt`.
+Ghi local Operational Logging theo Logging Requirements/Design và expose sanitized BDMA artifact `Logs/logs.txt`.
+
+Cloud logging delivery
+
+Quản lý internal upload queue/Backend Relay delivery; queue không phải BDMA artifact.
 
 BDMA readiness
 
@@ -156,19 +186,19 @@ Kết nối và đọc dữ liệu qua ADB.
 
 App/contract recognition
 
-Nhận dạng DCAM app bằng app/package/contract metadata và dùng built-in import/decode logic tương ứng.
+Nhận dạng DCAM bằng package/app/contract metadata và compatibility table.
 
 Decoder profile
 
-Không dùng `bdma_decoder_profile_id`; encoder phía DCAM là fixed contract và BDMA xử lý bằng compatibility table nội bộ.
+Không dùng `bdma_decoder_profile_id`.
 
 Media discovery
 
-Scan media ở cả External và Internal DCAM Media Roots.
+Scan media ở External và Internal DCAM Media Roots.
 
 MD5 verification
 
-Chỉ verify `.md5` cho video `.mp4` nếu file `.md5` tồn tại.
+Chỉ verify `.md5` cho `.mp4` nếu file tồn tại.
 
 Import
 
@@ -184,7 +214,7 @@ User/operator sync
 
 Device config read
 
-Read `dcam_config.cson` để lấy device information.
+Read `dcam_config.cson`.
 
 Database write-back
 
@@ -192,13 +222,15 @@ Write-back vào `dcam.db` chỉ theo approved tables/fields và schema/version r
 
 Logs reading
 
-Đọc `logs.txt` để diagnostics; không ghi, sửa hoặc xóa.
+Đọc stable `Logs/logs.txt` artifact để diagnostics; không ghi, sửa, truncate hoặc xóa.
+
+Internal logging artifacts
+
+Không đọc/consume internal rotated files hoặc upload queue trừ khi future contract version approve.
 
 Cleanup
 
-Xóa source media sau import theo cleanup policy.
-
-BDMA provisioning không bắt buộc cho normal factory provisioning. **DSetup + Web Portal/Firebase serial-number based provisioning** là default factory/business provisioning baseline.
+Xóa source media sau import theo cleanup policy; không cleanup diagnostics/config/database artifacts.
 
 ### 2.3 Firebase/WebServer Responsibilities
 
@@ -212,35 +244,33 @@ Quản lý server-side device record theo `dcam_cloud_device_id`.
 
 Serial lookup
 
-Quản lý lookup mapping từ `serial_number` tới `dcam_cloud_device_id`.
+Quản lý mapping `serial_number` → `dcam_cloud_device_id`.
 
-Web Portal/Firebase provisioning
+Web Portal provisioning
 
-Tạo/restore device record và serial lookup mapping sau authorized portal/factory action.
+Create/restore identity sau authenticated Factory Worker action.
 
 Device information management
 
-Lưu latest `serial_number`, `owner_name`, `manufacture_date`, device model, firmware và related device information.
-
-Serial history
-
-Lưu latest `serial_number` và `serial_history` nếu approved rework/admin flow cần.
+Lưu latest serial, owner, manufacture date, device model, firmware và related metadata.
 
 App/contract metadata
 
-Lưu app identity, app version, data contract version, media contract version và encoder contract version nếu cần cho support/compatibility.
+Lưu app/data/media/encoder contract metadata nếu cần.
 
 Remote config metadata
 
-Lưu target config revision / profile metadata.
+Lưu target config revision/profile metadata.
+
+Operational Log Relay
+
+Nếu implemented, authenticated relay nhận sanitized operational events và forward tới Loggly theo Logging Design/API Contract.
 
 Audit
 
-Audit provisioning, serial/device information change, config publish/apply result.
+Audit provisioning, device information change, config publish/apply result và security-relevant backend action.
 
 ## 3. Device Identity and Device Information Contract
-
-DCAM device identity uses `serial_number` as Hardware Identity and `dcam_cloud_device_id` as Cloud Identity.
 
 Field
 
@@ -262,25 +292,25 @@ App-private storage, `dcam_config.cson`, `dcam.db` mirror, Firebase/WebServer, S
 
 SD Identity File
 
-Recovery cache on external SD card; not Hardware Identity.
+Recovery cache; not Hardware Identity.
 
-External SD card, approved path from Factory SOP.
+External SD card, approved Factory SOP path.
 
 `owner_name`
 
-Mutable/semi-static device information for owner/customer/agency display.
+Mutable/semi-static device information.
 
 `dcam_config.cson`, `dcam.db` mirror, Firebase/WebServer.
 
 `manufacture_date`
 
-Semi-static device manufacture date using ISO `YYYY-MM-DD`.
+Semi-static manufacture date using `YYYY-MM-DD`.
 
 `dcam_config.cson`, `dcam.db` mirror, Firebase/WebServer.
 
 `serial_history`
 
-Lịch sử serial values if approved rework/admin flow changes serial.
+Lịch sử serial nếu approved rework/support process thay đổi serial.
 
 Firebase/WebServer; optional DB mirror.
 
@@ -288,15 +318,42 @@ Firebase/WebServer; optional DB mirror.
 
 App-install instance metadata only.
 
-Firebase/WebServer + optional DB metadata. Not a device identity key.
+Optional metadata; not device identity key.
 
 Rules:
 
-textLogical server mapping:
+serial_number is Hardware Identity / primary recovery key.
+dcam_cloud_device_id is the primary server/cloud device id.
+serial_lookup/{serial_number} is used to create/restore dcam_cloud_device_id.
+SD Identity File is recovery cache only.
+owner_name and manufacture_date are not primary keys.
+Advertising ID is not a DCAM identity key.
+ANDROID_ID, android_id_hash and device_lookup/{android_id_hash} are not used.
+manufacture_date uses YYYY-MM-DD.
+Logical server mapping:
 
-text### 3.1 App / Media / Encoder Compatibility Contract
+serial_lookup/{serial_number} = dcam_cloud_device_id
 
-BDMA nhận dạng app và contract version, không nhận dynamic decoder profile từ cloud.
+devices/{dcam_cloud_device_id}
+    dcam_cloud_device_id
+    serial_number
+    serial_history
+    owner_name
+    manufacture_date
+    device_model
+    firmware_version
+    app_code
+    app_package_name
+    app_version_name
+    app_version_code
+    dcam_data_contract_version
+    media_contract_version
+    encoder_contract_version
+    provisioning_status
+    config_revision
+    status
+    last_seen_at
+### 3.1 App / Media / Encoder Compatibility Contract
 
 Field
 
@@ -308,7 +365,7 @@ Mã app nội bộ, ví dụ `DCAM_ANDROID`.
 
 `app_package_name`
 
-Android package name để nhận dạng app trên device.
+Android package name.
 
 `app_version_name` / `app_version_code`
 
@@ -316,7 +373,7 @@ Version app đang chạy.
 
 `dcam_data_contract_version`
 
-Version tổng thể contract DCAM &harr; BDMA.
+Version tổng thể contract DCAM ↔ BDMA.
 
 `media_contract_version`
 
@@ -324,17 +381,43 @@ Version folder/naming/suffix/checksum/import/cleanup rule.
 
 `encoder_contract_version`
 
-Version fixed encoder/media encoding behavior của DCAM.
+Version fixed encoder/media encoding behavior.
 
 Not used:
 
-textBDMA phải dùng built-in compatibility table để quyết định app/contract version có được support hay không.
-
+bdma_decoder_profile_id
+decoder_profile_id
+dynamic_decoder_profile
 ## 4. Web Portal / Factory Provisioning Contract
 
-Default factory/business provisioning uses **DSetup + serial-number based Web Portal/Firebase provisioning**.
+Approved business provisioning flow:
 
-textExact QR signing/expiration/API details vẫn TBD. If QR is used, it must be business provisioning only and must not contain `ANDROID_ID` or `android_id_hash`.
+DSetup completes imported serial_number verification
+    ↓
+DCAM displays provisioning QR
+    ↓
+Factory Worker logs in to Web Portal
+    ↓
+Workspace scans QR displayed by DCAM
+    ↓
+serial_number is displayed read-only
+    ↓
+Factory Worker enters/selects owner_name and manufacture_date
+    ↓
+Backend checks serial_lookup/{serial_number}
+    ↓
+Create new or restore existing dcam_cloud_device_id
+    ↓
+DCAM receives/restores identity and writes local state
+Rules:
+
+Web Portal serial source is the provisioning QR displayed by DCAM.
+Web Portal does not allow manual serial entry.
+Web Portal does not scan serial barcode from the device label.
+Web Portal does not mark PASS, FAIL, QUARANTINED or READY_TO_SHIP.
+QR is business provisioning only; it is not Device Owner enrollment.
+QR must not contain ANDROID_ID, android_id_hash or long-lived secret.
+Exact QR/API details belong to Web Portal Design and API Contract.
 
 ## 5. Storage Location Strategy
 
@@ -344,17 +427,30 @@ Purpose
 
 Internal Storage
 
-Lưu `dcam_config.cson`, `dcam.db`, `logs.txt` và có thể lưu media khi user chọn Internal hoặc Auto fallback.
+Lưu `dcam_config.cson`, `dcam.db`, BDMA-facing `logs.txt`, internal diagnostics artifacts và có thể lưu media khi Internal/Auto fallback được chọn.
 
 External Storage
 
-Ưu tiên lưu media vì thường có dung lượng lớn hơn; cũng có thể lưu SD Identity File recovery cache nếu feature enabled.
+Ưu tiên media khi hợp lệ; có thể lưu SD Identity File recovery cache.
 
-Fixed Internal Files:
+Fixed BDMA-visible Internal Files:
 
-textOptional External Recovery Cache:
+Config/dcam_config.cson
+Database/dcam.db
+Logs/logs.txt
+Optional External Recovery Cache:
 
-textMedia storage rule:
+```
+DCAM_FACTORY/device_identity.json
+```
+
+Internal implementation artifacts có thể tồn tại nhưng không tự động trở thành BDMA contract:
+
+rotated operational log files
+local upload queue
+relay retry metadata
+Crashlytics local/provider cache
+Media storage rule:
 
 User Setting
 
@@ -370,17 +466,39 @@ Lưu media vào External DCAM Media Root nếu hợp lệ.
 
 Auto
 
-Ưu tiên External; fallback sang Internal trước khi recording nếu External unavailable/full/missing/not writable/invalid.
-
-BDMA phải scan cả hai vị trí, ưu tiên External trước rồi đến Internal.
+Ưu tiên External; fallback sang Internal trước recording nếu External unavailable/full/missing/not writable/invalid.
 
 ## 6. Logical Folder Contract
 
 ### 6.1 Internal DCAM Storage Root
 
-text### 6.2 External DCAM Storage Root
+Internal DCAM Storage Root
+├── Media
+│   ├── Video
+│   ├── Image
+│   ├── Audio
+│   └── IMP
+├── Config
+│   └── dcam_config.cson
+├── Database
+│   └── dcam.db
+├── Logs
+│   └── logs.txt                 # stable BDMA-facing artifact
+└── Temp
+Internal rotated logs/queue may be stored in app-private/internal implementation paths that are not part of the BDMA folder contract.
 
-textPhysical path thực tế là device-specific và phải được validate trên BodyCamera thật. Android-side storage mechanics thuộc **DCAM Storage Design**. SD Identity File path/schema/signature policy thuộc **DCAM Factory Provisioning & Device Production SOP** và Security Review.
+### 6.2 External DCAM Storage Root
+
+External DCAM Storage Root
+├── Media
+│   ├── Video
+│   ├── Image
+│   ├── Audio
+│   └── IMP
+├── DCAM_FACTORY
+│   └── device_identity.json
+└── Temp
+Physical paths are device-specific and require real-device validation.
 
 ## 7. Media File Naming Contract
 
@@ -404,15 +522,18 @@ Audio
 
 Normal naming:
 
-text]]>Important and encrypted suffix examples:
+```
+DCAM_XXXXXX_ZZZZZZ_YYYYMMDD_HHMMSS.<ext>
+```
 
-text
-DCAM_XXXXXX_ZZZZZZ_YYYYMMDD_HHMMSS_enc.
-DCAM_XXXXXX_ZZZZZZ_YYYYMMDD_HHMMSS_IMP_enc.]]>Encryption implementation details thuộc **DCAM Security & Encryption Design**.
+Important/encrypted examples:
 
+DCAM_XXXXXX_ZZZZZZ_YYYYMMDD_HHMMSS_IMP.<ext>
+DCAM_XXXXXX_ZZZZZZ_YYYYMMDD_HHMMSS_enc.<ext>
+DCAM_XXXXXX_ZZZZZZ_YYYYMMDD_HHMMSS_IMP_enc.<ext>
 ## 8. MD5 Checksum Contract
 
-File `.md5` chỉ áp dụng cho video `.mp4`.
+`.md5` chỉ áp dụng cho video `.mp4`.
 
 Rule
 
@@ -430,23 +551,30 @@ Same base name
 
 `.md5` dùng cùng base name với `.mp4`.
 
-Optional for `.mp4` import
+Optional for import
 
-Nếu thiếu `.md5`, BDMA vẫn có thể import nhưng result là Unverified/warning.
+Thiếu `.md5` vẫn có thể import dạng Unverified/warning.
 
 Not applicable for image/audio
 
-Không tạo, không tìm và không warning nếu `.jpg`, `.mp3`, `.aac`, `.wav` thiếu `.md5`.
+Không tạo/tìm/warning cho image/audio.
 
 ## 9. BDMA Import and Cleanup Rules
 
 BDMA scans:
 
-textBDMA must not treat SD Identity File as media and must not import it as evidence.
+Media/Video
+Media/Image
+Media/Audio
+Media/IMP
+BDMA must ignore as media:
 
-BDMA phải ignore:
-
-texttrừ khi một contract version trong tương lai định nghĩa rõ temp recovery/import behavior.
+Temp
+DCAM_FACTORY/device_identity.json
+Config/dcam_config.cson
+Database/dcam.db
+Logs/logs.txt
+`logs.txt` được đọc qua diagnostics flow, không phải media import flow.
 
 Case
 
@@ -458,7 +586,7 @@ Delete Source
 
 Yes
 
-Cho phép auto delete nếu cleanup policy enabled.
+Cho phép auto delete nếu cleanup enabled.
 
 `.mp4` has `.md5` and verify fail
 
@@ -470,13 +598,13 @@ No.
 
 Yes, Unverified
 
-User phải confirm theo từng file.
+User confirm per file.
 
-`.jpg`, `.mp3`, `.aac`, `.wav`
+Image/audio supported
 
 Yes nếu import succeeds.
 
-Cho phép auto delete nếu cleanup policy enabled.
+Cho phép auto delete nếu cleanup enabled.
 
 Unsupported encrypted media
 
@@ -496,15 +624,23 @@ No media import.
 
 No media cleanup.
 
-BDMA không được cleanup `dcam_config.cson`, `dcam.db`, `logs.txt` hoặc SD Identity File trừ khi future approved support/factory contract cho phép rõ ràng.
+BDMA không được cleanup `dcam_config.cson`, `dcam.db`, `logs.txt`, internal rotated logs, upload queue hoặc SD Identity File.
 
 ## 10. Device Config CSON Contract
 
-`dcam_config.cson` is stored at:
+Path:
 
-textPurpose:
+```
+Internal DCAM Storage Root/Config/dcam_config.cson
+```
 
-textAllowed examples:
+Purpose:
+
+```
+dcam_config.cson = static/semi-static device information only
+```
+
+Allowed examples:
 
 Area
 
@@ -524,15 +660,15 @@ Model.
 
 Serial number
 
-Hardware Identity / recovery key mirror.
+Hardware Identity mirror.
 
 Owner name
 
-Owner/customer/agency/organization display name.
+Owner/customer/agency display.
 
 Manufacture date
 
-Device manufacture date in `YYYY-MM-DD` format.
+`YYYY-MM-DD`.
 
 Firmware/hardware version
 
@@ -540,19 +676,31 @@ Version information.
 
 App/contract information
 
-App version and contract version metadata if needed for BDMA compatibility display.
+App and contract version metadata.
 
-Example direction:
+Not allowed:
 
-csonNot allowed in `dcam_config.cson`:
-
-text`dcam_config.cson` có thể được restore from app-private serial/server after serial-based identity restore/provisioning if file bị mất.
-
+user/operator data
+auth credentials
+operational settings
+storage mode
+feature flags
+MD5/encryption enable flags
+cleanup policy
+BDMA import records
+BDMA decoder profile id
+application logs
+logging provider token
+factory Wi-Fi password
+ANDROID_ID
+android_id_hash
 ## 11. SQLite Database Contract
 
-`dcam.db` is stored at:
+Path:
 
-text`dcam.db` chứa runtime data và operational data như sau:
+```
+Internal DCAM Storage Root/Database/dcam.db
+```
 
 Data Group
 
@@ -560,69 +708,204 @@ Description
 
 Device identity/provisioning
 
-`dcam_cloud_device_id`, `serial_number`, serial source, owner name, manufacture date, app/contract metadata and provisioning state.
+Cloud ID, serial, source, owner, manufacture date, contract metadata and provisioning state.
 
-SD Identity File sync state
+SD Identity File sync
 
-Optional local state for SD recovery cache availability/sync result.
+Recovery cache availability/sync result.
 
 Remote config cache
 
-Target/pending/applied config revision và apply status.
+Target/pending/applied revision and apply status.
 
 User/operator data
 
-User profiles, auth method references, operator session history và sync state.
+Profiles, auth references, session history and sync state.
 
 Settings
 
-Operational settings và applied setting state.
+Operational settings and applied setting state.
 
 Runtime state
 
-App/runtime/module/session state cần cho DCAM.
+App/module/session state.
 
 Media/session state
 
-Recording/capture session, operator snapshot, BDMA readiness và recovery state.
+Recording/capture, operator snapshot, BDMA readiness and recovery state.
 
-BDMA import/write-back state
+BDMA import/write-back
 
-Import status, history, external change log và sync checkpoint.
+Import status, history, external change log and sync checkpoint.
 
 Diagnostics
 
-Diagnostic events nếu được lưu trong DB.
+Diagnostic metadata/events nếu approved; không chứa provider credential hoặc forbidden secret.
 
-DB ownership rule:
+DB ownership:
 
-text## 12. User / Operator Sync Contract
+Android owns schema and runtime invariants.
+BDMA writes only approved tables/fields.
+Firebase/WebServer does not write directly into local DB.
+BDMA checks schema_version before write-back.
+Android safely applies/defers/rejects external writes.
+## 12. User / Operator Sync Contract
 
-DCAM và BDMA đều maintain user/operator management data.
+DCAM stores user/operator data in dcam.db.
+BDMA stores user/operator data in BDMA database.
+BDMA syncs through ADB.
+Sync is two-way, versioned and auditable.
+Required emergency system identity:
 
-textRequired emergency system identity:
+user_id = SYSTEM_EMERGENCY_OVERRIDE
+operator_code = EMERGENCY_OVERRIDE_ADMIN
+display_name = Emergency Override Admin
+user_type = SYSTEM
+role = SYSTEM_ADMIN
+## 13. Logs Artifact Contract
 
-textNormal recording/capture evidence yêu cầu authenticated operator session trên DCAM. Emergency recording có thể dùng system operator nếu chưa có operator logged in.
-
-## 13. Logs File Contract
+### 13.1 Stable BDMA-facing Artifact
 
 `logs.txt` is stored at:
 
-text
+```
+Internal DCAM Storage Root/Logs/logs.txt
+```
+
+`logs.txt` là stable logical artifact cho BDMA/support diagnostics. Nó không bắt buộc phải là internal source file duy nhất của logging implementation.
+
+Property
+
+Contract
+
+Purpose
+
+Sanitized Operational Logging artifact cho BDMA/support.
+
+Encoding
+
+UTF-8.
+
+Record boundary
+
+Newline-delimited; mỗi logical event phải là một complete record.
+
+Structured direction
+
+JSON Lines hoặc equivalent structured single-line records theo Logging Design.
+
+Sensitive fields
+
+Phải được sanitize trước khi xuất.
+
+Availability
+
+DCAM maintain file hoặc safe snapshot để BDMA có thể đọc khi connected.
+
+Active write behavior
+
+BDMA phải coi file có thể đang được DCAM append/replace; nên copy/read snapshot an toàn.
+
+### 13.2 Relation to Internal Rotated Logs
+
+Internal structured active/rotated logs
+        ↓ sanitize/normalize/export
+Logs/logs.txt
+        ↓ read-only ADB access
+BDMA diagnostics
+Rules:
+
+Rule
+
+Description
+
+LOG-CONTRACT-001
+
+`logs.txt` là stable BDMA-facing name bất kể internal logger dùng một hay nhiều rotated files.
+
+LOG-CONTRACT-002
+
+Internal rotated file names/paths không thuộc BDMA contract mặc định.
+
+LOG-CONTRACT-003
+
+BDMA không scan hoặc phụ thuộc vào internal rotated files.
+
+LOG-CONTRACT-004
+
+DCAM có thể regenerate/replace `logs.txt` atomically hoặc maintain append-only export theo Logging Design.
+
+LOG-CONTRACT-005
+
+Rotation không được để `logs.txt` biến mất lâu dài hoặc trở thành partial/corrupt artifact.
+
+LOG-CONTRACT-006
+
+Multi-line exception/context phải được escaped/normalized thành one logical record nếu exported.
+
+### 13.3 Relation to Upload Queue and Providers
+
+Local upload queue ≠ logs.txt
+Loggly delivery state ≠ BDMA artifact
+Crashlytics report/cache ≠ logs.txt
+Rules:
+
+Rule
+
+Description
+
+LOG-CONTRACT-007
+
+Upload queue và relay retry metadata là internal implementation state, không expose cho BDMA.
+
+LOG-CONTRACT-008
+
+Loggly delivery success/failure có thể xuất hiện như safe Operational Logging event nhưng provider token/secret không được expose.
+
+LOG-CONTRACT-009
+
+Crashlytics reports không thuộc BDMA Data Contract; selected safe error event có thể đồng thời tồn tại trong Operational Logging.
+
+LOG-CONTRACT-010
+
+Provider unavailable không làm `logs.txt` unavailable nếu local logging vẫn hoạt động.
+
+### 13.4 Permissions
+
 Actor
 
 Permission
 
 DCAM
 
-Read / Write
+Read / Write / Replace / Rotate export.
 
 BDMA
 
-Read-only
+Read-only.
 
-BDMA không được write, modify, truncate hoặc delete `logs.txt`.
+Firebase/WebServer
 
+Không direct-access file; nhận operational events qua approved relay/API nếu implemented.
+
+BDMA không được write, modify, truncate, rename hoặc delete `logs.txt`.
+
+### 13.5 Forbidden Content
+
+`logs.txt` không được chứa:
+
+password or credential
+Firebase/auth/access token
+maintenance password
+factory Wi-Fi password
+Google account password/token
+APK signing private key
+raw Android system identifier
+ANDROID_ID
+android_id_hash
+provisioning secret / long-lived QR secret
+raw media/sensor/location/AI/biometric payload
+full sensitive config payload
 ## 14. BDMA Write-back Rules
 
 BDMA may write-back to:
@@ -633,23 +916,23 @@ Permission
 
 `dcam_config.cson`
 
-Read / Write / Update cho device information only nếu có approved contract path.
+Device information only nếu approved path.
 
 `dcam.db` user/profile/auth/sync tables
 
-Theo User Sync Contract và DB ownership.
+Theo User Sync Contract.
 
 `dcam.db` approved operational/import tables
 
-Theo SQLite Database Design và System Settings.
+Theo SQLite Design.
 
-Source media files
+Source media
 
-Delete sau successful import theo cleanup policy.
+Delete after successful import theo cleanup policy.
 
-Matching `.md5` files
+Matching `.md5`
 
-Delete sau source `.mp4` video cleanup.
+Delete after matching `.mp4` cleanup.
 
 BDMA must not write-back to:
 
@@ -661,41 +944,41 @@ Rule
 
 Read-only.
 
+Internal rotated logs / upload queue
+
+Không thuộc BDMA contract.
+
 Media content before import
 
-Không được modify.
+Không modify.
 
 Embedded media metadata
 
-Không được modify.
+Không modify.
 
 `.md5` content
 
-Không được modify vì dùng cho video verification.
+Không modify.
 
-`Temp` files
+`Temp`
 
-Không được process trừ khi contract tương lai định nghĩa rõ.
+Không process trừ future contract.
 
 SD Identity File
 
-Không được modify/delete trừ khi future approved support/factory contract cho phép.
+Không modify/delete trừ future approved support/factory contract.
 
-Active `operator_session` runtime state
+Active runtime/session lifecycle fields
 
 Android runtime-owned.
 
-Active `media_session` lifecycle fields
-
-Android runtime-owned, trừ khi có explicit approval.
-
 Device identity primary mapping
 
-Thuộc Firebase/WebServer provisioning flow.
+Firebase/WebServer provisioning-owned.
 
 `bdma_decoder_profile_id`
 
-Không áp dụng; field này không thuộc DCAM contract.
+Not applicable.
 
 ## 15. Error and Warning Cases
 
@@ -709,19 +992,19 @@ Missing `.md5` for `.mp4`
 
 Warning
 
-BDMA imports video as Unverified.
+Import video as Unverified.
 
 Missing `.md5` for image/audio
 
 Not applicable
 
-Import normally; không warning.
+Import normally.
 
 MD5 mismatch for `.mp4`
 
 Error
 
-Không import; không delete source.
+Không import/delete source.
 
 DB schema unsupported
 
@@ -733,49 +1016,67 @@ App/contract version unsupported
 
 Error
 
-BDMA blocks import or shows compatibility warning; no dynamic decoder profile is fetched.
+Block hoặc compatibility warning.
 
 Invalid user/auth sync data
 
 Error
 
-Reject record, giữ last valid state và log conflict/error.
+Reject, preserve last valid state và log.
 
 Serial lookup not found
 
 Provisioning
 
-DCAM enters `PROVISIONING_REQUIRED` or approved factory/admin provisioning flow.
+DCAM enters `PROVISIONING_REQUIRED`.
 
-Server unavailable and local identity exists
+Server unavailable with local identity
 
 Offline fallback
 
-DCAM tiếp tục dùng last valid local identity/config cache.
+Continue using last valid local identity/config.
 
-Server unavailable and no local identity
+Server unavailable without local identity
 
 Provisioning wait
 
-DCAM chờ network/admin action.
+Wait for network/Factory Worker action.
 
-SD Identity File missing while app-private serial exists
-
-Recovery cache warning
-
-DCAM recreates SD Identity File if SD card is available.
-
-SD Identity File conflict with app-private serial
-
-Warning / policy event
-
-App-private serial wins; overwrite SD file or raise warning according to policy.
-
-Logs unreadable
+SD Identity File missing with app-private serial
 
 Warning
 
-Tiếp tục import nếu media hợp lệ.
+Recreate if SD available.
+
+SD Identity File conflict
+
+Warning / policy
+
+App-private serial wins.
+
+`logs.txt` missing temporarily during atomic replace
+
+Retryable warning
+
+BDMA retries; media import may continue.
+
+`logs.txt` malformed/partial
+
+Warning
+
+BDMA reports diagnostics warning; does not modify source.
+
+Internal rotated logs unavailable
+
+Not applicable to BDMA
+
+BDMA depends only on `logs.txt`.
+
+Loggly/Crashlytics unavailable
+
+Diagnostics degradation
+
+Local logs and `logs.txt` remain available; core flow continues.
 
 External storage missing
 
@@ -787,7 +1088,7 @@ Cleanup failed
 
 Warning/Error
 
-Import vẫn valid; cleanup issue phải được report.
+Import remains valid; report cleanup issue.
 
 ## 16. Versioning
 
@@ -797,48 +1098,64 @@ Rule
 
 Data Contract
 
-Version của tài liệu này là contract baseline.
+Document version is contract baseline.
 
 DB schema
 
-`dcam.db` phải expose schema/version metadata để BDMA compatibility check.
+`dcam.db` exposes schema/version metadata.
 
 App contract metadata
 
-App package/version và contract metadata phải đủ để BDMA nhận dạng app.
+App/package/version and contract metadata identify compatibility.
 
 Media contract
 
-`media_contract_version` version hóa folder/naming/suffix/checksum/import/cleanup rule.
+Versions folder/naming/suffix/checksum/import/cleanup.
 
 Encoder contract
 
-`encoder_contract_version` version hóa fixed DCAM encoder behavior; không dùng `bdma_decoder_profile_id`.
+Versions fixed encoder behavior.
 
 Device identity
 
-Server identity/provisioning contract phải được versioned.
+Server identity/provisioning contract is versioned.
 
 SD Identity File
 
-Path/schema/signature/checksum policy must be versioned if feature enabled.
+Path/schema/signature/checksum policy is versioned if enabled.
 
 Remote config
 
-Config profile/revision schema phải được versioned.
+Config schema/revision is versioned.
 
 User sync
 
-User sync records phải dùng revision/change tokens.
+Records use revision/change tokens.
 
-Media naming
+Logs artifact
 
-Breaking changes yêu cầu contract update và BDMA compatibility review.
+Breaking change to `logs.txt` encoding, record format, location or BDMA access requires Data Contract + Logging Design + BDMA compatibility review.
 
-Auth methods
+Internal rotation/queue
 
-Credential/auth sync format changes yêu cầu Security Design và contract review.
+May evolve within Logging Design without Data Contract change if `logs.txt` contract remains compatible.
 
 ## 17. Practical Conclusion
 
-text
+DCAM creates media, device config, dcam.db and operational diagnostics.
+Firebase/WebServer owns dcam_cloud_device_id and serial_lookup mapping.
+serial_number is Hardware Identity / primary recovery key.
+dcam_cloud_device_id is Cloud Identity / primary cloud device id.
+SD Identity File is recovery cache, not Hardware Identity.
+Factory Worker Web Portal provisioning uses QR displayed by DCAM.
+BDMA reads/imports media through ADB.
+BDMA identifies compatibility through app/data/media/encoder contract versions.
+BDMA does not use bdma_decoder_profile_id.
+BDMA syncs user/operator data through dcam.db.
+dcam_config.cson is device information only.
+dcam.db stores operational/user/runtime/import/identity/config-cache state.
+Logs/logs.txt is the stable sanitized BDMA-facing Operational Logging artifact.
+Internal rotated logs, upload queue, Loggly delivery state and Crashlytics reports are not BDMA contract artifacts.
+BDMA reads logs.txt in read-only mode and must not modify or delete it.
+MD5 applies only to .mp4 video files.
+BDMA_READY means safe for BDMA scan/import, not already imported.

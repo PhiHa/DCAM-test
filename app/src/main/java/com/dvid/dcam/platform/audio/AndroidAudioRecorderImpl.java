@@ -13,6 +13,7 @@ import com.dvid.dcam.feature.auth.application.usecase.OperatorSessionUseCase;
 import com.dvid.dcam.feature.auth.domain.OperatorSession;
 import com.dvid.dcam.feature.settings.application.usecase.MediaEncryptionSettingsUseCase;
 import com.dvid.dcam.platform.storage.DcamFileType;
+import com.dvid.dcam.platform.storage.CaptureStorageCheck;
 import com.dvid.dcam.platform.storage.DcamMediaFile;
 import com.dvid.dcam.platform.storage.DcamMediaOutput;
 import java.io.File;
@@ -77,6 +78,11 @@ public final class AndroidAudioRecorderImpl implements AudioRecorder {
             OperatorSession session = operatorSession.current();
             if (session == null) {
                 log.warn("Audio start ignored: operator login required", null);
+                return null;
+            }
+            CaptureStorageCheck storageCheck = mediaOutput.checkCaptureReady();
+            if (!storageCheck.isReady()) {
+                log.warn("Audio start rejected: " + storageCheck.getReason(), null);
                 return null;
             }
             LocalDateTime at = LocalDateTime.now();

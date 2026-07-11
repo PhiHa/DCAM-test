@@ -3,7 +3,7 @@
 **Page ID**: 47120395  
 **Version**: 10  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/47120395
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47120395
 
 ---
 
@@ -90,7 +90,18 @@ BDMA Desktop là hệ thống ingest, index, xem lại, backup, export, quản l
 
 Cloud Services là lớp mở rộng tùy chọn. Cloud có thể được triển khai bằng Firebase, custom REST backend, private cloud hoặc provider khác. Cloud không phải điều kiện bắt buộc cho core recording/capture/storage/metadata/user authentication.
 
-text## 3. Architecture Goals
+BodyCamera Android Device
+        ↓
+DCAM Android Application
+        ↓
+Local Media / Metadata / User-Operator DB / Logs
+        ↓
+BDMA Desktop via ADB
+        ↓
+Ingest / Index / User Sync / View / Backup / Export / Report
+        ↓
+Optional Cloud Services / Future Operations
+## 3. Architecture Goals
 
 Goal
 
@@ -142,7 +153,26 @@ Các module cần đủ tách biệt để test và debug.
 
 ## 4. High-Level Architecture
 
-text## 5. Primary Responsibilities of DCAM
++------------------------------------------------+
+|                BodyCamera Device               |
+|                                                |
+|  +------------------------------------------+  |
+|  |          DCAM Android Application         |  |
+|  |                                          |  |
+|  |  UI / Login / Runtime Orchestrator       |  |
+|  |  Recording / Capture / Storage / DB      |  |
+|  |  User / Auth / GPS / Logs                |  |
+|  |  Device Capability / Update / Config     |  |
+|  |  Cloud Service Adapter (optional)        |  |
+|  +------------------------------------------+  |
+|                                                |
+|  Local Media + Metadata + User DB + Logs       |
++------------------------------------------------+
+                     ↓
+              BDMA Desktop via ADB
+                     ↓
+     Import + User Sync + Optional Cloud / Analytics
+## 5. Primary Responsibilities of DCAM
 
 Responsibility
 
@@ -350,4 +380,7 @@ DCAM được thiết kế như một ứng dụng Android **offline-first**, **
 
 Các TBD còn lại trên trang này là open decisions thật sự cần POC, thiết bị thật, ADR hoặc future design.
 
-text
+Overview định nghĩa architecture context.
+Runtime design documents định nghĩa implementation baseline.
+Data Contract định nghĩa BDMA-facing và user-sync behavior.
+Security Design định nghĩa auth/encryption constraints.

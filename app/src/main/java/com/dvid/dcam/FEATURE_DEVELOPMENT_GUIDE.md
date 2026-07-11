@@ -98,23 +98,14 @@ public interface VideoRecordingUseCase {
 }
 ```
 
-Implementation:
+Recording command/event orchestration:
 
 ```java
 package com.dvid.dcam.feature.capture.application.usecase;
 
-import com.dvid.dcam.feature.capture.application.port.CameraGateway;
-
-public final class VideoRecordingUseCaseImpl implements VideoRecordingUseCase {
-    private final CameraGateway camera;
-
-    public VideoRecordingUseCaseImpl(CameraGateway camera) {
-        this.camera = camera;
-    }
-
-    @Override public void startVideo() {
-        camera.startVideo();
-    }
+public final class SerializedRecordingCoordinator
+        implements VideoRecordingUseCase, CaptureEventUseCase {
+    // UI, hardware and platform callbacks enter one FIFO state authority.
 }
 ```
 
@@ -174,7 +165,7 @@ UI button / hardware key
     ↓
 VideoRecordingUseCase                  application/usecase interface
     ↓
-VideoRecordingUseCaseImpl              application/usecase implementation
+SerializedRecordingCoordinator         application/usecase orchestration
     ↓
 CameraGateway                          application/port interface
     ↑
@@ -282,7 +273,7 @@ Không `new CameraX...` trong ViewModel/use case. Nối graph tại
 
 | Logic | Không nên đặt | Nên đặt |
 |---|---|---|
-| Start/stop/toggle recording policy | Activity/ViewModel/platform | `VideoRecordingUseCaseImpl` |
+| Start/stop/toggle recording policy | Activity/ViewModel/platform | `SerializedRecordingCoordinator` |
 | Tạo file bằng CameraX/MediaStore | Use case/domain | `platform/storage` hoặc `platform/camera` |
 | Parse config/fallback default | Activity | `ConfigurationRepositoryImpl` |
 | Lưu language preference Android | Use case | `AndroidLanguagePreferenceStoreImpl` |

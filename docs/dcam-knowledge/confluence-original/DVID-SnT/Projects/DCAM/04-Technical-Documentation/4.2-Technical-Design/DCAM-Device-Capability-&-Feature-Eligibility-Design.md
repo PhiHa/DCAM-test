@@ -3,7 +3,7 @@
 **Page ID**: 48758788  
 **Version**: 5  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/48758788
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/48758788
 
 ---
 
@@ -50,7 +50,13 @@ Detailed app operating modes, recording states, storage states, DB states, kiosk
 
 Current baseline:
 
-text## 2. Official Feature Eligibility States
+No external EMM.
+No Android Management API.
+No Managed Google Play policy-driven update.
+DCAM-as-DPC / local Device Owner feasibility must be detected/validated.
+Self Update / APK update is primary update path.
+Manual Google Play Store update is optional fallback only if GMS/Play Store capability exists and process is approved.
+## 2. Official Feature Eligibility States
 
 Đây là official state set được dùng trên toàn bộ DCAM documents.
 
@@ -98,7 +104,11 @@ Detection, evaluation hoặc runtime error.
 
 ## 3. Runtime Rule
 
-textRuntime modules có trạng thái `UNSUPPORTED_*`, `DISABLED_*`, `TEMPORARILY_UNAVAILABLE`, `PRUNED` hoặc `ERROR` không được start normal runtime path.
+Setting = requested feature state
+Capability = actual device ability
+Eligibility = official runtime decision
+Runtime starts only for ENABLED or approved DEGRADED states
+Runtime modules có trạng thái `UNSUPPORTED_*`, `DISABLED_*`, `TEMPORARILY_UNAVAILABLE`, `PRUNED` hoặc `ERROR` không được start normal runtime path.
 
 ## 4. Capability Categories
 
@@ -302,8 +312,43 @@ DCAM State Machine Design
 
 `feature_eligibility_state.eligibility_state` chỉ được dùng official state set dưới đây.
 
-textRecommended feature/capability keys include but are not limited to:
+ENABLED
+DEGRADED
+DISABLED_BY_POLICY
+DISABLED_BY_PERMISSION
+UNSUPPORTED_HARDWARE
+UNSUPPORTED_PERFORMANCE
+TEMPORARILY_UNAVAILABLE
+PRUNED
+ERROR
+Recommended feature/capability keys include but are not limited to:
 
-text## 8. Conclusion
+camera.recording
+camera.preview_analysis
+audio.recording
+sensor.motion
+location.gps
+storage.internal
+storage.external
+policy.device_owner
+policy.lock_task
+policy.user_restrictions
+policy.home_launcher
+console.setting_hub
+console.file_manager_read_only
+console.media_viewer_read_only
+maintenance.password_gate
+maintenance.approved_targets
+update.self_update
+update.play_store_fallback
+bdma.adb_import
+bdma.user_sync
+ai.realtime_detection
+## 8. Conclusion
 
-text
+Device Capability Design owns eligibility state names and capability categories.
+Runtime design documents own their domain-specific states.
+External EMM / Android Management API / Managed Google Play are not current baseline capabilities.
+Self Update is the primary update capability for current baseline.
+Play Store fallback is optional and capability-gated.
+Tất cả documents phải dùng official eligibility state set một cách nhất quán.

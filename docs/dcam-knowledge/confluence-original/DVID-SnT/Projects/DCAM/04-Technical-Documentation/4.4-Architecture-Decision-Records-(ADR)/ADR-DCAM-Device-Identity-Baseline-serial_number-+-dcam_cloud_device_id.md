@@ -3,7 +3,7 @@
 **Page ID**: 50692110  
 **Version**: 2  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/50692110
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/50692110
 
 ---
 
@@ -66,15 +66,38 @@ ADR này trở thành `Accepted` sau khi các tài liệu liên quan được c�
 
 Các tài liệu cần kiểm tra sau ADR này:
 
-textwide760## 2. Context
+DCAM Security & Encryption Design
+DCAM QA Test Strategy & Test Matrix
+DCAM Web Portal & Device API Contract
+DCAM Device Provisioning Web Portal Design
+DCAM Factory Provisioning & Device Production SOP
+DCAM Android Operation Design
+DCAM SQLite Database Design
+DCAM Project Home
+DCAM Architecture Home
+## 2. Context
 
 DCAM là Android BodyCamera Application chạy trong dedicated-device / kiosk deployment. Thiết bị cần một identity model ổn định để dùng xuyên suốt các tình huống production và support.
 
 Identity model phải hoạt động được trong các trường hợp sau:
 
-textwide760Các draft cũ từng đề cập tới Android-derived identity, bao gồm:
+Android app update
+app reinstall trong approved rework flow
+factory reset
+DSetup factory provisioning
+SD card recovery
+Web Portal / Firebase business provisioning
+Backend identity restore
+BDMA import / user sync boundary
+QA release readiness
+Factory READY_TO_SHIP / QUARANTINED decision
+Support diagnostics
+Các draft cũ từng đề cập tới Android-derived identity, bao gồm:
 
-textwide760Cách tiếp cận này không phù hợp với current production baseline vì `ANDROID_ID` và `android_id_hash` không phải Hardware Identity của BodyCamera. Chúng phụ thuộc vào Android runtime / app / user / firmware behavior và có thể gây duplicate cloud device sau factory reset, reinstall hoặc rework.
+ANDROID_ID
+android_id_hash
+device_lookup/{android_id_hash}
+Cách tiếp cận này không phù hợp với current production baseline vì `ANDROID_ID` và `android_id_hash` không phải Hardware Identity của BodyCamera. Chúng phụ thuộc vào Android runtime / app / user / firmware behavior và có thể gây duplicate cloud device sau factory reset, reinstall hoặc rework.
 
 Trong current DCAM baseline, Factory SOP đã có nguồn Hardware Identity rõ ràng là `serial_number`. Vì vậy identity baseline cần thống nhất quanh `serial_number` và `dcam_cloud_device_id`.
 
@@ -82,9 +105,30 @@ Trong current DCAM baseline, Factory SOP đã có nguồn Hardware Identity rõ 
 
 DCAM current production baseline sử dụng identity model sau:
 
-textwide760DCAM current production baseline không sử dụng:
+Hardware Identity:
+    serial_number
 
-textwide760## 4. Identity Model
+Cloud Identity:
+    dcam_cloud_device_id
+
+Cloud lookup / restore path:
+    serial_lookup/{serial_number}
+
+Cloud device record:
+    devices/{dcam_cloud_device_id}
+
+Recovery cache:
+    SD Identity File on external SD card
+DCAM current production baseline không sử dụng:
+
+ANDROID_ID
+android_id_hash
+device_lookup/{android_id_hash}
+Advertising ID
+owner_name as identity
+manufacture_date as identity
+SD Identity File as authoritative identity
+## 4. Identity Model
 
 Identity
 
@@ -144,29 +188,71 @@ Mutable hoặc semi-static, không phải identity key.
 
 Rules:
 
-textwide760### 5.2 `dcam_cloud_device_id`
+serial_number is Hardware Identity / primary recovery key.
+serial_number is used to create or restore dcam_cloud_device_id.
+serial_number is injected by DSetup or recovered from approved factory source.
+serial_number is stored locally by DCAM after validation.
+serial_number may be mirrored to dcam_config.cson and dcam.db according to related design documents.
+serial_number may be synced to SD Identity File as recovery cache.
+serial_number must not be silently overwritten after business provisioning.
+serial_number change must be exceptional, permission-controlled and auditable.
+### 5.2 `dcam_cloud_device_id`
 
 `dcam_cloud_device_id` là Cloud Identity và primary cloud/backend device id.
 
 Rules:
 
-textwide760### 5.3 `serial_lookup/{serial_number}`
+dcam_cloud_device_id is generated or restored by Backend/Firebase.
+dcam_cloud_device_id is the primary key for devices/{dcam_cloud_device_id}.
+dcam_cloud_device_id is stored locally after successful provisioning or restore.
+dcam_cloud_device_id is used for cloud requests after identity is resolved.
+dcam_cloud_device_id must not be derived from Android system identifiers.
+### 5.3 `serial_lookup/{serial_number}`
 
 `serial_lookup/{serial_number}` là production lookup path duy nhất để create/restore Cloud Identity trong current baseline.
 
 Rules:
 
-textwide760### 5.4 SD Identity File
+If serial_lookup/{serial_number} exists:
+    restore existing dcam_cloud_device_id.
+
+If serial_lookup/{serial_number} does not exist:
+    create new dcam_cloud_device_id only in an authorized factory/admin provisioning flow.
+
+If serial_lookup/{serial_number} maps to DISABLED, REVOKED or QUARANTINED device:
+    Android must not enter normal field operation.
+
+Duplicate serial_number must not silently create another active cloud device.
+### 5.4 SD Identity File
 
 SD Identity File là recovery cache, không phải Hardware Identity.
 
 Recommended path:
 
-textwide760/DCAM_FACTORY/device_identity.json]]>Recommended payload:
+```
+<SD_CARD>/DCAM_FACTORY/device_identity.json
+```
 
-jsonwide760Rules:
+Recommended payload:
 
-textwide760## 6. Explicit Rejections
+{
+  "schema_version": 1,
+  "identity_type": "BODYCAMERA_SD_FACTORY_IDENTITY",
+  "serial_number": "BC240001",
+  "created_by": "DSetup|DCAM",
+  "created_at": "2026-07-09T00:00:00Z",
+  "updated_at": "2026-07-09T00:00:00Z",
+  "signature": "optional-approved-signature-or-checksum"
+}
+Rules:
+
+DCAM app-private serial_number is source of truth while DCAM is running.
+If SD Identity File is missing, DCAM may recreate it from app-private serial_number.
+If SD card is replaced, DCAM may create SD Identity File on the new card.
+If SD Identity File conflicts with app-private serial_number, app-private serial_number wins.
+DSetup may use SD Identity File after factory reset only if the file is valid.
+If SD Identity File is missing, invalid or conflicting, DSetup must request barcode scan or quarantine according to Factory SOP.
+## 6. Explicit Rejections
 
 Mechanism
 
@@ -234,7 +320,7 @@ Quyết định này được chọn vì các lý do sau:
 
 DSetup có thể recover `serial_number` từ SD Identity File hoặc barcode scan mà không cần phụ thuộc `ANDROID_ID`.
 
-Factory, QA, Support, Backend và BDMA có cùng một baseline để trace physical device &harr; cloud device.
+Factory, QA, Support, Backend và BDMA có cùng một baseline để trace physical device ↔ cloud device.
 
 Rủi ro duplicate cloud device sau factory reset được giảm đáng kể.
 
@@ -242,41 +328,105 @@ Rủi ro duplicate cloud device sau factory reset được giảm đáng kể.
 
 ### 8.1 Positive Consequences
 
-textwide760### 8.2 Negative / Trade-off Consequences
+Factory reset recovery trở nên deterministic hơn.
+Backend identity restore đơn giản hơn.
+Cloud device duplication risk giảm.
+DCAM không phụ thuộc Android ID behavior.
+Factory SOP, API Contract, Android runtime và QA có thể dùng cùng một identity model.
+Support có thể mapping physical device với cloud device thông qua serial_number.
+### 8.2 Negative / Trade-off Consequences
 
-textwide760### 8.3 Security Consequences
+serial_number phải được bảo vệ khỏi accidental overwrite.
+serial_number conflict handling phải rõ ràng.
+SD Identity File có thể sai nếu SD card bị tráo giữa hai BodyCamera.
+Barcode label / factory record quality trở nên quan trọng hơn.
+Backend phải enforce duplicate active serial mapping prevention.
+Support flow cần xử lý serial conflict, rebind hoặc exceptional serial change.
+### 8.3 Security Consequences
 
-textwide760## 9. Implementation Direction
+serial_number is not a secret, but it is security-sensitive operational identity.
+serial_number must not be used as an authentication secret.
+Knowing serial_number alone must not grant device control or admin access.
+Cloud APIs still require device/admin authentication and authorization.
+SD Identity File should have validation, checksum or signature if supported.
+Logs should avoid unnecessary exposure of serial_number and must not include secrets.
+## 9. Implementation Direction
 
 ### 9.1 Android Runtime
 
 Android must:
 
-textwide760### 9.2 DSetup / Factory SOP
+Read local app-private serial_number if available.
+Read local dcam_cloud_device_id if available.
+Use dcam_cloud_device_id for cloud requests after identity is resolved.
+If dcam_cloud_device_id is missing but serial_number exists, restore through serial_lookup/{serial_number}.
+If serial_number is missing, enter SERIAL_REQUIRED / PROVISIONING_REQUIRED / approved factory state.
+Never use ANDROID_ID as production identity.
+Never compute or send android_id_hash as production recovery identity.
+Never call device_lookup/{android_id_hash} in current production baseline.
+### 9.2 DSetup / Factory SOP
 
 DSetup must:
 
-textwide760### 9.3 Backend / Firebase / Web Portal
+Recover serial_number from SD Identity File if valid.
+Fallback to barcode scan if SD Identity File is missing, invalid or conflicting.
+Inject serial_number into DCAM after Device Owner verification.
+Record serial source in production record.
+Use serial_number for Firebase/WebServer business provisioning or restore flow.
+Never use ANDROID_ID or android_id_hash for production provisioning.
+Never treat Web Portal QR Flow as Android Device Owner setup.
+### 9.3 Backend / Firebase / Web Portal
 
 Backend must:
 
-textwide760### 9.4 SQLite / Local DB
+Use serial_lookup/{serial_number} to resolve dcam_cloud_device_id.
+Store device records under devices/{dcam_cloud_device_id}.
+Prevent duplicate active serial_number mapping.
+Audit serial create, restore, conflict and exceptional change actions.
+Reject or deprecate device_lookup/{android_id_hash} for current production baseline.
+### 9.4 SQLite / Local DB
 
 `dcam.db` should support local persistence of:
 
-textwide760`dcam.db` must not store:
+dcam_cloud_device_id
+serial_number
+serial_source
+identity_state
+last_identity_lookup_at
+last_identity_restore_at
+sd_identity_sync_state
+device_identity_history
+provisioning_state
+`dcam.db` must not store:
 
-textwide760### 9.5 Security
+raw ANDROID_ID
+android_id_hash as production recovery key
+Advertising ID as device identity
+### 9.5 Security
 
 Security Design must align with this statement:
 
-textwide760## 10. Migration / Documentation Cleanup
+serial_number = Hardware Identity / primary recovery key
+dcam_cloud_device_id = Cloud Identity / primary cloud device id
+SD Identity File = recovery cache only
+ANDROID_ID / android_id_hash / device_lookup are not used in current production baseline
+## 10. Migration / Documentation Cleanup
 
 The following old wording must be removed from current-baseline documents:
 
-textwide760Replace with:
+Recovery lookup key = android_id_hash
+serial_number = mutable device information
+device_lookup/{android_id_hash}
+Local QR provisioning / device_lookup
+Android only checks device_lookup/{android_id_hash}
+Replace with:
 
-textwide760
+Recovery lookup key = serial_number
+serial_number = Hardware Identity / primary recovery key
+dcam_cloud_device_id = Cloud Identity / primary cloud device id
+serial_lookup/{serial_number}
+Web Portal/Firebase creates or restores devices/{dcam_cloud_device_id} by serial_number
+
 Document
 
 Required Change
@@ -309,7 +459,18 @@ Giữ làm source of truth cho DSetup, barcode scan, SD Identity File và ready-
 
 QA must verify:
 
-textwide760Suggested QA cases:
+A clean factory device can be provisioned with barcode-scanned serial_number.
+A factory-reset device can recover serial_number from valid SD Identity File.
+A factory-reset device without valid SD Identity File requires barcode scan.
+serial_lookup/{serial_number} restores the same dcam_cloud_device_id.
+Duplicate serial_number does not create a second active cloud device.
+ANDROID_ID is not sent, stored or logged.
+android_id_hash is not sent, stored or logged as production identity.
+device_lookup/{android_id_hash} is not used.
+SD Identity File conflict does not override app-private serial_number during normal operation.
+Device with DISABLED / REVOKED / QUARANTINED cloud state cannot enter normal field operation.
+Production record includes safe serial source metadata but no Android ID/hash.
+Suggested QA cases:
 
 Test ID
 
@@ -401,6 +562,18 @@ Backend vẫn cần `dcam_cloud_device_id` làm Cloud Identity ổn định đ�
 
 DCAM current production identity baseline là:
 
-textwide760Current production baseline explicitly does not use:
+serial_number = Hardware Identity / primary recovery key
+dcam_cloud_device_id = Cloud Identity / primary cloud device id
+SD Identity File = recovery cache on external SD card
+serial_lookup/{serial_number} = cloud create/restore lookup
+devices/{dcam_cloud_device_id} = cloud device record
+Current production baseline explicitly does not use:
 
-textwide760ADR này thống nhất Android runtime, DSetup, Factory SOP, Web Portal, Backend/Firebase, SQLite, Security, QA và BDMA-facing behavior quanh một identity model duy nhất.
+ANDROID_ID
+android_id_hash
+device_lookup/{android_id_hash}
+Advertising ID
+owner_name as identity
+manufacture_date as identity
+SD Identity File as authoritative identity
+ADR này thống nhất Android runtime, DSetup, Factory SOP, Web Portal, Backend/Firebase, SQLite, Security, QA và BDMA-facing behavior quanh một identity model duy nhất.

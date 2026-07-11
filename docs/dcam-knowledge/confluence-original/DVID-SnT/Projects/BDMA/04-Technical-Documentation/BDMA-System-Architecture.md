@@ -3,7 +3,7 @@
 **Page ID**: 25264261  
 **Version**: 5  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/25264261
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/25264261
 
 ---
 
@@ -42,7 +42,22 @@ Tạo nền tảng cho operational analytics và AI-assisted workflow trong tư�
 
 # 🧱 High-Level Architecture
 
-textwide760# 📦 Core Modules
+BodyCam Device
+↓
+USB Detection Layer
+↓
+Device Recognition Layer
+↓
+Sync Engine
+↓
+Data Processing & Indexing
+↓
+Secure Storage Layer
+↓
+Application Services
+↓
+UI / Reporting / Monitoring
+# 📦 Core Modules
 
 Module
 
@@ -152,9 +167,30 @@ Theme/language/storage config
 
 ## Main Business Flow
 
-textwide760## Data Flow
+Connect BodyCam
+→ Detect Device
+→ Validate Device
+→ User Confirmation
+→ Sync Data
+→ Index Data
+→ Backup Data
+→ Verify Integrity
+→ Optional Device Cleanup
+→ Monitoring & Reporting
+## Data Flow
 
-textwide760# 🧩 Integrations
+BodyCam Storage
+↓
+Sync Engine
+↓
+Temporary Processing Buffer
+↓
+Secure Local Storage
+↓
+Database Index
+↓
+UI / Search / Reporting
+# 🧩 Integrations
 
 Integration
 
@@ -421,7 +457,14 @@ Logging các operational event quan trọng
 
 ## Deployment Flow
 
-textwide760## CI/CD Direction
+Development
+→ Internal Testing
+→ QA Validation
+→ Release Build
+→ Auto Update Distribution
+→ User Deployment
+→ Monitoring & Hotfix
+## CI/CD Direction
 
 Stage
 
@@ -529,7 +572,11 @@ Better incident visibility
 
 BDMA được định hướng phát triển theo mô hình:
 
-textwide760Hệ thống sẽ dần hỗ trợ:
+```
+AI-Ready Operational Platform
+```
+
+Hệ thống sẽ dần hỗ trợ:
 
 AI-assisted search
 

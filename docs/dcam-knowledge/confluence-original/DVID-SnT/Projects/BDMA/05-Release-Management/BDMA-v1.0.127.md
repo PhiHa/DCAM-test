@@ -3,7 +3,7 @@
 **Page ID**: 41746454  
 **Version**: 4  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/41746454
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/41746454
 
 ---
 
@@ -24,13 +24,15 @@ v1.0.127
 
 Release Date
 
+27 Jun 2026
+
 Release Type
 
 Minor / Feature Release
 
 Prepared By
 
- 
+[Dinh Nhan](https://ducviet.atlassian.net/wiki/people/70121:52166504-9fa8-44ba-969f-16f03f3dc4d6?ref=confluence) 
 
 Approved By
 
@@ -252,7 +254,7 @@ Stop rollout, restore the previously approved installer package, and repeat depl
 
 # 🔗 Related Documents
 
-Installer false-positive app running detection
+[Installer false-positive app running detection](/wiki/spaces/DVID/pages/41615363/Installer+false-positive+app+running+detection)
 
 [BDMA-151](https://ducviet.atlassian.net/browse/BDMA-151) — Refactor UI
 

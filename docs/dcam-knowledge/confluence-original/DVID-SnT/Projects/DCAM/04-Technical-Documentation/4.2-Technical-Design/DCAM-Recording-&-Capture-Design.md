@@ -3,7 +3,7 @@
 **Page ID**: 48529484  
 **Version**: 9  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/48529484
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/48529484
 
 ---
 
@@ -270,7 +270,26 @@ Làm việc với Android Operation Design.
 
 ### 5.1 Normal Recording Flow
 
-text### 5.2 State Meaning
+IDLE
+    ↓ StartRecordingRequested
+PRECHECKING
+    ↓ PrecheckPassed
+PREPARING_CAMERA
+    ↓ CameraReady
+PREPARING_STORAGE
+    ↓ TempFileReady
+STARTING
+    ↓ SdkRecordingStarted
+RECORDING
+    ↓ StopRequested
+STOPPING
+    ↓ SdkRecordingStopped
+FINALIZING
+    ↓ FinalizationCompleted
+BDMA_READY
+    ↓ CompletionAcknowledged
+COMPLETED
+### 5.2 State Meaning
 
 State
 
@@ -694,7 +713,10 @@ Reject/defer start cho đến khi finalization completes.
 
 Core rule:
 
-text## 8. Command and Event Model
+Normal recording/capture evidence requires authenticated operator session.
+Emergency recording may use EMERGENCY_OVERRIDE_ADMIN when no operator is logged in.
+GPS, Sensor Monitoring and Realtime AI are not hard dependencies for core video recording.
+## 8. Command and Event Model
 
 Type
 
@@ -866,7 +888,11 @@ Không discard already captured media chỉ vì post-record failed.
 
 ## 11. Finalization Pipeline
 
-text minimum
+Stop camera SDK
+    ↓
+Close temp/staging media file
+    ↓
+Validate file exists and size > minimum
     ↓
 Write/embed metadata if supported and required
     ↓
@@ -880,7 +906,8 @@ Insert/update media session in dcam.db with operator snapshot
     ↓
 Mark BDMA_READY
     ↓
-Log final result]]>`BDMA_READY` nghĩa là final media safe cho BDMA scan/import. Nó không có nghĩa là BDMA đã import file.
+Log final result
+`BDMA_READY` nghĩa là final media safe cho BDMA scan/import. Nó không có nghĩa là BDMA đã import file.
 
 ## 12. Emergency Runtime Behavior
 
@@ -924,15 +951,34 @@ Preserve current artifacts trước; chỉ queue emergency diagnostics nếu saf
 
 Emergency evidence rule:
 
-text## 13. Operator Attribution Behavior
+EmergencyEventManager requests emergency behavior.
+RecordingController decides whether to start emergency recording, mark current session, queue event or reject safely.
+If no operator is logged in, emergency override uses EMERGENCY_OVERRIDE_ADMIN and must be auditable.
+## 13. Operator Attribution Behavior
 
 Khi recording/capture starts, RecordingController phải resolve operator attribution trước khi tạo media session.
 
-textRequired media session snapshot:
+Resolve operator attribution
+    ├── Active operator session exists
+    │       → operator_resolution_state = RESOLVED
+    ├── Emergency request and no operator session
+    │       → operator_resolution_state = EMERGENCY_OVERRIDE
+    └── Normal recording and no operator session
+            → reject OPERATOR_AUTH_REQUIRED
+Required media session snapshot:
 
-textAudit rule:
+operator_user_id
+operator_code_snapshot
+operator_name_snapshot
+operator_badge_snapshot
+operator_session_id
+operator_auth_method
+operator_resolution_state
+Audit rule:
 
-text## 14. Recovery Behavior
+Historical media keeps the operator snapshot from recording time.
+Later user profile changes must not silently rewrite old evidence attribution.
+## 14. Recovery Behavior
 
 Scenario
 
@@ -980,26 +1026,53 @@ Preserve local evidence candidate trước; log emergency recovery event.
 
 Recovery safety rule:
 
-text## 15. Runtime Persistence Direction
+When unsure, preserve source/temp/staging/final candidate and mark recovery state.
+Do not delete evidence automatically during recovery.
+## 15. Runtime Persistence Direction
 
 Detailed schema thuộc **DCAM SQLite Database Design**. Recording & Capture yêu cầu các runtime information dưới đây persistable khi cần:
 
-text## 16. Logging Direction
+recording_session_id
+recording_state
+recording_started_at
+recording_stopped_at
+recording_finalized_at
+operator_user_id
+operator_code_snapshot
+operator_name_snapshot
+operator_badge_snapshot
+operator_session_id
+operator_auth_method
+operator_resolution_state
+is_important
+is_emergency
+source_event_id
+pre_record_used
+post_record_used
+staging_file_path
+final_file_path
+finalization_state
+bdma_readiness_state
+recovery_required
+failure_reason_code
+## 16. Logging Direction
 
 Required examples:
 
-text
+[RECORDING] Start requested
+[RECORDING] Operator resolved: <state>
 [RECORDING] Operator auth required
 [RECORDING] Emergency override operator used
 [RECORDING] Precheck passed
-[RECORDING] Precheck failed: 
+[RECORDING] Precheck failed: <reason_code>
 [RECORDING] SDK recording started
 [RECORDING] Finalization started
 [RECORDING] Finalization completed
 [RECORDING] BDMA_READY
 [RECORDING] Recovery required
 [EMERGENCY] Current recording marked important
-[EMERGENCY] Emergency marker created]]>Không log plaintext credentials, raw media content, sensitive media data, raw AI frames, face data, raw location history, encryption keys, credentials hoặc secrets.
+[EMERGENCY] Emergency marker created
+Không log plaintext credentials, raw media content, sensitive media data, raw AI frames, face data, raw location history, encryption keys, credentials hoặc secrets.
 
 ## 17. Open Questions / TBD
 
@@ -1061,4 +1134,10 @@ TBD
 
 ## 18. Practical Conclusion
 
-text
+Chỉ RecordingController owns recording decisions.
+Normal recording/capture evidence yêu cầu authenticated operator session.
+Emergency recording có thể dùng EMERGENCY_OVERRIDE_ADMIN khi chưa có operator logged in.
+Recording phải pass operator/capability/storage/permission precheck trước SDK start.
+Finalization phải complete trước BDMA_READY.
+Emergency events không được corrupt active/finalizing media.
+Recovery phải preserve source evidence khi state không chắc chắn.

@@ -3,7 +3,7 @@
 **Page ID**: 26411028  
 **Version**: 5  
 **Type**: page  
-**URL**: undefined/spaces/DVID/pages/26411028
+**URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/26411028
 
 ---
 
@@ -66,38 +66,69 @@ Khi code nên import chính xác class cần dùng, không dùng import all (*):
 
 Dễ đọc & review code hơn
 
-wide760người đọc biết ngay file đang dùng những class gì.
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+người đọc biết ngay file đang dùng những class gì.
 
 So với:
 
-wide760muốn biết đang dùng gì phải đọc hết code.
+```
+import java.util.*;
+```
+
+muốn biết đang dùng gì phải đọc hết code.
 
 Tránh xung đột tên class
 
 Ví dụ:
 
-wide760Cả hai package đều có:
+import java.util.*;
+import java.awt.*;
+Cả hai package đều có:
 
-wide760Khi đó:
+```
+List
+```
 
-wide760sẽ bị ambiguous.
+Khi đó:
+
+```
+List list;
+```
+
+sẽ bị ambiguous.
 
 Import cụ thể:
 
-wide760giúp tránh các lỗi kiểu này.
+```
+import java.util.List;
+```
+
+giúp tránh các lỗi kiểu này.
 
 Giảm diff vô nghĩa khi refactor
 
 Ví dụ ban đầu:
 
-wide760Sau này xóa hết code dùng HashMap.
+```
+import java.util.*;
+```
+
+Sau này xóa hết code dùng HashMap.
 
 Import vẫn là:
 
-wide760Không ai biết thực tế dependency đã thay đổi.
+```
+import java.util.*;
+```
+
+Không ai biết thực tế dependency đã thay đổi.
 
 Ngược lại với explicit import:
 
-wide760IDE sẽ warning xóa HashMap khi không dùng nữa.
+import java.util.HashMap;
+import java.util.List;
+IDE sẽ warning xóa HashMap khi không dùng nữa.
 
 Danh sách import phản ánh đúng dependency thực tế của file.
