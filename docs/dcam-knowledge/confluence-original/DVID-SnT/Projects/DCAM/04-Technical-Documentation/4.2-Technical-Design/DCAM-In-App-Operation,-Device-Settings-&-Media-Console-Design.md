@@ -1,7 +1,7 @@
 # DCAM In-App Operation, Device Settings & Media Console Design
 
 **Page ID**: 49840330  
-**Version**: 10  
+**Version**: 12  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/49840330
 
@@ -24,7 +24,7 @@ Technical Design / In-App Console Design
 
 Version
 
-Draft 1.0
+Draft 1.1
 
 Status
 
@@ -1521,7 +1521,7 @@ Description
 
 CONSOLE-UPD-001
 
-Current device baseline: No external EMM / No Android Management API / No Managed Google Play (per ADR). Managed GP/policy-driven update not applicable.
+Update applicability tuân theo ADR và Release & Build Applicability Matrix; console không được tự giả định policy-driven update capability.
 
 CONSOLE-UPD-002
 
@@ -2299,31 +2299,18 @@ TBD
 
 ## 18. Practical Conclusion
 
-Kiosk mode khiến DCAM phải chịu trách nhiệm cung cấp các in-app operation và device control surfaces được phép.
-Record / Live View là default main screen.
-Setting là in-app console hub.
-Back trên Record / Live View mở Setting.
-Back trên Setting quay lại Record / Live View.
-Back trong bất kỳ child module nào quay lại Setting.
-Back không được exit DCAM khi kiosk mode active.
-Recording vẫn là primary feature.
-Tuy nhiên DCAM cũng phải cung cấp controlled settings, storage/media review, login settings, admin-only user settings và support/admin workflows.
-Login Settings cho phép approved current-user self-service auth changes như password/login method/face auth enrollment.
-User Settings là Admin-only và hỗ trợ add/edit/delete-disable user với audit và historical attribution preservation.
-Admin / Maintenance là approved path duy nhất để Enter Maintenance Mode / Exit Kiosk temporarily.
-Enter Maintenance Mode / Exit Kiosk temporarily yêu cầu Maintenance Password Gate.
-Exit Kiosk temporarily nghĩa là Controlled Mode only.
-Controlled Mode chỉ được mở approved Android settings screens và approved maintenance/support apps.
-Current device baseline per ADR: No external EMM / No Android Management API / No Managed Google Play.
-Primary update path là DCAM Self Update / APK update.
-Manual Google Play Store update chỉ là optional fallback nếu device có GMS/Play Store và approved maintenance/factory Google account.
-Personal Google account usage và unapproved Play Store browsing/install không được hỗ trợ.
-Full Android unrestricted mode is not supported.
-Maintenance secret values không được hardcoded, stored plaintext hoặc logged.
-Maintenance session phải restore User Restrictions và Lock Task policy sau exit/timeout/recovery.
-App Operation Settings control recording/app behavior.
-Device/System Settings là controlled proxies, không phải unrestricted Android Settings.
+Trang này sở hữu local UI/UX và runtime guard của in-app console:
+
+`Record / Live View` là default main screen; `Setting` là console hub.
+
+Back navigation luôn ở trong DCAM khi kiosk policy active.
+
+Login Settings hỗ trợ approved current-user auth change; User Settings là Admin-only và phải bảo toàn historical attribution.
+
+Admin/Maintenance flow chỉ expose approved target thông qua role, authentication, capability, policy, security và runtime guard.
+
 File Manager và Media Viewer là read-only/view-only.
-File Manager không được delete, edit, mark important, export hoặc share media files.
-Emergency Settings, Server Connection, Live Stream, PTT và AI Mode vẫn là TBD/future groups.
-Tất cả changes phải pass role/access, capability, policy, security và runtime guards.
+
+App Operation Settings và Device/System proxy chỉ thay đổi các setting được phép.
+
+Project-wide Device Owner/EMM, maintenance và update baseline được reference từ ADR, Kiosk Policy Design và Self Update Design; trang này không restate các baseline đó. Các rule chi tiết trong body chỉ mô tả local console behavior.

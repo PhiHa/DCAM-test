@@ -1,7 +1,7 @@
 # 07 - Logging & Diagnostics Requirements
 
 **Page ID**: 47776094  
-**Version**: 5  
+**Version**: 7  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47776094
 
@@ -24,11 +24,15 @@ Functional Requirements
 
 Version
 
-Approved 1.3
+Approved 1.5
 
 Status
 
 Approved
+
+Approval Scope
+
+Stable Build 0.1 logging requirements cho storage, checksum, operator và Device Status
 
 Owner
 
@@ -52,15 +56,19 @@ PM/BA, Tech Lead, Android Developers, AI/ML Engineer, QA, Support, Cloud/WebServ
 
 Last Updated
 
-2026-07-10
+2026-07-13
 
 Related Jira
 
-None
+Not linked
+
+Dependencies / Blockers
+
+Jira/PR/build/test evidence; provider-specific activation decision; logs.txt implementation exception closure.
 
 Related Documents
 
-07 - Logging, Diagnostics, Performance & Security, DCAM Logging & Diagnostics Design, DCAM-BDMA Data Contract, DCAM Security & Encryption Design, DCAM Performance Budget & Resource Constraints, DCAM QA Test Strategy & Test Matrix, DCAM Device Capability & Feature Eligibility Design, DCAM State Machine Design, DCAM Sensor & Location Monitoring Design, DCAM Realtime AI Detection Design, DCAM Recording & Capture Design
+07 - Logging, Diagnostics, Performance & Security, DCAM Logging & Diagnostics Design, DCAM-BDMA Data Contract, DCAM Security & Encryption Design, DCAM Performance Budget & Resource Constraints, DCAM QA Test Strategy & Test Matrix, DCAM Device Capability & Feature Eligibility Design, DCAM State Machine Design, DCAM Sensor & Location Monitoring Design, DCAM Realtime AI Detection Design, DCAM Recording & Capture Design, Decision Brief – DCAM MVP Internal Build 0.1 – Working Recording Slice
 
 ## 1. Purpose
 
@@ -621,7 +629,161 @@ Non-GMS/provider-unavailable device still preserves local diagnostics.
 BDMA can read the approved logs artifact without modifying it.
 Detailed test IDs thuộc **DCAM QA Test Strategy & Test Matrix**.
 
-## 12. Practical Conclusion
+## 12. Build 0.1 Stable Requirement IDs
+
+Các ID dưới đây gắn vào behavior hiện có; changeset này không thay đổi logging behavior.
+
+Requirement ID
+
+Existing Requirement
+
+Build 0.1
+
+LOG-LOCAL-001
+
+Local Persistence
+
+Required
+
+LOG-LOCAL-002
+
+Asynchronous Delivery
+
+Required
+
+LOG-LOCAL-003
+
+Offline Queue
+
+Required cho local/provider-degradation flow được implement
+
+LOG-LOCAL-004
+
+Bounded Storage
+
+Required
+
+LOG-LOCAL-005
+
+Provider Recovery
+
+Conditional khi cloud provider client được enable
+
+LOG-LOCAL-006
+
+BDMA Diagnostics Artifact (`logs.txt`)
+
+Required
+
+LOG-LOCAL-007
+
+Non-GMS Fallback
+
+Conditional theo target device/provider profile
+
+LOG-EVT-APP-001
+
+Application/System operational events
+
+Required subset
+
+LOG-EVT-REC-001
+
+Recording operational events
+
+Required
+
+LOG-EVT-STO-001
+
+Storage operational events
+
+Required
+
+LOG-EVT-PERF-001
+
+Performance events thuộc active Performance Budget
+
+Required
+
+LOG-EVT-BDMA-001
+
+BDMA readiness/contract issues
+
+Required
+
+LOG-QUAL-001
+
+Timestamp
+
+Required
+
+LOG-QUAL-002
+
+Category
+
+Required
+
+LOG-QUAL-003
+
+Level
+
+Required
+
+LOG-QUAL-004
+
+Event Name
+
+Required
+
+LOG-QUAL-005
+
+Result / Reason Code
+
+Required
+
+LOG-QUAL-006
+
+Correlation
+
+Required khi applicable
+
+LOG-QUAL-007
+
+Application Context
+
+Required khi support cần
+
+LOG-QUAL-008
+
+Bounded Payload
+
+Required
+
+LOG-SEC-001
+
+Sensitive Logging Rules
+
+Required
+
+LOG-DIAG-REC-001
+
+Recording/finalization diagnostics
+
+Required
+
+LOG-DIAG-STO-001
+
+Storage/finalization/recovery diagnostics
+
+Required
+
+LOG-DIAG-BDMA-001
+
+BDMA import-readiness/contract diagnostics
+
+Required
+
+## 13. Practical Conclusion
 
 Operational Logging is the primary operational observability channel.
 Loggly is the centralized Operational Logging provider.
@@ -640,3 +802,36 @@ unsupported by performance,
 missing permission,
 degraded,
 or pruned from runtime.
+## 13. Build 0.1 Decision Logging Requirements
+
+Requirement ID
+
+Required Event / Context
+
+Status
+
+LOG-B01-STO-001
+
+Internal storage pre-check failure, runtime storage failure, safe-stop và finalization result.
+
+Approved
+
+LOG-B01-MD5-001
+
+MD5 start/success/pending/failed/missing/mismatch và BDMA readiness result.
+
+Approved
+
+LOG-B01-OP-001
+
+BUILD01_OPERATOR / Build 0.1 Operator tại nơi log schema yêu cầu; không được diễn giải là authenticated identity.
+
+Approved
+
+LOG-B01-STATUS-001
+
+Battery level, Internal free storage và GPS Available/Unavailable/Unsupported khi WRS thu evidence.
+
+Approved
+
+Log phải sanitized và không được thêm credential, token, coordinate hoặc route data từ các decisions này.

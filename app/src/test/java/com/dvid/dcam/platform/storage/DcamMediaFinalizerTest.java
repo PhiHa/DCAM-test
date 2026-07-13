@@ -2,6 +2,7 @@ package com.dvid.dcam.platform.storage;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -44,6 +45,20 @@ final class DcamMediaFinalizerTest {
 
         assertTrue(media.getFile().isFile());
         assertArrayEquals(new byte[] {9}, Files.readAllBytes(target.toPath()));
+    }
+
+    @Test
+    void createsSameBasenameMd5ForVideoWhenEnabled() throws Exception {
+        DcamStorage storage = new DcamStorage(root.toFile());
+        DcamMediaFile media = staged(storage, false);
+        Files.writeString(media.getFile().toPath(), "abc");
+
+        java.io.File published = new DcamMediaFinalizer(storage).finalizeMedia(media, true);
+        Path sidecar = published.toPath().resolveSibling(
+                published.getName().replaceFirst("\\.mp4$", ".md5"));
+
+        assertEquals("900150983cd24fb0d6963f7d28e17f72",
+                Files.readString(sidecar).trim());
     }
 
     @Test

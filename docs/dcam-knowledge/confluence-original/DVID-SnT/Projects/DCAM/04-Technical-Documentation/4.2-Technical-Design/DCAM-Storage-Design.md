@@ -1,7 +1,7 @@
 # DCAM Storage Design
 
 **Page ID**: 48496699  
-**Version**: 6  
+**Version**: 9  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/48496699
 
@@ -24,11 +24,15 @@ Technical Design
 
 Version
 
-Draft 0.6
+0.9
 
 Status
 
-Draft
+Approved Pending Device POC
+
+Approval Scope
+
+Build 0.1 Internal-only mechanics; physical path/scoped storage/ADB evidence Pending Device POC
 
 Owner
 
@@ -36,7 +40,7 @@ Hoàng Ngọc Quyền
 
 Technical Reviewer
 
-Tech Lead / Android Lead / BDMA Lead
+Tech Lead / Android Lead / BDMA Lead / QA Lead
 
 Approver
 
@@ -52,95 +56,27 @@ Tech Lead, Android Developers, BDMA Team, QA, Support
 
 Last Updated
 
-2026-07-08
+2026-07-13
+
+Related Jira
+
+Not linked
+
+Dependencies / Blockers
+
+Active storage profile decision; Device POC cho physical path, scoped storage, ADB visibility và atomic move.
 
 Related Documents
 
-DCAM-BDMA Data Contract, DCAM Recording & Capture Design, DCAM SQLite Database Design, DCAM Android Operation Design, DCAM Security & Encryption Design, 07 - Logging & Diagnostics Requirements
+DCAM-BDMA Data Contract, DCAM Performance Budget & Resource Constraints, DCAM Recording & Capture Design, DCAM SQLite Database Design, DCAM Android Operation Design, DCAM Security & Encryption Design, DCAM QA Test Strategy & Test Matrix, Decision Brief – DCAM MVP Internal Build 0.1 – Working Recording Slice
 
 ## 1. Purpose
 
-**DCAM Storage Design** định nghĩa Android-side storage mechanics cho DCAM, bao gồm storage root resolution, physical path validation, temp/in-progress file handling, final media movement, storage mode selection, Auto fallback behavior, free-space thresholds, BDMA readiness, storage error handling và storage recovery.
+Trang này định nghĩa Android-side storage mechanics: root resolution, temp/final files, storage modes, free-space guard, finalization, BDMA readiness và recovery.
 
-Tài liệu này implement các rule của **DCAM-BDMA Data Contract**, nhưng không redefine file naming, folder naming, MD5 rule hoặc BDMA cleanup contract.
+Data Contract owns external file/folder/naming/checksum/import contract. Performance Budget owns measurable storage thresholds and latency targets.
 
-## 2. Authoritative References
-
-Topic
-
-Authoritative Document
-
-Local Usage
-
-Folder structure, media naming, `_IMP`, `_enc`, MD5 rule and BDMA cleanup contract
-
-DCAM-BDMA Data Contract
-
-Storage áp dụng contract; không copy full contract tables.
-
-Recording/capture/finalization business flow
-
-DCAM Recording & Capture Design
-
-Storage thực thi temp/final file mechanics được RecordingController request.
-
-Media session DB state and recovery fields
-
-DCAM SQLite Database Design
-
-Storage persist state thông qua repository; schema details nằm trong DB design.
-
-Android runtime startup/recovery hosting
-
-DCAM Android Operation Design
-
-Android Operation gọi storage validation và recovery scanning.
-
-Encryption and sensitive file handling
-
-DCAM Security & Encryption Design
-
-Storage gọi security services theo security policy.
-
-Logging and diagnostics
-
-07 - Logging & Diagnostics Requirements
-
-Storage logs phải tuân theo logging policy.
-
-## 3. Storage Ownership Rule
-
-Data Contract owns external file/folder/naming/checksum/import contract.
-Recording Design owns recording/capture session flow.
-SQLite Database Design owns persisted DB schema/state.
-Storage Design owns physical path resolution, temp/final mechanics, fallback, free-space checks, BDMA readiness marking and recovery scanning.
-Core rules:
-
-Rule
-
-Description
-
-STR-OWN-001
-
-StorageService thực thi storage actions do RecordingController request.
-
-STR-OWN-002
-
-In-progress files không được expose như final media.
-
-STR-OWN-003
-
-Final media chỉ xuất hiện trong Data Contract media folders sau khi finalization conditions pass.
-
-STR-OWN-004
-
-Storage fallback nên được quyết định trước khi recording starts, trừ khi target SDK/vendor SDK chứng minh mid-session switch an toàn.
-
-STR-OWN-005
-
-Khi state không chắc chắn, preserve file artifacts và để recovery reconcile.
-
-## 4. Storage Components
+## 2. Components
 
 Component
 
@@ -148,508 +84,375 @@ Responsibility
 
 `StorageRootResolver`
 
-Resolve logical Internal/External DCAM root thành validated physical path.
+Resolve logical Internal/External root thành physical path.
 
 `StorageHealthChecker`
 
-Check mounted state, writable state, free space và BDMA visibility nếu cần.
+Check mount, writable state, free space and visibility.
 
 `MediaPathBuilder`
 
-Build temp/staging/final path dựa trên Data Contract naming và session metadata.
+Build temp/staging/final path.
 
 `TempFileManager`
 
-Create và track in-progress files dưới Temp/staging.
+Manage in-progress files.
 
 `FinalizationManager`
 
-Move/rename finalized media vào approved Media folder sau khi finalization conditions pass.
+Close, validate and move/rename final media.
 
 `FileIntegrityService`
 
-Generate checksum cho `.mp4` nếu enabled và policy cho phép, theo Data Contract.
+Generate checksum according to Data Contract/policy.
 
 `BdmaReadinessMarker`
 
-Mark media là `BDMA_READY` chỉ sau khi file và DB readiness conditions pass.
+Mark `BDMA_READY` after all required conditions pass.
 
 `StorageRecoveryScanner`
 
-Scan Temp/staging/final folders và DB cho interrupted sessions trong startup/reboot/recovery.
+Reconcile interrupted DB/file state.
 
-## 5. Physical Path Validation
+### 2.1 Logical-to-Physical Path Ownership
 
-Storage Target
+Concern
 
-Validation
+Authoritative Owner
 
-Failure Behavior
+Local Rule
 
-Internal DCAM Root
+Logical roots, folders, naming and protected artifacts
 
-Exists hoặc có thể create; writable; đủ free space; stable across reboot.
+DCAM-BDMA Data Contract
 
-Block hoặc enter safe storage mode nếu unavailable cho DB/config/log; fallback chỉ áp dụng cho media nếu policy cho phép.
+Không copy hoặc tự đổi logical contract tại đây.
 
-External DCAM Root
+Android logical-root resolution mechanics
 
-Mounted; writable; đủ space; BDMA có thể read qua agreed mechanism.
+DCAM Storage Design
 
-Trong Auto mode fallback sang Internal trước recording; trong External mode apply policy.
+`StorageRootResolver` map logical root sang device path theo active profile.
 
-Temp folder
+BDMA logical-root-to-ADB scan mapping
 
-Exists; không bị BDMA scan; writable cho active media.
+DCAM BDMA Integration Technical Design
 
-Block start nếu temp/staging không thể create.
+BDMA chỉ scan approved logical final-media roots.
 
-Final Media folder
+Actual physical paths, scoped-storage behavior and ADB visibility
 
-Exists; tuân theo Data Contract; chỉ visible cho BDMA sau finalization.
+DCAM Device POC & Hardware Validation Report
 
-Không expose partial file; preserve staging nếu final move fails.
+Phải có evidence trên target device/model/firmware.
 
-Recovery / preserved area
+Active storage mode/profile
 
-Available cho interrupted hoặc uncertain files.
+Approved Product/Architecture decision + Release & Build Applicability Matrix
 
-Nếu unavailable, giữ original path và mark recovery reason.
+Không tự suy ra từ tên `Internal Build 0.1`.
 
-Validation sequence:
+Không chọn hoặc publish physical path trong changeset này.
 
-Resolve logical storage mode
-    ↓
-Validate root availability
-    ↓
-Validate Temp/staging availability
-    ↓
-Validate final media folder availability
-    ↓
-Check free-space thresholds
-    ↓
-Create session temp/staging target
-## 6. Storage Mode and Fallback
+## 3. Storage Modes
 
 Mode
 
 Before Recording
 
-During Recording
-
-Recommended Policy
+Failure Direction
 
 Internal
 
-Validate internal root only.
+Validate internal root.
 
-Nếu internal fails, stop/finalize hoặc fail safely.
-
-Không fallback silently vì user/policy đã chọn Internal.
+Stop/finalize safely if unavailable during session.
 
 External
 
 Validate external root.
 
-Nếu external fails, stop/finalize safely.
-
-Cần clarify fallback sang Internal có được allowed không; default nên là no trừ khi policy approves.
+No silent fallback unless approved policy allows it.
 
 Auto
 
-Ưu tiên External; fallback Internal nếu External unavailable, full, not writable hoặc invalid.
+Prefer External, fallback Internal before recording.
 
-Không switch mid-file trừ khi vendor SDK supports it safely.
+No mid-file switch unless vendor SDK proves it safe.
 
-Start new session trên fallback sau khi current session được xử lý.
+## 4. Temp, Final and BDMA Readiness
 
-## 7. Temp vs Final File Rule
-
-BDMA chỉ được thấy finalized media.
-
-In-progress media phải ở trong Temp/staging hoặc dùng non-final extension/name. Final media chỉ xuất hiện trong approved Media folders sau successful finalization và DB update.
-
-File State
+State
 
 Location
 
-BDMA Candidate?
-
-Notes
+BDMA Candidate
 
 `IN_PROGRESS`
 
-Temp hoặc staging folder.
+Temp/staging
 
 No
-
-SDK writes tại đây trong lúc recording/capturing.
 
 `FINALIZING`
 
-Temp/staging.
+Temp/staging
 
 No
-
-Metadata/encryption/checksum/move chưa complete.
 
 `FINALIZED`
 
-Approved Media folder theo Data Contract.
+Approved Media folder
 
-Yes sau DB readiness.
-
-File name tuân theo Data Contract.
+Yes after DB/readiness checks
 
 `RECOVERY_REQUIRED`
 
-Temp/recovery hoặc preserved path.
+Preserved temp/recovery path
 
 No
 
-RecoveryManager quyết định next action.
-
 `RECOVERY_FAILED`
 
-Preserved diagnostic area hoặc Temp.
+Preserved diagnostic area
 
-No trừ khi future contract định nghĩa.
+No unless future contract defines otherwise
 
-Preserve cho diagnostics/support.
+`BDMA_READY` requires:
 
-## 8. Free Space Thresholds
+final file exists
+file handle closed and size stable
+DB record updated
+no pending recovery flag
+required metadata/encryption/checksum step completed or explicitly classified
+## 5. Free-space Baseline
 
-Exact values vẫn TBD, nhưng threshold names và decisions phải được định nghĩa để Android, QA và Product align behavior.
+Free-space thresholds are no longer all `TBD`. Current measurable baseline comes from **DCAM Performance Budget & Resource Constraints**.
 
 Threshold
 
-Purpose
+Current Baseline
 
-Action
-
-Owner to Decide
-
-`WARNING_FREE_SPACE`
-
-Cảnh báo storage thấp.
-
-Show/log warning; continue nếu safe.
-
-Tech Lead + QA + Product
+Status
 
 `MIN_START_FREE_SPACE`
 
-Dung lượng tối thiểu để start recording/capture.
+Estimated size of 30-minute recording + `500 MB` safety margin.
 
-Block recording/capture nếu dưới threshold.
-
-Tech Lead
+Defined provisional budget
 
 `CRITICAL_ACTIVE_FREE_SPACE`
 
-Đang record nhưng sắp hết dung lượng.
+Enough headroom to stop safely and complete critical finalization.
 
-Stop safely/finalize theo policy.
-
-Tech Lead + Product
+Defined behavior; device-specific value POC-calibrated
 
 `RESERVED_FINALIZATION_SPACE`
 
-Dành cho metadata/checksum/DB/log/final move.
+At least `500 MB` or approved device-specific value.
 
-Không cho media consume reserved space.
+Defined provisional budget
 
-Tech Lead
+`WARNING_FREE_SPACE`
+
+Warning above start/critical thresholds.
+
+Exact value TBD / Product + POC
 
 `MIN_RECOVERY_SPACE`
 
-Dung lượng tối thiểu để run recovery/finalization.
+Enough for recovery/finalization support operations.
 
-Enter recovery warning/safe mode nếu dưới threshold.
+Exact value TBD / POC
 
-Tech Lead + QA
+Formula direction:
 
-## 9. Finalization and Move/Rename Direction
+estimated_recording_bytes = bitrate_bits_per_second / 8 × duration_seconds
+MIN_START_FREE_SPACE = estimated_30_minute_bytes + 500 MB
+Device POC may adjust values with recorded evidence; it must not remove the safety-margin principle.
 
-Close temp/staging file
-    ↓
-Validate file exists and file size is stable
-    ↓
-Apply metadata/encryption/checksum steps if required by policy
-    ↓
-Resolve final Data Contract path
-    ↓
-Move/rename from Temp/staging to final Media folder
-    ↓
-Update media_session / finalization state in dcam.db
-    ↓
-Mark BDMA_READY only if readiness conditions pass
+## 6. Finalization Budget
 
-Step
+Current performance baseline:
 
-Storage Responsibility
+Metric
 
-Failure Behavior
+Target
 
-Close file
+Critical finalization latency
 
-Ensure StorageService không còn write vào temp/staging file.
+`≤ 5.0s`
 
-Giữ staging file và mark recovery nếu không thể confirm close.
+Recording stop latency
 
-Validate stability
+`≤ 1.5s`
 
-Check file exists, size stable và file handle closed.
+Checksum
 
-Giữ ở `FINALIZING` hoặc mark `RECOVERY_REQUIRED`.
+Must not block critical `BDMA_READY` path when asynchronous policy is allowed.
 
-Build final path
+Finalization flow:
 
-Dùng MediaPathBuilder theo Data Contract.
+close temp file
+validate stable file
+complete critical metadata steps
+move/rename to final path
+update DB
+mark BDMA_READY
+run non-critical checksum/export work asynchronously when policy allows
+Exact retry count/backoff and device/storage-specific atomic-move behavior remain TBD.
 
-Fail finalization nếu không thể resolve final path an toàn.
-
-Move/rename
-
-Ưu tiên atomic move khi storage backend support.
-
-Preserve staging file nếu final move fails.
-
-DB update
-
-Write final path/state thông qua repository transaction.
-
-Nếu final file exists nhưng DB update fails, recovery scanner reconcile later.
-
-Readiness mark
-
-Mark `BDMA_READY` chỉ sau khi toàn bộ required conditions pass.
-
-Không BDMA-ready nếu bất kỳ required condition nào fail.
-
-## 10. BDMA Readiness Rule
-
-Media chỉ là `BDMA_READY` khi required readiness conditions pass.
-
-Condition
-
-Required?
-
-Failure Behavior
-
-Final file exists in approved Media folder.
-
-Yes
-
-Không `BDMA_READY`.
-
-File handle is closed and size is stable.
-
-Yes
-
-Giữ ở `FINALIZING` hoặc `RECOVERY_REQUIRED`.
-
-`media_session` DB record is updated.
-
-Yes
-
-Run reconciliation nếu file exists nhưng DB missing.
-
-No recovery flag is pending.
-
-Yes
-
-Giữ not ready cho đến khi recovery completes.
-
-Metadata step completed or skipped with explicit reason.
-
-Depends on format/policy
-
-Mark skipped hoặc failed reason.
-
-Encryption completed if enabled.
-
-If encryption enabled
-
-Không expose final encrypted suffix trừ khi encryption successful.
-
-Checksum behavior completed according to Data Contract/settings.
-
-Depends on checksum policy
-
-Nếu optional, mark unverified/warning reason; nếu required, not ready.
-
-`BDMA_READY` nghĩa là final media safe for BDMA scan/import. Nó không có nghĩa là BDMA đã import file.
-
-## 11. Storage Recovery
+## 7. Recovery
 
 Scenario
 
-Recovery Action
+Behavior
 
-Temp file exists and DB session is `RECORDING`.
+Temp file + active DB state after crash
 
-Try finalize nếu file valid; nếu không thì mark `RECOVERY_REQUIRED`.
+Validate and finalize if safe; otherwise preserve and mark recovery.
 
-Temp/staging file exists but SDK state is unknown.
+Final file exists but DB missing
 
-Preserve file; run safe validation; chỉ finalize nếu validated.
+Reconcile DB using recovered flag.
 
-Final file exists but DB missing.
+DB says ready but file missing
 
-Reconcile: create/recover `media_session` record với recovered flag.
+Mark missing source and log diagnostics.
 
-DB says `BDMA_READY` but file missing.
+Missing checksum
 
-Mark `MISSING_SOURCE_FILE` và log diagnostics.
+Generate if policy allows; otherwise classify unverified/warning according to Data Contract.
 
-Checksum missing for `.mp4`.
+External removed
 
-Generate nếu policy và file available; nếu không thì mark unverified/warning reason.
+Preserve candidate and stop/finalize safely.
 
-External removed before final move.
+Interrupted move/duplicate
 
-Preserve temp/staging nếu có thể; mark storage failure.
+Apply deterministic recovery rule after implementation decision.
 
-Move/rename interrupted.
+When uncertain, preserve evidence-like artifacts.
 
-Detect staging/final duplicates và apply deterministic recovery rule.
+## 8. Performance and QA References
 
-Final folder unavailable.
+Storage QA coverage is no longer an unspecified future matrix. **DCAM QA Test Strategy & Test Matrix** already covers:
 
-Giữ preserved/staging file và mark recovery required.
+minimum free-space precheck
+near-full/full storage handling
+safe stop/finalization
+critical finalization latency
+storage I/O
+external removal
+reboot/crash recovery
+BDMA readiness
+Detailed device/model cases remain part of Device POC and execution test plans.
 
-Recovery file cannot be validated.
-
-Mark recovery failed; preserve artifact cho support nếu safe.
-
-## 12. Runtime Persistence Direction
-
-Detailed schema thuộc **DCAM SQLite Database Design**. Storage Design yêu cầu các information sau persistable khi cần:
-
-storage_mode
-resolved_storage_root_type
-resolved_storage_root_path
-session_temp_path
-session_staging_path
-session_final_path
-file_state
-finalization_state
-bdma_readiness_state
-storage_failure_reason
-free_space_snapshot
-recovery_required
-recovery_result
-## 13. Logging and Diagnostics
-
-Storage logs phải tuân theo **07 - Logging & Diagnostics Requirements**.
-
-Required examples:
-
-[STORAGE] Root resolution started
-[STORAGE] Internal root validated
-[STORAGE] External root unavailable: <reason_code>
-[STORAGE] Auto fallback selected: EXTERNAL -> INTERNAL
-[STORAGE] Temp file created
-[STORAGE] Free space warning
-[STORAGE] Critical active free space reached
-[STORAGE] Final move started
-[STORAGE] Final move completed
-[STORAGE] Final move failed
-[STORAGE] BDMA readiness marked
-[STORAGE] Recovery scan started
-[STORAGE] Recovery candidate found
-[STORAGE] Recovery completed
-[STORAGE] Recovery failed: <reason_code>
-Không log sensitive data hoặc raw media content.
-
-## 14. Open Questions / TBD
+## 9. Resolved and Remaining Decisions
 
 Item
 
 Status
 
-Actual internal root physical path
+Minimum start free-space formula
 
-TBD
+Defined in Performance Budget
 
-Actual external root physical path
+Safety margin
 
-TBD
+Defined: `500 MB` provisional baseline
 
-Android scoped storage behavior by target SDK
+Critical finalization headroom
 
-TBD
+Defined provisional baseline
 
-Exact ADB visibility rule for External/Internal roots
+Critical finalization latency
 
-TBD
+Defined: `≤ 5.0s`
 
-Whether external-to-internal fallback is allowed in External mode
+Storage full behavior
 
-TBD
+Defined: safe stop/finalize, no corruption
 
-Vendor SDK support for mid-recording path switching
+Physical internal/external paths
 
-TBD
+TBD / Device POC
 
-Final threshold values: warning/min-start/critical/reserved/recovery
+Scoped storage and ADB visibility
 
-TBD
+TBD / Device POC
 
-Atomic move support by target storage backend
+External-mode fallback policy
 
-TBD
+TBD / Product + Storage Design
 
-Temp/staging folder naming and retention policy
+Mid-recording path switch
 
-TBD
+Unsupported by default; POC needed for any exception
 
-Recovery folder/preserved diagnostic area
+Warning/recovery exact thresholds
 
-TBD
+TBD / POC
 
-Deterministic rule for interrupted move/rename duplicates
+Atomic move support
 
-TBD
+TBD / target storage POC
 
-Behavior when final file exists but checksum is missing
+Temp/recovery naming and retention
 
-TBD
+TBD / Implementation + Support
 
-Storage test matrix for full disk/external removed/reboot/crash
+Duplicate move recovery rule
 
-TBD
+TBD / Implementation
 
-Storage cleanup policy for old Temp/recovery artifacts
+Recovered-media BDMA flag
 
-TBD
+TBD / Data Contract decision
 
-Whether BDMA should see recovered media with special flag
+## 10. Practical Conclusion
 
-TBD
+Storage thresholds and finalization budget are no longer fully undefined.
+Performance Budget supplies the current measurable baseline.
+Storage Design retains only physical-path, device-specific and recovery-policy decisions as TBD.
+## 11. Build 0.1 Authoritative Storage Profile
 
-## 15. Practical Conclusion
+Section này override Auto/External/fallback mechanics đối với Build 0.1.
 
-Resolve storage root
-    ↓
-Validate physical path and free space
-    ↓
-Create Temp/staging target
-    ↓
-Keep in-progress file away from BDMA
-    ↓
-Finalize and move to Data Contract media folder
-    ↓
-Update DB state
-    ↓
-Mark BDMA_READY only when readiness conditions pass
-    ↓
-Recover safely if DB/file state is uncertain
-Key implementation rules:
+Design Item
 
-Data Contract owns external media/file contract.
-Storage Design owns Android-side path/temp/final/fallback/recovery mechanics.
-BDMA chỉ được thấy final media.
-Không switch storage mid-file trừ khi explicitly supported và tested.
-Khi không chắc chắn, preserve file artifacts và mark recovery state.
+Build 0.1 Behavior
+
+Active Root
+
+Logical Internal DCAM Media Root
+
+External / Auto
+
+Not Applicable
+
+Pre-check
+
+Nếu không đạt thì không start recording
+
+Runtime Failure
+
+Safe-stop và finalize MP4 nếu còn khả năng
+
+Finalization
+
+Close/finalize MP4 trước khi bắt đầu async MD5
+
+Readiness
+
+Chỉ publish BDMA_READY sau valid MD5
+
+MD5 Failure
+
+Giữ MP4; persist Checksum Pending/Failed; log; không import
+
+Recovery
+
+Reconcile file/DB/checksum state; không cleanup protected artifact
+
+Logical-to-physical Internal path, scoped-storage behavior và ADB visibility vẫn Pending Device POC. Exact checksum state names và recovery schema cần Technical Review.

@@ -33,6 +33,7 @@ import com.dvid.dcam.platform.storage.CaptureStorageCheck;
 import com.dvid.dcam.platform.storage.CaptureStorageFailureClassifier;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.time.LocalDateTime;
+import java.util.function.Consumer;
 
 /** CameraX camera adapter. CameraX types do not escape through CameraGateway. */
 public final class CameraXCameraGatewayImpl implements CameraGateway {
@@ -40,13 +41,14 @@ public final class CameraXCameraGatewayImpl implements CameraGateway {
     private final DcamConfig config;
     private final DcamMediaOutput mediaOutput;
     private final LifecycleOwner lifecycleOwner;
-    private final CameraXPreviewView previewView;
+    private CameraXPreviewView previewView;
     private final LogSink log;
     private final CaptureEventUseCase captureEvents;
     private final MediaEncryptionSettingsUseCase mediaEncryptionSettings;
     private final OperatorSessionUseCase operatorSession;
     private final ImageCapture imageCapture = new ImageCapture.Builder().build();
     private final VideoCapture<Recorder> videoCapture;
+    private Preview cameraPreview;
     private ListenableFuture<ProcessCameraProvider> providerFuture;
     private Recording activeRecording;
     private DcamFileType pendingRecordingType;
@@ -68,19 +70,37 @@ public final class CameraXCameraGatewayImpl implements CameraGateway {
         bindIfPermitted();
     }
 
-    public void bindIfPermitted() {
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            previewView.showPermissionRequired(); return;
+    public static void warmUp(Context context) {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
+                == PackageManager.PERMISSION_GRANTED) {
+            ProcessCameraProvider.getInstance(context.getApplicationContext());
         }
-        previewView.clearMessage();
+    }
+
+    public void bindIfPermitted() {
+        CameraXPreviewView preview = previewView;
+        if (preview == null) return;
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            preview.showPermissionRequired(); return;
+        }
+        preview.showStarting();
+        if (cameraPreview != null) {
+            cameraPreview.setSurfaceProvider(preview.surfaceProvider());
+            preview.clearMessage();
+            return;
+        }
         providerFuture = ProcessCameraProvider.getInstance(context);
         providerFuture.addListener(() -> {
             try {
                 ProcessCameraProvider provider = providerFuture.get();
-                Preview preview = new Preview.Builder().build();
-                preview.setSurfaceProvider(previewView.surfaceProvider());
+                CameraXPreviewView attachedPreview = previewView;
+                cameraPreview = new Preview.Builder().build();
+                cameraPreview.setSurfaceProvider(
+                        attachedPreview == null ? null : attachedPreview.surfaceProvider());
                 provider.unbindAll();
-                provider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview, imageCapture, videoCapture);
+                provider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA,
+                        cameraPreview, imageCapture, videoCapture);
+                if (attachedPreview != null) attachedPreview.clearMessage();
             } catch (Exception error) { showError(error.getMessage()); }
         }, ContextCompat.getMainExecutor(context));
     }
@@ -104,7 +124,7 @@ public final class CameraXCameraGatewayImpl implements CameraGateway {
                     mediaOutput.finalizeSaved(context, mediaFile, new DcamMediaOutput.FinalizationCallback() {
                         @Override public void onSuccess(java.io.File finalFile) {
                             onMain(() -> {
-                                previewView.showSaved(mediaFile.getFileName());
+                                onPreview(view -> view.showSaved(mediaFile.getFileName()));
                                 log.info((encrypt ? "Encrypted photo finalized: " : "Photo finalized: ")
                                         + mediaFile.getFileName());
                                 captureEvents.photoSaved(mediaFile.getFileName());
@@ -118,7 +138,7 @@ public final class CameraXCameraGatewayImpl implements CameraGateway {
                 } catch (Exception error) {
                     log.error("Photo encryption failed: " + mediaFile.getFileName(), error);
                     captureEvents.captureFailed("Photo encryption", message(error));
-                    previewView.showError("Photo encryption failed");
+                    onPreview(view -> view.showError("Photo encryption failed"));
                 }
             }
             @Override public void onError(ImageCaptureException error) {
@@ -127,7 +147,7 @@ public final class CameraXCameraGatewayImpl implements CameraGateway {
                     String detail = storageCheck.getReason() + "; staged image preserved if present";
                     log.error("Photo storage failure", error);
                     captureEvents.captureFailed("Storage", detail);
-                    previewView.showError(detail);
+                    onPreview(view -> view.showError(detail));
                     return;
                 }
                 log.error("Photo failed", error);
@@ -173,7 +193,7 @@ public final class CameraXCameraGatewayImpl implements CameraGateway {
             pending = pending.withAudioEnabled();
         activeRecording = pending.start(ContextCompat.getMainExecutor(context), event -> {
             if (event instanceof VideoRecordEvent.Start) {
-                previewView.showRecording(mediaFile.getFileName());
+                onPreview(view -> view.showRecording(mediaFile.getFileName()));
                 log.info("Recording started: " + mediaFile.getFileName());
                 if (!RecordingForegroundService.start(context, mediaFile.getFileName())) {
                     log.warn("Could not start recording foreground service", null);
@@ -186,8 +206,8 @@ public final class CameraXCameraGatewayImpl implements CameraGateway {
                 // CameraX has closed this Recording. Keep the foreground indicator until
                 // publication completes, but never call stop() on the finalized handle again.
                 activeRecording = null;
-                previewView.showFinalized(done.hasError()
-                        ? "VIDEO ERROR " + done.getError() : "SAVED " + mediaFile.getFileName());
+                onPreview(view -> view.showFinalized(done.hasError()
+                        ? "VIDEO ERROR " + done.getError() : "SAVED " + mediaFile.getFileName()));
                 if (done.hasError()) {
                     boolean storageFailure =
                             CaptureStorageFailureClassifier.isVideoStorageFailure(done.getError())
@@ -228,7 +248,7 @@ public final class CameraXCameraGatewayImpl implements CameraGateway {
                     } catch (Exception error) {
                         log.error("Recording encryption failed: " + mediaFile.getFileName(), error);
                         captureEvents.captureFailed("Recording encryption", message(error));
-                        previewView.showError("Recording encryption failed");
+                        onPreview(view -> view.showError("Recording encryption failed"));
                         finishRecordingAttempt();
                     }
                 }
@@ -236,12 +256,23 @@ public final class CameraXCameraGatewayImpl implements CameraGateway {
         });
     }
 
+    public void attachPreview(CameraXPreviewView previewView) {
+        this.previewView = previewView;
+        bindIfPermitted();
+    }
+
+    public void detachPreview(CameraXPreviewView previewView) {
+        if (this.previewView != previewView) return;
+        this.previewView = null;
+        if (cameraPreview != null) cameraPreview.setSurfaceProvider(null);
+    }
+
     private void reportFinalizationFailure(
             String mediaKind, DcamMediaFile mediaFile, Exception failure) {
         String detail = "Finalization failed; staged media preserved: " + message(failure);
         log.error(mediaKind + " finalization failed: " + mediaFile.getFileName(), failure);
         captureEvents.captureFailed("Finalization", detail);
-        previewView.showError(detail);
+        onPreview(view -> view.showError(detail));
     }
 
     private void finishRecordingAttempt() {
@@ -261,7 +292,7 @@ public final class CameraXCameraGatewayImpl implements CameraGateway {
     private void showError(String text) {
         log.error("Camera error: " + text, null);
         captureEvents.captureFailed("Camera", text);
-        previewView.showError(text);
+        onPreview(view -> view.showError(text));
     }
 
     private boolean ensureStorageReady(String operation) {
@@ -271,7 +302,7 @@ public final class CameraXCameraGatewayImpl implements CameraGateway {
                 + ", required=" + check.getRequiredBytes() + ")";
         log.warn(operation + " rejected: " + message, null);
         captureEvents.captureFailed("Storage", message);
-        previewView.showError(message);
+        onPreview(view -> view.showError(message));
         return false;
     }
 
@@ -286,6 +317,11 @@ public final class CameraXCameraGatewayImpl implements CameraGateway {
         return error.getMessage() == null ? error.getClass().getSimpleName() : error.getMessage();
     }
 
+    private void onPreview(Consumer<CameraXPreviewView> action) {
+        CameraXPreviewView preview = previewView;
+        if (preview != null) action.accept(preview);
+    }
+
     public void release() {
         pendingRecordingType = null;
         if (activeRecording != null) activeRecording.stop();
@@ -293,5 +329,6 @@ public final class CameraXCameraGatewayImpl implements CameraGateway {
         if (providerFuture != null && providerFuture.isDone()) {
             try { providerFuture.get().unbindAll(); } catch (Exception ignored) {}
         }
+        cameraPreview = null;
     }
 }

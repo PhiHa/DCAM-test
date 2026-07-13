@@ -1,7 +1,7 @@
 # DCAM Release & Build Applicability Matrix
 
 **Page ID**: 51020012  
-**Version**: 2  
+**Version**: 3  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/51020012
 
@@ -24,11 +24,15 @@ Release / Build Applicability Matrix
 
 Version
 
-Approved 1.0
+Approved 1.1
 
 Status
 
 Approved
+
+Approval Scope
+
+Build applicability cho DCAM MVP Internal Build 0.1
 
 Owner
 
@@ -52,7 +56,7 @@ PM/BA, Product Owner, Tech Lead, Developers, BDMA Team, QA, Factory, Security Re
 
 Last Updated
 
-2026-07-10
+2026-07-13
 
 Related Jira
 
@@ -60,7 +64,7 @@ None
 
 Related Documents
 
-DCAM MVP Scope, DCAM Roadmap, DCAM 9-Month Development Plan, DCAM Architecture Delivery Profile, DCAM Requirements Home, DCAM Architecture Home, DCAM QA Test Strategy & Test Matrix, DCAM Documentation Governance
+DCAM MVP Scope, DCAM Roadmap, DCAM 9-Month Development Plan, DCAM Architecture Delivery Profile, DCAM Requirements Home, DCAM Architecture Home, DCAM QA Test Strategy & Test Matrix, DCAM Documentation Governance, Decision Brief – DCAM MVP Internal Build 0.1 – Working Recording Slice
 
 ## 1. Purpose
 
@@ -331,3 +335,90 @@ Build 0.1 is not blocked by Web Portal, full auth, full kiosk, Remote Config, Se
 Build 0.2 activates identity/provisioning/user/platform foundations.
 Build 0.3 activates advanced communication.
 Pilot applies all features and tests included in approved pilot scope.
+## 9. Build 0.1 Approved Decision Applicability
+
+Applicability dưới đây được phê duyệt bởi [Decision Brief – DCAM MVP Internal Build 0.1 – Working Recording Slice](/wiki/spaces/DVID/pages/51642452/Decision+Brief+DCAM+MVP+Internal+Build+0.1+Working+Recording+Slice) và override mọi generic/target-state row mâu thuẫn đối với Build 0.1.
+
+Capability / Requirement
+
+Build 0.1 Applicability
+
+Condition / Evidence
+
+NCC-036V / Android 12 / API 31 / 877AOOAKN1_RK2_V009
+
+Required
+
+Qualification giữ Pending Device POC đến khi có physical-device evidence.
+
+Android platform Camera API
+
+Required
+
+Camera1/Camera2 và capability chờ Device POC.
+
+Vendor SDK
+
+Not Applicable
+
+Không thuộc Build 0.1.
+
+Internal storage
+
+Required
+
+DEC-02.
+
+External storage
+
+Not Applicable
+
+Không fallback.
+
+Auto storage mode
+
+Not Applicable
+
+Không fallback.
+
+MP4 MD5 sidecar
+
+Required
+
+Mọi MP4; integrity-only.
+
+BDMA_READY after valid MD5
+
+Required
+
+Missing/mismatch/failure chặn import và release evidence.
+
+Login UI / Authentication / Roles
+
+Not Applicable
+
+Target-state requirements giữ cho build sau.
+
+Static Build 0.1 Operator
+
+Required
+
+BUILD01_OPERATOR / Build 0.1 Operator; không phải authenticated identity.
+
+Basic Device Status
+
+Required
+
+Battery level, Internal free storage, GPS Available/Unavailable/Unsupported.
+
+GPS coordinates / route / continuous tracking
+
+Not Applicable
+
+Không thuộc WRS.
+
+Multi-model / multi-firmware / fleet qualification
+
+Not Applicable
+
+WRS chỉ pass trên một reference configuration.

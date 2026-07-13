@@ -5,5 +5,6 @@ import com.dvid.dcam.core.config.domain.DcamConfig;
 /** Audio capability required by application workflows. */
 public interface AudioRecorder {
     String toggle(DcamConfig config);
+    boolean isRecording();
     void release();
 }

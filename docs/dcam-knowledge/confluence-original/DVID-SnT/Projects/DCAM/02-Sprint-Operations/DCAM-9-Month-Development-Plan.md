@@ -1,7 +1,7 @@
 # DCAM 9-Month Development Plan
 
 **Page ID**: 46759955  
-**Version**: 8  
+**Version**: 9  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/46759955
 
@@ -24,7 +24,7 @@ Development Plan
 
 Version
 
-Approved 1.4
+Approved 1.5
 
 Status
 
@@ -52,7 +52,7 @@ PM/BA, Product Owner, Tech Lead, Developers, QA, Stakeholders
 
 Last Updated
 
-2026-07-09
+2026-07-10
 
 Related Jira
 
@@ -60,7 +60,7 @@ None
 
 Related Documents
 
-DCAM Project Home, DCAM Documentation Governance, DCAM Product Vision, DCAM Project Charter, DCAM Roadmap, DCAM MVP Scope, DCAM Architecture Delivery Profile
+DCAM Project Home, DCAM Documentation Governance, DCAM Product Vision, DCAM Project Charter, DCAM Roadmap, DCAM MVP Scope, DCAM Release & Build Applicability Matrix, DCAM Architecture Delivery Profile, DCAM Requirements Home, DCAM Architecture Home
 
 Duration
 
@@ -68,18 +68,16 @@ Duration
 
 Sprint Length
 
-2-4 Weeks
+2–4 Weeks
 
 ## 1. Purpose
 
-Tài liệu này mô tả kế hoạch triển khai thực tế của dự án **DCAM** trong 9 tháng.
+Tài liệu này mô tả cách triển khai DCAM trong 9 tháng, bao gồm Android onboarding, sprint allocation, phase delivery, buffer, risk và release preparation.
 
-Khác với **DCAM Roadmap**, tài liệu này tập trung vào cách đội phát triển sẽ thực hiện roadmap, bao gồm Android onboarding, sprint planning, buffer planning, delivery planning, integration strategy, risk management và release preparation.
-
-Roadmap trả lời câu hỏi **What & When**.    
-Development Plan trả lời câu hỏi **How**.
-
-Kế hoạch implementation phải tuân theo **DCAM Architecture Delivery Profile** để tránh implement toàn bộ target architecture trước khi có working recording/storage/BDMA vertical slice.
+Roadmap → What & When
+Development Plan → How
+Release & Build Applicability Matrix → What is mandatory for each build
+Implementation phải tuân theo **DCAM Architecture Delivery Profile** và **DCAM Release & Build Applicability Matrix**.
 
 ## 2. Project Assumptions
 
@@ -93,11 +91,11 @@ Development Duration
 
 Sprint Length
 
-2-4 weeks
+2–4 weeks
 
 Estimated Total Sprints
 
-18 sprints
+18
 
 Development Team
 
@@ -107,14 +105,6 @@ QA
 
 Shared QA / assigned per phase
 
-Product Owner
-
-Internal
-
-Project Manager
-
-Hoàng Ngọc Quyền
-
 Platform
 
 Android BodyCamera
@@ -123,33 +113,23 @@ Desktop Integration
 
 BDMA Desktop
 
-Main Delivery Target
-
-Customer Pilot / Production Candidate
-
 Development Language
 
 Java-first
 
-Architecture Delivery Baseline
+Main Delivery Target
 
-MVP first; target architecture grows by phase after working recording slice.
+Customer Pilot / Production Candidate
 
-## 3. Current Team Situation
+Current Active Build
 
-Team hiện tại có nền tảng tốt về Java, JavaFX/Desktop Application, BDMA domain knowledge, Git, Jira và Confluence.
+DCAM MVP Internal Build 0.1
 
-DCAM là ứng dụng Android chạy trên BodyCamera, vì vậy team cần bổ sung năng lực Android Studio, Java on Android, Android Lifecycle, CameraX/Camera2, Android Storage, Runtime Permission, Foreground Service, GPS/Location Service, network basics và device-specific debugging.
+Current Delivery Gate
 
-Tài liệu onboarding chính cho phần này là **DCAM Android Training & Architecture Onboarding**.
+Working Recording Slice
 
-Quy tắc implementation Android chính nằm trong **DCAM Android Development Standard**.
-
-Quy trình owner/reviewer và bảo trì tài liệu nằm trong **DCAM Documentation Governance**.
-
-Architecture delivery guardrail nằm trong **DCAM Architecture Delivery Profile**.
-
-## 4. Development Strategy
+## 3. Development Strategy
 
 Principle
 
@@ -157,41 +137,37 @@ Description
 
 Foundation First
 
-Làm chắc recording, capture, storage, metadata và logging trước khi mở rộng.
+Recording, capture, storage and BDMA contract output đi trước.
 
 Working Recording First
 
-Trước khi mở rộng platform architecture, team phải có APK chạy được trên BodyCamera và pass working recording/storage/BDMA vertical slice.
+Pass Working Recording Slice trước khi mở rộng platform architecture.
+
+Build Applicability
+
+Chỉ implement/test feature được Matrix mark Required/Conditional cho build hiện tại.
 
 Integration Early
 
-Đưa BDMA integration vào sớm để giảm rủi ro Data Contract thay đổi muộn.
-
-Platform Before Communication Features
-
-Remote Device Management và Advanced User Management được đưa vào Phase 2 để làm nền cho BDMA, Live Streaming và PTT.
+BDMA sample import được đưa vào Build 0.1.
 
 Incremental Delivery
 
-Mỗi phase cần có deliverable rõ ràng và có thể demo được.
+Mỗi phase có runnable build và measurable acceptance.
 
 Architecture by Delivery Profile
 
-Target architecture được giữ, nhưng implementation module/component/state/rule phải áp dụng theo phase trong DCAM Architecture Delivery Profile.
+Không tạo future module/layer trước khi có real implementation need.
 
 Stabilize Before Pilot
 
-Phase cuối tập trung hardening, QA, release documentation và customer pilot readiness.
+Phase cuối tập trung regression, performance, security and release readiness.
 
-Documentation Governance
+```
+No future Target Architecture feature may block Build 0.1 unless the Applicability Matrix activates it or an approved exception exists.
+```
 
-Tài liệu chính cần tuân theo owner/reviewer/RACI và update rules trong DCAM Documentation Governance.
-
-Delivery guardrail:
-
-No new architecture layer/module may be added before Working Recording Slice is demoable,
-unless it directly blocks recording, storage, BDMA ingest, device POC or release safety.
-## 5. Overall Timeline
+## 4. Overall Timeline
 
 Stage
 
@@ -203,850 +179,291 @@ Main Deliverable
 
 Android Training
 
-Week 1-2
+Week 1–2
 
-Chuẩn bị năng lực Android cho team Java/Desktop
+Team Android readiness.
 
-Android training prototype
+Android training prototype.
 
-Phase 1 - MVP Foundation
+Phase 1 – MVP Foundation
 
-Month 1-3
+Month 1–3
 
-Hoàn thiện recording, capture, storage, metadata, logs; pass working recording slice
+Working Recording Slice and stable core capture/storage.
 
-DCAM MVP Internal Build 0.1
+DCAM MVP Internal Build 0.1.
 
-Phase 2 - Platform Foundation & BDMA Integration
+Phase 2 – Platform Foundation & BDMA Integration
 
-Month 4-5
+Month 4–5
 
-Hoàn thiện BDMA compatibility, Device/User foundation, reliability và basic security
+Identity, provisioning, Device/User, BDMA E2E and basic security/platform foundation.
 
-Secure Platform MVP Build 0.2
+Secure Platform MVP Build 0.2.
 
-Phase 3 - Advanced Communication
+Phase 3 – Advanced Communication
 
-Month 6-7
+Month 6–7
 
-Triển khai Live Streaming, PTT, GPS Route và Advanced Encryption
+Live Streaming, PTT, GPS route and advanced encryption beta.
 
-Advanced Communication Beta Build 0.3
+Advanced Communication Beta Build 0.3.
 
-Phase 4 - Hardening & Customer Pilot
+Phase 4 – Hardening & Customer Pilot
 
-Month 8-9
+Month 8–9
 
-Ổn định hệ thống và chuẩn bị pilot
+Full applicable regression and pilot readiness.
 
-Customer Pilot Release / Production Candidate
+Customer Pilot / Production Candidate.
 
-## 6. Android Training Plan
+## 5. Phase 1 – MVP Foundation
 
-Item
+### 5.1 Required Scope
+
+Recording / Capture
+Storage / Finalization
+Minimal DB / CSON / logs.txt
+Local Operational Logging
+MVP Data Contract output
+BDMA sample detect/import
+Critical-path concurrency
+Basic device status where supported
+### 5.2 Deferred Scope
+
+Web Portal provisioning
+Cloud identity
+Full operator auth/user management
+Full Device Owner / Kiosk Policy
+Remote Config
+Self Update
+Advanced In-App Console
+AI
+Live Streaming
+PTT
+Full GPS route
+### 5.3 Deliverables
+
+Deliverable
 
 Description
 
-Duration
+Camera Prototype
 
-Week 1-2
-
-Objective
-
-Đảm bảo team có đủ năng lực cơ bản để phát triển Android bằng Java trên BodyCamera.
-
-Output
-
-Android training prototype và development readiness.
-
-Main Reference
-
-DCAM Android Training & Architecture Onboarding
-
-### 6.1 Training Topics
-
-Topic
-
-Expected Outcome
-
-Android Studio / Gradle
-
-Dev build và debug được Android project.
-
-Java on Android
-
-Dev hiểu khác biệt giữa Java Desktop và Android Java.
-
-Activity / Fragment / Lifecycle
-
-Dev hiểu vòng đời app và UI state.
-
-Runtime Permission
-
-Dev xử lý được camera, microphone, location, storage permission.
-
-CameraX / Camera2
-
-Dev tạo được sample record/capture.
-
-Storage
-
-Dev lưu được file vào đúng folder test.
-
-GPS / Location
-
-Dev lấy được location sample nếu thiết bị hỗ trợ.
-
-Foreground Service
-
-Dev hiểu cách chạy tác vụ dài như recording.
-
-Android Debugging Basics
-
-Dev đọc được Logcat và debug được app trên thiết bị thật.
-
-Architecture Delivery Profile
-
-Dev hiểu MVP module set, deferred modules và working recording slice gate.
-
-### 6.2 Exit Criteria
-
-Criteria
-
-Required
-
-Build Android project successfully
-
-Yes
-
-Run app on BodyCamera
-
-Yes
-
-Capture image sample
-
-Yes
-
-Record video sample
-
-Yes
-
-Debug logs from device
-
-Yes
-
-Understand MVP vs Target Architecture split
-
-Yes
-
-## 7. Phase 1 - MVP Foundation
-
-Item
-
-Description
-
-Timeline
-
-Month 1-3
-
-Target Build
-
-DCAM MVP Internal Build 0.1
-
-Buffer
-
-20%
-
-Architecture Profile
-
-MVP Implementation Architecture only; no full target architecture expansion before Working Recording Slice.
-
-### 7.1 Objectives
-
-Phase 1 tập trung xây dựng các chức năng cốt lõi của DCAM:
-
-Video Recording.
-
-Image Capture.
-
-Local Storage.
-
-Metadata Generation.
-
-Logging.
-
-Basic Device Status.
-
-Working Recording Slice.
-
-### 7.2 Technical Focus
-
-Area
-
-Focus
-
-Camera Module
-
-Start/stop recording, capture image, recording state.
-
-Storage Module
-
-Folder structure, file naming, local media storage, temp/final handling.
-
-Metadata Module
-
-Generate metadata for video/image where supported by MVP contract.
-
-Logging Module
-
-App log, recording log, capture log, error log.
-
-Device Status
-
-Battery, storage, GPS availability.
-
-BDMA Export
-
-Ensure BDMA can detect/import sample media through ADB.
-
-MVP Architecture
-
-Small module set, small runtime component set, no unnecessary Gradle/module split.
+Recording/capture sample on selected device.
 
 Working Recording Slice
 
-App can record 30s video, finalize file, write minimal DB/config/log output and BDMA can import sample.
-
-### 7.3 Deliverables
-
-Deliverable
-
-Description
+30-second recording, image capture, finalization, minimal artifacts and BDMA sample import.
 
 DCAM MVP Internal Build 0.1
 
-Internal build with recording/capture/storage/metadata/logging.
+Stable core MVP build.
 
-Working Recording Slice Demo
+MVP Test Checklist / Report
 
-Demo runnable APK on BodyCamera: record/capture/save/finalize/BDMA import.
+Applicable Build 0.1 QA groups only.
 
-MVP Demo
+Known Issues
 
-Demo basic capture/recording workflow.
+Device/firmware limitations and workarounds.
 
-MVP Test Checklist
+## 6. Phase 2 – Platform Foundation & BDMA Integration
 
-Basic test checklist for core flows.
+Area
 
-Known Issues List
+Direction
 
-Known issues from BodyCamera testing.
+DCAM-BDMA
 
-### 7.4 Phase 1 Architecture Guardrails
+Full active contract integration and write-back scope.
 
-Phase 1 must follow the limits from **DCAM Architecture Delivery Profile**:
+Device Identity
 
-≤ 5 Gradle modules
-≤ 8 logical modules
-≤ 10 runtime components
-≤ 7 runtime states
-≤ 8 P0 dependency rules
-1 working recording/storage/BDMA vertical slice before platform expansion
-Phase 1 deferred modules:
+`serial_number`, `dcam_cloud_device_id`, restore/provisioning foundation.
 
-AI Detection
-Sensor Monitoring advanced
-Remote Config apply
+Web Portal
+
+Factory Worker QR-based provisioning.
+
+User/Auth
+
+Basic operator/profile/session foundation.
+
+Kiosk / Device Owner
+
+Begin after required Device POC evidence.
+
+Remote Config
+
+Fetch/cache/apply foundation according to approved scope.
+
 Self Update
-Play Store fallback
-Full In-App Console advanced
-Full Kiosk Policy stack
-Advanced User Management
-Full Feature Eligibility engine
-Full Runtime Module Registry
-Full State Machine Coordinator
-## 8. Phase 2 - Platform Foundation & BDMA Integration
 
-Item
+Basic APK update foundation after recording/storage stability.
 
-Description
+Security
 
-Timeline
+Basic approved protection/encryption foundation.
 
-Month 4-5
+Main deliverable: **Secure Platform MVP Build 0.2**.
 
-Target Build
-
-Secure Platform MVP Build 0.2
-
-Buffer
-
-20%
-
-### 8.1 Objectives
-
-Phase 2 tập trung đảm bảo DCAM tương thích với BDMA, đồng thời xây dựng sớm nền tảng Device/User để tránh refactor lớn ở các phase sau.
-
-Phase 2 chỉ bắt đầu mở rộng platform architecture sau khi Phase 1 đã có working recording/storage/BDMA slice demoable.
-
-### 8.2 Main Scope
+## 7. Phase 3 – Advanced Communication
 
 Area
 
-Description
-
-DCAM-BDMA Data Contract
-
-Chuẩn hóa folder structure, metadata fields, status và schema version.
-
-BDMA Ingest
-
-BDMA đọc được media và metadata từ DCAM.
-
-Metadata Mapping
-
-Mapping đúng file, device, timestamp, GPS, status.
-
-File Recovery
-
-Xử lý file pending/corrupted/incomplete ở mức cơ bản.
-
-GPS per Media File
-
-Ghi GPS cho từng media file nếu thiết bị có dữ liệu hợp lệ.
-
-Remote Device Management
-
-Basic status/config read-write foundation.
-
-Device Information
-
-Device ID, model, firmware/app version, storage, battery, network status.
-
-Advanced User Management
-
-Basic user/profile/operator/role/permission foundation.
-
-Basic Encryption
-
-Basic encryption scope for media/metadata based on agreed design.
-
-Kiosk / Device Owner Baseline
-
-Begin Device Owner/DPC baseline only after device POC confirms feasibility.
-
-Remote Config Foundation
-
-Fetch/cache foundation may start; apply policy must follow guard rules.
-
-Self Update Foundation
-
-Basic APK update path may start after recording/storage stability is protected.
-
-### 8.3 Deliverables
-
-Deliverable
-
-Description
-
-Secure Platform MVP Build 0.2
-
-Build with BDMA integration, Device/User foundation and basic security.
-
-DCAM-BDMA E2E Demo
-
-BDMA ingest and display DCAM data end-to-end.
-
-Data Contract Version 1
-
-Initial agreed contract between DCAM and BDMA.
-
-Device/User Foundation Demo
-
-Demo device status/config and user/operator mapping foundation.
-
-Integration Test Report
-
-Test result for BDMA ingest and metadata mapping.
-
-## 9. Phase 3 - Advanced Communication
-
-Item
-
-Description
-
-Timeline
-
-Month 6-7
-
-Target Build
-
-Advanced Communication Beta Build 0.3
-
-### 9.1 Objectives
-
-Phase 3 tập trung vào các năng lực giao tiếp/thời gian thực và capability nâng cao dựa trên nền tảng Device/User đã hoàn thiện ở Phase 2.
-
-### 9.2 Scope
-
-Area
-
-Description
+Direction
 
 Live Streaming
 
-Streaming video ở mức beta/basic implementation.
+Beta/basic implementation.
 
-Push-to-Talk (PTT)
+Push-to-Talk
 
-Trigger, audio capture/transmission, state logging, basic error handling.
+Beta/basic implementation.
 
-Full GPS Tracking Route
+Full GPS Route
 
-Route recording by session.
+Version 1 route tracking.
 
 Advanced Encryption
 
-Extended encryption scope beyond basic encryption.
+Extended approved scope.
 
-Reconnect / Timeout Handling
+Reconnect / Timeout
 
-Basic handling for weak network, disconnect, timeout.
+Weak-network handling and operational logging.
 
-Streaming/PTT Logs
+Main deliverable: **Advanced Communication Beta Build 0.3**.
 
-Log state, error, reconnect, timeout and operational status.
-
-Sensor / AI Optional Expansion
-
-Only after recording/storage/platform foundation is stable and approved.
-
-## 10. Phase 4 - Hardening & Customer Pilot
-
-Item
-
-Description
-
-Timeline
-
-Month 8-9
-
-Target Build
-
-Customer Pilot Release / Production Candidate
-
-### 10.1 Main Activities
+## 8. Phase 4 – Hardening & Customer Pilot
 
 Activity
 
 Description
 
-Regression Testing
+Regression
 
-Test lại toàn bộ core flows.
+Run all test groups activated for pilot scope.
 
-Stability Testing
+Stability
 
-Test app stability trên BodyCamera trong thời gian dài.
+Long-running recording/device tests.
 
-Performance Testing
+Performance
 
-Kiểm tra CPU, memory, battery, storage.
-
-Streaming/PTT Testing
-
-Test network yếu, reconnect, timeout, interruption.
-
-GPS Route Testing
-
-Test GPS availability, route recording and fallback.
+CPU, memory, battery, storage and latency budgets.
 
 Security Review
 
-Review encryption/security scope.
+Active authentication, provisioning, kiosk, update and encryption scope.
 
-Architecture Debt Review
+Factory Validation
 
-Check module/component growth against Architecture Delivery Profile.
-
-Bug Fixing
-
-Fix critical and high-priority bugs.
+Applicable SOP and `READY_TO_SHIP` gates.
 
 Release Documentation
 
-Release notes, install guide, test report, known issues.
+Release notes, installation guide, test report and known issues.
 
-### 10.2 Deliverables
-
-Deliverable
-
-Description
-
-Release Candidate
-
-Build sẵn sàng cho customer pilot.
-
-Customer Pilot Release
-
-Pilot build cho khách hàng chọn lọc.
-
-Release Notes
-
-Ghi chú phát hành.
-
-Installation Guide
-
-Hướng dẫn cài đặt trên BodyCamera.
-
-Test Report
-
-Báo cáo kiểm thử.
-
-Known Issues
-
-Danh sách lỗi đã biết và workaround.
-
-## 11. Sprint Allocation
+## 9. Sprint Allocation
 
 Sprint Range
-
-Timeline
 
 Main Focus
 
 Sprint 1
 
-Week 1-2
-
-Android Training, environment setup and Architecture Delivery Profile onboarding.
+Android training, environment and delivery-profile onboarding.
 
 Sprint 2
 
-Week 3-4
-
-Camera prototype, basic record/capture proof of concept.
+Camera prototype.
 
 Sprint 3
 
-Week 5-6
-
-Working Recording Slice: record 30s, capture image, save/finalize file on BodyCamera.
+Record/capture/finalize vertical slice.
 
 Sprint 4
 
-Week 7-8
+Minimal DB/CSON/log output and BDMA sample import.
 
-Minimal DB/config/log output and BDMA import sample media.
+Sprint 5–6
 
-Sprint 5-6
+Build 0.1 hardening and applicable QA.
 
-Week 9-12
+Sprint 7–10
 
-MVP Foundation hardening: recording, capture, storage, metadata, logging and MVP test checklist.
-
-Sprint 7-10
-
-Week 13-20
-
-BDMA integration, Data Contract, Device/User foundation, basic encryption.
+Phase 2 identity, provisioning, BDMA and platform foundation.
 
 Sprint 11
 
-Week 21-22
+Build 0.2 stabilization.
 
-Phase 2 stabilization, integration testing and Secure Platform MVP 0.2.
+Sprint 12–14
 
-Sprint 12-14
+Live Streaming, PTT, GPS route and advanced encryption.
 
-Week 23-28
+Sprint 15–16
 
-Live Streaming, PTT, GPS route, advanced encryption implementation.
-
-Sprint 15-16
-
-Week 29-32
-
-Advanced communication hardening and beta validation.
+Build 0.3 hardening.
 
 Sprint 17
 
-Week 33-36
-
-Regression, performance, stability, security review.
+Regression, performance, stability and security review.
 
 Sprint 18
 
-Week 37-40
+Release candidate and customer pilot preparation.
 
-Release candidate, customer pilot preparation and documentation.
+## 10. Jira / Sprint Applicability Rule
 
-## 12. Team Responsibilities
+Every implementation Jira issue should identify:
 
-Role
+Build Profile
+Applicability Status
+Requirement Inputs
+Design / Contract Inputs
+QA Group
+POC / Security / API blocker
+Deferred Dependencies
+A future feature may not be added to Build `0.1` by an isolated Jira task without updating **DCAM Release & Build Applicability Matrix** or recording an approved temporary exception.
 
-Responsibility
-
-Product Owner
-
-Manage product direction, scope priority and acceptance direction.
-
-Project Manager / BA
-
-Plan execution, track progress, manage requirements, coordinate releases and documentation.
-
-Tech Lead
-
-Own architecture, technical decisions, code review direction, implementation quality and Architecture Delivery Profile enforcement.
-
-Android Developers
-
-Implement DCAM Android features, create/update technical design and fix bugs.
-
-BDMA Team
-
-Support Data Contract, ingest, metadata mapping and end-to-end testing.
-
-QA
-
-Build test checklist, execute regression/integration/stability tests and report bugs.
-
-## 13. Buffer Strategy
-
-Phase
-
-Buffer
-
-Purpose
-
-Android Training
-
-Included in Week 1-2
-
-Reduce Android onboarding risk.
-
-Phase 1
-
-20%
-
-Android learning curve, camera compatibility, BodyCamera hardware issues and working recording slice risk.
-
-Phase 2
-
-20%
-
-BDMA integration, Data Contract change, Device/User model adjustment and encryption performance.
-
-Phase 3
-
-Standard management buffer
-
-Network, streaming/PTT and GPS route risks.
-
-Phase 4
-
-Stabilization buffer
-
-Bug fixing, release readiness and customer pilot preparation.
-
-Buffer không dùng để thêm scope mới ngoài phạm vi đã được duyệt.
-
-## 14. Risk Management
+## 11. Risk Management
 
 Risk
-
-Impact
 
 Mitigation
 
 Android learning curve
 
-Delay in early phase
+Training, prototypes and code review.
 
-Android training, onboarding checklist, prototype and code review.
+Camera/firmware limitation
 
-Camera compatibility
+Early Device POC and provider abstraction.
 
-Recording/capture instability
+Analysis paralysis
 
-Test early on BodyCamera hardware.
+Enforce Working Recording Slice and Matrix.
 
-BodyCamera hardware limitation
+Too many modules early
 
-Performance, storage, battery or permission issues
+Follow Architecture Delivery Profile.
 
-Device-specific testing and fallback design.
+BDMA contract changes
 
-Analysis-paralysis / over-architecture
-
-Low development velocity, delayed recording demo
-
-Enforce Architecture Delivery Profile; working recording slice before platform expansion.
-
-Too many Gradle modules too early
-
-Slow build, complex dependency management, team confusion
-
-Keep MVP module count small; split package into module only with approved trigger.
-
-BDMA Data Contract changes
-
-Rework for DCAM and BDMA
-
-Define Data Contract early and version it.
+Versioned Data Contract and early sample import.
 
 Device/User model changes
 
-Rework in Phase 2/3
-
-Build foundation early and review with BDMA.
-
-Encryption performance
-
-App slow or recording instability
-
-Benchmark on device before finalizing design.
-
-GPS instability
-
-Missing/incorrect GPS data
-
-Support unavailable/invalid GPS state and fallback.
-
-Streaming/PTT network issue
-
-Poor beta quality
-
-Test weak network, reconnect and timeout.
+Activate only in Build 0.2 and review API/schema first.
 
 Scope creep
 
-Delay release
+Matrix change control and Jira traceability.
 
-Use Jira, PM review and change control.
-
-## 15. Major Milestones
-
-Milestone
-
-Target Time
-
-Success Condition
-
-M0 - Android Training Complete
-
-End of Week 2
-
-Team can build, run, debug and create camera sample on BodyCamera.
-
-M1 - Camera Prototype
-
-End of Week 6
-
-Video recording and image capture work on BodyCamera.
-
-M1.5 - Working Recording Slice
-
-End of Week 8
-
-App can record 30s, capture image, finalize media, write minimal DB/config/log output and BDMA can detect/import sample media.
-
-M2 - DCAM MVP Internal 0.1
-
-End of Week 12
-
-Recording/capture/storage/metadata/logging work reliably.
-
-M3 - DCAM-BDMA E2E Demo
-
-End of Week 16
-
-BDMA can ingest and display DCAM data.
-
-M4 - Secure Platform MVP 0.2
-
-End of Week 22
-
-BDMA integration, basic encryption, Remote Device Management and Advanced User Management foundation are available.
-
-M5 - Advanced Communication Beta 0.3
-
-End of Week 32
-
-Live Streaming beta, PTT beta, GPS route v1 and advanced encryption are available.
-
-M6 - Release Candidate
-
-End of Week 39
-
-Critical bugs fixed and pilot documentation prepared.
-
-M7 - Customer Pilot Release
-
-End of Week 40
-
-Pilot build and release/test documents are available.
-
-## 16. Success Criteria
-
-Criteria
-
-Required
-
-Android onboarding completed
-
-Yes
-
-Working Recording Slice completed before optional platform expansion
-
-Yes
-
-DCAM MVP Foundation completed
-
-Yes
-
-BDMA integration works end-to-end
-
-Yes
-
-Remote Device Management foundation completed
-
-Yes
-
-Advanced User Management foundation completed
-
-Yes
-
-Basic encryption implemented and tested
-
-Yes
-
-Live Streaming reaches beta/basic level
-
-Yes
-
-PTT reaches beta/basic level
-
-Yes
-
-GPS route v1 works in supported conditions
-
-Yes
-
-No critical blocker remains before pilot
-
-Yes
-
-Release documentation is available
-
-Yes
-
-Customer Pilot build is available
-
-Yes
-
-## 17. Documentation Deliverables by Phase
+## 12. Documentation Deliverables by Phase
 
 Phase
 
@@ -1054,103 +471,74 @@ Required Documents
 
 Current Baseline
 
-DCAM Project Home, DCAM Documentation Governance, DCAM Architecture Home, DCAM Architecture Delivery Profile, DCAM Android Development Standard.
+DCAM Project Home, Documentation Governance, Release & Build Applicability Matrix, Architecture Home, Architecture Delivery Profile.
 
 Android Training
 
-DCAM Android Training & Architecture Onboarding, Camera Training Prototype Notes.
+DCAM Android Training & Architecture Onboarding and prototype notes.
 
 Phase 1
 
-DCAM Functional Requirements, MVP Test Checklist, Working Recording Slice Notes, Known Issues, MVP Release Notes.
+DCAM Requirements Home, MVP Scope, Data Contract, Working Recording Slice evidence, applicable QA report, release notes.
 
 Phase 2
 
-DCAM-BDMA Data Contract, Device/User Foundation Notes, Integration Test Report.
+Updated API/Technical Designs, integration test report and platform foundation notes.
 
 Phase 3
 
-Live Streaming & PTT Design, GPS Route Design, Advanced Feature Test Checklist.
+Approved feature-specific Technical Designs and beta test reports.
 
 Phase 4
 
-Release Notes, Installation Guide, Test Report, Known Issues, Customer Pilot Notes.
+QA Test Report, Factory SOP evidence where applicable, Release Notes, Installation Guide and Known Issues.
 
-## 18. Related Documents
+## 13. Related Documents
 
 Document
 
 Purpose
 
-DCAM Project Home
-
-Main documentation hub and current documentation status.
-
-DCAM Documentation Governance
-
-Owner, reviewer, RACI, lifecycle and update rules for DCAM documents.
-
-DCAM Architecture Delivery Profile
-
-Defines MVP vs target architecture delivery guardrails and working recording slice gate.
-
-DCAM Product Vision
-
-Product direction and long-term positioning.
-
-DCAM Project Charter
-
-Project authorization, scope, governance and approval baseline.
-
 DCAM Roadmap
 
-Product roadmap, phase objectives, milestones and feature roadmap.
+Product stages and milestones.
 
 DCAM MVP Scope
 
-MVP scope, acceptance criteria and exit criteria.
+MVP acceptance and boundaries.
 
-DCAM Android Training & Architecture Onboarding
+DCAM Release & Build Applicability Matrix
 
-Android onboarding for Java/Desktop team.
+Active feature/requirement/test applicability.
 
-DCAM Android Development Standard
+DCAM Requirements Home
 
-Project-specific Android implementation standard.
+Functional Requirements 01–10 navigation.
 
 DCAM Architecture Home
 
-Official Software Architecture Home and SAD document set.
+Architecture, Technical Design and ADR navigation.
 
-DCAM Functional Requirements
+DCAM Architecture Delivery Profile
 
-Detailed functional requirements.
-
-DCAM Non-functional Requirements
-
-Reliability, performance, security and operational requirements.
+MVP implementation guardrails.
 
 DCAM-BDMA Data Contract
 
-Data contract between DCAM Android and BDMA Desktop.
+Android–BDMA interoperability.
 
-DCAM Release Plan
+DCAM QA Test Strategy & Test Matrix
 
-Build, versioning, release and pilot process.
+Test coverage and release validation.
 
-## 19. Practical Conclusion
+DCAM Factory Provisioning & Device Production SOP
 
-Mục tiêu thực tế của kế hoạch 9 tháng là:
+Factory production and final acceptance.
 
-Android readiness + Working Recording Slice + DCAM stable MVP + BDMA ingest
-+ Device/User platform foundation + advanced communication beta + customer pilot release.
-Development Plan này không thay thế Roadmap. Tài liệu này dùng để quản lý cách triển khai roadmap thành sprint, deliverable, milestone, buffer và release readiness.
+## 14. Practical Conclusion
 
-Tài liệu này cũng không thay thế DCAM Project Home hoặc DCAM Documentation Governance. Project Home phản ánh trạng thái tài liệu hiện tại; Documentation Governance quy định owner, reviewer, lifecycle và update rules.
-
-Architecture delivery baseline hiện tại là:
-
-Target Architecture remains valid.
-MVP Implementation Architecture is intentionally smaller.
-Working recording/storage/BDMA slice must come first.
-Additional managers/coordinators/modules become mandatory only when their feature enters scope.
+Current active build = DCAM MVP Internal Build 0.1.
+Current gate = Working Recording Slice.
+Development Plan defines execution.
+Applicability Matrix defines mandatory scope per build.
+Requirements Home and Architecture Home replace obsolete generic document names.

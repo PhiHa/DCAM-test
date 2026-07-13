@@ -1,7 +1,7 @@
 # 05 - User & Device Operation Requirements
 
 **Page ID**: 47710574  
-**Version**: 5  
+**Version**: 6  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47710574
 
@@ -24,11 +24,15 @@ Functional Requirements
 
 Version
 
-Approved 1.3
+Approved 1.4
 
 Status
 
 Approved
+
+Approval Scope
+
+Target-state operator requirements với approved Build 0.1 exception
 
 Owner
 
@@ -52,7 +56,7 @@ PM/BA, Tech Lead, Android Developers, BDMA Developers, QA, Support, Security Rev
 
 Last Updated
 
-2026-07-08
+2026-07-13
 
 Related Jira
 
@@ -60,7 +64,7 @@ None
 
 Related Documents
 
-DCAM Requirements Home, 04 - Device Configuration Requirements, 09 - System Settings Requirements, DCAM-BDMA Data Contract, DCAM SQLite Database Design, DCAM Android Operation Design, DCAM Recording & Capture Design, DCAM Security & Encryption Design, DCAM State Machine Design
+DCAM Requirements Home, 04 - Device Configuration Requirements, 09 - System Settings Requirements, DCAM-BDMA Data Contract, DCAM SQLite Database Design, DCAM Android Operation Design, DCAM Recording & Capture Design, DCAM Security & Encryption Design, DCAM State Machine Design, Decision Brief – DCAM MVP Internal Build 0.1 – Working Recording Slice
 
 ## 1. Purpose
 
@@ -645,3 +649,38 @@ BDMA syncs user/operator data with DCAM through ADB.
 Active operator_session runtime state is Android-owned.
 Media sessions must store operator attribution snapshot.
 Emergency override must be auditable and distinguishable from real operator attribution.
+## 12. Approved Build 0.1 Operator Exception
+
+Đối với Build 0.1, section này override login/session/authentication requirements mâu thuẫn ở target-state sections phía trên. Các target-state requirements vẫn giữ hiệu lực cho build sau.
+
+Requirement ID
+
+Build 0.1 Requirement
+
+Status
+
+UDO-B01-001
+
+Không có login UI; normal recording/capture không yêu cầu authenticated operator session.
+
+Approved for Build DCAM MVP Internal Build 0.1
+
+UDO-B01-002
+
+operator_id luôn là BUILD01_OPERATOR và operator_name luôn là Build 0.1 Operator.
+
+Approved for Build DCAM MVP Internal Build 0.1
+
+UDO-B01-003
+
+Hai giá trị không thể sửa từ UI hoặc runtime configuration và phải được snapshot nhất quán tại nơi SQLite/CSON/log schema yêu cầu.
+
+Approved for Build DCAM MVP Internal Build 0.1
+
+UDO-B01-004
+
+Placeholder chỉ phục vụ technical traceability; không phải authenticated identity, credential, role hoặc authorization claim.
+
+Approved for Build DCAM MVP Internal Build 0.1
+
+Authentication, authorization, roles và operator management là Out of Scope cho Build 0.1.

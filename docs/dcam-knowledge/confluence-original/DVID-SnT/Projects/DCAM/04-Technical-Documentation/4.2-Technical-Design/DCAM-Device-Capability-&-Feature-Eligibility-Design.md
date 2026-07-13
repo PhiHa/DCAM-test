@@ -1,7 +1,7 @@
 # DCAM Device Capability & Feature Eligibility Design
 
 **Page ID**: 48758788  
-**Version**: 5  
+**Version**: 7  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/48758788
 
@@ -24,7 +24,7 @@ Technical Design
 
 Version
 
-Draft 0.5
+Draft 0.6
 
 Status
 
@@ -44,18 +44,20 @@ DCAM Android Operation Design, DCAM Android Device Owner & Kiosk Policy Design, 
 
 ## 1. Purpose
 
-Trang này định nghĩa single canonical feature eligibility state set cho DCAM và runtime pruning principle được Android runtime modules sử dụng.
+Trang này định nghĩa single canonical feature eligibility state set và runtime pruning principle cho DCAM.
 
-Detailed app operating modes, recording states, storage states, DB states, kiosk policy states và update states được định nghĩa trong các technical design documents riêng. Trang này chỉ owns feature eligibility state names, meaning và capability categories that feed eligibility decisions.
+Project-wide Device Owner/EMM, update và maintenance policy được reference từ DCAM Project Home, DCAM Architecture Home, Device Owner ADR, Kiosk Policy Design và Self Update Design; trang này không restate các decision đó.
 
-Current baseline:
+Local implementation scope:
 
-No external EMM.
-No Android Management API.
-No Managed Google Play policy-driven update.
-DCAM-as-DPC / local Device Owner feasibility must be detected/validated.
-Self Update / APK update is primary update path.
-Manual Google Play Store update is optional fallback only if GMS/Play Store capability exists and process is approved.
+Định nghĩa eligibility state name, meaning và capability category.
+
+Map hardware, firmware, permission, policy và runtime condition thành eligibility result.
+
+Cung cấp input để runtime initialize/prune module và UI expose/hide capability.
+
+Không thay đổi domain-specific state machine hoặc project policy.
+
 ## 2. Official Feature Eligibility States
 
 Đây là official state set được dùng trên toàn bộ DCAM documents.
@@ -196,43 +198,39 @@ ADB/user sync/import path availability under approved restrictions.
 
 Must be validated by POC.
 
-## 5. Current Baseline Decisions That Are Not TBD
+## 5. Baseline References and Local Eligibility Impact
 
-Area
+Project-wide EMM, Device Owner, maintenance và update decision không được copy lại tại trang này.
 
-Decision
+Topic
 
-External EMM
+Authoritative Reference
 
-Not available / not assumed for current baseline.
+Current project/architecture baseline
 
-Android Management API
+DCAM Project Home / DCAM Architecture Home
 
-Not available / not assumed for current baseline.
+Device Owner / EMM / Managed Google Play
 
-Managed Google Play policy-driven update
+ADR - DCAM Android Dedicated Device / Device Owner / Lock Task Decision
 
-Not applicable for current baseline.
+Update and Play Store fallback
 
-Update primary path
+DCAM Self Update Design / DCAM In-App Operation, Device Settings & Media Console Design
 
-DCAM Self Update / APK update.
+Kiosk and maintenance policy
 
-Play Store
+DCAM Android Device Owner & Kiosk Policy Design
 
-Optional manual fallback only if GMS/Play Store exists and approved process allows it.
+Local eligibility impact:
 
-Kiosk exit
+Capability evaluator chỉ report capability/eligibility state; không thay đổi project policy.
 
-Controlled Maintenance Mode only; full Android unrestricted mode is not supported.
+Feature không có trên target device/profile phải map sang official state như `UNSUPPORTED_HARDWARE`, `DISABLED_BY_POLICY` hoặc `PRUNED`.
 
-Maintenance authentication
+Optional fallback chỉ được expose khi capability tồn tại và authoritative policy cho phép.
 
-Maintenance Password Gate is required.
-
-File/Media console
-
-File Manager and Media Viewer are read-only/view-only.
+Runtime module phải consume eligibility result trước khi initialize hoặc expose UI.
 
 ## 6. Downstream Runtime Design Alignment
 
@@ -346,9 +344,10 @@ bdma.user_sync
 ai.realtime_detection
 ## 8. Conclusion
 
-Device Capability Design owns eligibility state names and capability categories.
-Runtime design documents own their domain-specific states.
-External EMM / Android Management API / Managed Google Play are not current baseline capabilities.
-Self Update is the primary update capability for current baseline.
-Play Store fallback is optional and capability-gated.
-Tất cả documents phải dùng official eligibility state set một cách nhất quán.
+Device Capability Design sở hữu eligibility state name, capability category và evaluation rule.
+
+Runtime design document sở hữu domain-specific state/behavior.
+
+Project policy về EMM, Device Owner, update và maintenance được reference từ authoritative document; trang này chỉ chuyển policy/capability thành eligibility result.
+
+Tất cả document và implementation phải dùng official eligibility state set nhất quán.

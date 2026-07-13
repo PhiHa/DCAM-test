@@ -10,20 +10,24 @@ public final class DeveloperFeatureToggle {
     private final String developerSection;
     private final String developerLabel;
     private final SettingId developerSetting;
+    private final FeatureGate parentGate;
 
     DeveloperFeatureToggle(
             FeatureGate gate,
             String developerSection,
             String developerLabel,
-            SettingId developerSetting) {
+            SettingId developerSetting,
+            FeatureGate parentGate) {
         this.gate = Objects.requireNonNull(gate);
         this.developerSection = Objects.requireNonNull(developerSection);
         this.developerLabel = Objects.requireNonNull(developerLabel);
         this.developerSetting = Objects.requireNonNull(developerSetting);
+        this.parentGate = parentGate;
     }
 
     public FeatureGate getGate() { return gate; }
     public String getDeveloperSection() { return developerSection; }
     public String getDeveloperLabel() { return developerLabel; }
     public SettingId getDeveloperSetting() { return developerSetting; }
+    public FeatureGate getParentGate() { return parentGate; }
 }

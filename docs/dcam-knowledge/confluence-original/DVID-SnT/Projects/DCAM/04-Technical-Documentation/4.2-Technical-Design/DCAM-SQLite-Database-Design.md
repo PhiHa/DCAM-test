@@ -1,7 +1,7 @@
 # DCAM SQLite Database Design
 
 **Page ID**: 48529463  
-**Version**: 14  
+**Version**: 17  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/48529463
 
@@ -24,11 +24,15 @@ Technical Design
 
 Version
 
-Draft 1.3
+Approved Provisional Baseline 1.6
 
 Status
 
-Draft
+Approved Provisional Baseline
+
+Approval Scope
+
+Build 0.1 minimal data/state subset; exact schema/migration/transaction boundary Pending Technical Review
 
 Owner
 
@@ -52,34 +56,43 @@ Tech Lead, Android Developers, BDMA Developers, QA, Support, Cloud/WebServer Tea
 
 Last Updated
 
-2026-07-09
+2026-07-13
 
 Related Jira
 
-None
+Not linked
+
+Dependencies / Blockers
+
+Technical Review cho physical schema, `schema_version`, recovery representation và transaction implementation; Device POC/ADB compatibility evidence.
 
 Related Documents
 
-DCAM Factory Provisioning & Device Production SOP, DCAM Web Portal & Device API Contract, DCAM-BDMA Data Contract, 04 - Device Configuration Requirements, 05 - User & Device Operation Requirements, 09 - System Settings Requirements, 06 - Cloud Services, Update & Configuration Architecture, DCAM Android Device Owner & Kiosk Policy Design, DCAM In-App Operation, Device Settings & Media Console Design, DCAM Self Update Design, DCAM Device Capability & Feature Eligibility Design, DCAM Android Operation Design, DCAM Recording & Capture Design, DCAM Storage Design, DCAM State Machine Design, DCAM Security & Encryption Design, 07 - Logging & Diagnostics Requirements
+DCAM Factory Provisioning & Device Production SOP, DCAM Web Portal & Device API Contract, DCAM-BDMA Data Contract, 04 - Device Configuration Requirements, 05 - User & Device Operation Requirements, 09 - System Settings Requirements, 06 - Cloud Services, Update & Configuration Architecture, DCAM Android Device Owner & Kiosk Policy Design, DCAM In-App Operation, Device Settings & Media Console Design, DCAM Self Update Design, DCAM Device Capability & Feature Eligibility Design, DCAM Android Operation Design, DCAM Recording & Capture Design, DCAM Storage Design, DCAM State Machine Design, DCAM Security & Encryption Design, 07 - Logging & Diagnostics Requirements, Decision Brief – DCAM MVP Internal Build 0.1 – Working Recording Slice
 
 ## 1. Purpose
 
-**DCAM SQLite Database Design** định nghĩa `dcam.db` schema direction và runtime database behavior cho settings, runtime state, media/session state, update state, capability/eligibility state, optional kiosk policy state snapshot, in-app console state, maintenance audit/session state, monitoring/tracking state, **offline user/operator management**, authentication/session state, **device identity/provisioning state**, device information mirror, app/contract metadata, remote config cache và BDMA write-back compatibility.
+**DCAM SQLite Database Design** định nghĩa `dcam.db` schema direction và runtime database behavior cho settings, runtime state, media/session state, update state, capability/eligibility state, optional kiosk policy snapshot, in-app console state, maintenance audit/session state, monitoring/tracking state, offline user/operator management, authentication/session state, device identity/provisioning state, device information mirror, app/contract metadata, remote config cache và BDMA write-back compatibility.
 
-Current baseline follows [**DCAM Factory Provisioning & Device Production SOP**](/wiki/spaces/DVID/pages/49545629/DCAM+Factory+Provisioning+Device+Production+SOP):
+Project-wide Device Identity, Device Owner/EMM và update baseline được reference từ:
 
-No external EMM.
-No Android Management API.
-No Managed Google Play policy-driven update.
-Primary update path = DCAM Self Update / APK update.
-Manual Play Store update = optional controlled maintenance fallback only if approved and available.
-Maintenance Password Gate is required for controlled kiosk exit.
-File Manager and Media Viewer are read-only/view-only.
-serial_number = Hardware Identity / primary recovery key.
-dcam_cloud_device_id = Cloud Identity / primary cloud device id.
-SD Identity File = recovery cache on external SD card, not Hardware Identity.
-Do not use ANDROID_ID, android_id_hash or device_lookup/{android_id_hash} in the current production baseline.
-Tài liệu này cũng định nghĩa table ownership, schema versioning, migration policy, transaction boundaries, database locking expectations, external write detection, user sync/write-back validation, provisioning recovery và database recovery behavior.
+DCAM Project Home / DCAM Architecture Home.
+
+ADR - DCAM Device Identity Baseline: serial_number + dcam_cloud_device_id.
+
+ADR - DCAM Android Dedicated Device / Device Owner / Lock Task Decision.
+
+DCAM Factory Provisioning & Device Production SOP.
+
+Local database impact:
+
+Persist identity/provisioning fields theo semantics của Identity ADR và API Contract.
+
+Persist policy, maintenance và update state dưới dạng non-sensitive runtime/audit state; DB không sở hữu policy decision.
+
+Không lưu secret, maintenance credential hoặc raw Android system identifier.
+
+Định nghĩa table ownership, schema versioning, migration, transaction, locking, external-write detection và recovery behavior.
 
 ## 2. Database Boundary
 
@@ -1342,7 +1355,105 @@ Required example logs use safe identifiers/reason codes only:
 [UPDATE] Play Store fallback used
 [DB] External write detected: <change_type>
 [AUTH] Session expired by reboot
-## 18. Open Questions / TBD
+## 18. Build 0.1 Minimal Subset
+
+Subset này là semantic implementation boundary cho Working Recording Slice. Không tự chọn physical schema khi Technical Review chưa hoàn tất.
+
+Requirement ID
+
+Minimal Semantic Requirement
+
+Build 0.1
+
+Closure / Guardrail
+
+DB-SCHEMA-001
+
+`dcam.db` phải expose `schema_version` để Android và BDMA kiểm tra compatibility.
+
+Required
+
+Exact type/format/table placement giữ `TBD` đến Technical Review.
+
+DB-MEDIA-001
+
+DB phải giữ đủ media/session identity và file association cho recording/image artifact của slice.
+
+Required
+
+Exact table/column/relationship giữ `TBD`.
+
+DB-FINAL-001
+
+DB phải phân biệt in-progress/finalizing/finalized/ready/recovery state đủ để không expose partial media.
+
+Required
+
+Exact enum/state representation giữ `TBD`.
+
+DB-BDMA-001
+
+`BDMA_READY` chỉ biểu thị final media an toàn cho scan/import; không biểu thị đã import.
+
+Required
+
+Full BDMA write-back không thuộc Build 0.1 scope.
+
+DB-REC-001
+
+DB/file mismatch, missing/corrupt DB và interrupted finalization phải đi vào controlled recovery và preserve evidence.
+
+Required
+
+Exact recovery state/table giữ `TBD`.
+
+DB-OWN-001
+
+Android owns schema/migration/runtime transaction; DB work chạy qua `DbExecutor`; file I/O/checksum/camera wait nằm ngoài DB transaction.
+
+Required
+
+BDMA write chỉ khi contract/schema cho phép; không mở rộng ownership trong changeset này.
+
+### 18.1 Technical Review Items
+
+Item
+
+Current Decision
+
+Guardrail / Closure Gate
+
+Room hoặc raw SQLite
+
+`TBD`
+
+Có thể defer cho backlog; phải chốt trước implementation merge và QA-DB-002 execution.
+
+Exact `schema_version` representation
+
+`TBD`
+
+Chốt trước schema migration/compatibility implementation.
+
+Physical media/session/finalization tables and columns
+
+`TBD`
+
+Chốt bằng Technical Review; không suy ra từ semantic IDs.
+
+Recovery representation
+
+`TBD`
+
+Phải preserve evidence và support QA-DB-003 trước Working Recording Slice exit.
+
+Transaction retry algorithm
+
+`TBD`
+
+Không vượt `PERF-ANR-007`; chốt trước DB implementation merge.
+
+## 19. Open Questions / TBD
 
 Item
 
@@ -1440,28 +1551,52 @@ Migration test matrix with BDMA/WebServer versions
 
 TBD
 
-## 19. Practical Conclusion
+## 20. Practical Conclusion
 
-`dcam.db` là runtime database boundary, không chỉ là schema file.
+`dcam.db` là runtime database boundary, không phải nơi định nghĩa lại project baseline.
 
-Android runtime owns schema and invariants.
-dcam_cloud_device_id được lưu locally sau identity resolution/provisioning.
-serial_number is Hardware Identity / primary recovery key.
-SD Identity File is recovery cache on external SD card, not Hardware Identity.
-App-private serial_number is source of truth while DCAM is running.
-DCAM may persist SD identity sync state, but SD file must not override app-private serial.
-owner_name / manufacture_date được mirror locally và có thể restore vào dcam_config.cson.
-app/data/media/encoder contract metadata có thể mirror locally cho BDMA/support compatibility.
-bdma_decoder_profile_id không được dùng trong DCAM DB contract.
-Do not use ANDROID_ID, android_id_hash or device_lookup/{android_id_hash} in current production baseline.
-Remote config được cached/applied through dcam.db.
-Kiosk requested-policy settings may be cached in dcam.db.
-Console settings, maintenance state and update state belong in dcam.db as non-sensitive runtime/audit state.
-Actual Device Owner / Lock Task / User Restrictions behavior is not owned by DB; it belongs to Kiosk Policy Design.
-Maintenance password, Google account password/token and raw Android ID must not be stored.
-Self Update is the primary update path for current baseline; Managed Google Play is not represented as active runtime state.
-BDMA chỉ được write approved fields/tables.
-User/operator data được sync two-way through ADB.
-Operator sessions là Android runtime-owned.
-Mọi external change phải được version-checked và detectable.
-Nếu DB/auth/identity/policy/maintenance/update state không chắc chắn, fail safe, preserve evidence và yêu cầu recovery/provisioning/login/policy verification tùy trường hợp.
+Android runtime sở hữu schema, invariant, migration và transaction boundary.
+
+Identity/provisioning field tuân theo Identity ADR và API Contract; trang này chỉ định nghĩa cách persist/recover local.
+
+Kiosk, maintenance và update field chỉ là non-sensitive state/audit snapshot; behavior thuộc domain design tương ứng.
+
+BDMA chỉ được write approved field/table; mọi external change phải version-checked và detectable.
+
+Khi DB/auth/identity/policy/update state không chắc chắn, implementation phải fail safe, preserve evidence và chuyển sang recovery state phù hợp.
+
+## 18. Build 0.1 Minimal SQLite Subset
+
+Logical State / Data
+
+Build 0.1 Requirement
+
+schema_version
+
+Required
+
+Media / Session
+
+Minimal recording/capture session và finalized artifact state
+
+Checksum
+
+Pending, success/ready và failed representation
+
+BDMA Readiness
+
+Không BDMA_READY trước valid MD5 đối với MP4
+
+Recovery
+
+State đủ để reconcile MP4, MD5 và interrupted finalization sau restart
+
+Operator Snapshot
+
+operator_id = BUILD01_OPERATOR; operator_name = Build 0.1 Operator
+
+Ownership
+
+Android/DCAM sở hữu runtime transaction; BDMA tuân theo Data Contract boundary
+
+Exact table, column, Room/raw SQLite choice, migration, transaction grouping và enum spelling chưa được Decision Brief phê duyệt; giữ Pending Technical Review.

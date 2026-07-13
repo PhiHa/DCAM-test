@@ -28,6 +28,7 @@ import com.dvid.dcam.app.presentation.MainViewModel;
 import com.dvid.dcam.app.presentation.MainViewModelFactory;
 import com.dvid.dcam.core.config.domain.DcamConfig;
 import com.dvid.dcam.core.feature.domain.FeatureGate;
+import com.dvid.dcam.core.input.domain.ButtonRole;
 import com.dvid.dcam.databinding.ActivityMainBinding;
 import com.dvid.dcam.databinding.ItemMediaEntryBinding;
 import com.dvid.dcam.databinding.ScreenCameraBinding;
@@ -43,6 +44,7 @@ import com.dvid.dcam.feature.media.application.usecase.OpenMediaUseCase;
 import com.dvid.dcam.feature.media.domain.MediaEntry;
 import com.dvid.dcam.feature.settings.application.usecase.LanguageSettingsUseCase;
 import com.dvid.dcam.feature.settings.application.usecase.MediaEncryptionSettingsUseCase;
+import com.dvid.dcam.feature.settings.application.usecase.VideoMd5SettingsUseCase;
 import com.dvid.dcam.feature.settings.application.usecase.StorageSettingsUseCase;
 import com.dvid.dcam.feature.settings.domain.StorageMode;
 import com.dvid.dcam.feature.settings.domain.AppLanguage;
@@ -53,7 +55,9 @@ import com.dvid.dcam.feature.settings.presentation.SettingsControlRenderer;
 import com.dvid.dcam.feature.settings.presentation.SettingsScreenModel;
 import com.dvid.dcam.feature.settings.presentation.SettingsSection;
 import com.dvid.dcam.platform.config.AndroidLanguagePreferenceStoreImpl;
+import com.dvid.dcam.platform.camera.CameraXCameraGatewayImpl;
 import com.dvid.dcam.platform.device.DcamKioskController;
+import com.dvid.dcam.platform.input.DeveloperHardwareButtonSettings;
 import com.dvid.dcam.platform.input.HardwareButtonRouter;
 import com.dvid.dcam.platform.logging.DcamLogger;
 import com.dvid.dcam.platform.permission.DcamPermissions;
@@ -67,7 +71,6 @@ import java.util.Locale;
 public final class MainActivity extends ComponentActivity {
     private static final int DEV_MODE_UNLOCK_TAPS = 7;
     private static final long DEV_MODE_UNLOCK_WINDOW_MS = 5_000L;
-    private static final float RECORDING_BADGE_IDLE_ALPHA = 0.35f;
     private static final float RECORDING_BADGE_ACTIVE_ALPHA = 1f;
     private final DateTimeFormatter clock = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private final Handler cameraClock = new Handler(Looper.getMainLooper());
@@ -85,7 +88,9 @@ public final class MainActivity extends ComponentActivity {
     private OpenMediaUseCase openMedia;
     private LanguageSettingsUseCase languageSettings;
     private DeveloperFeatureToggles developerFeatureToggles;
+    private DeveloperHardwareButtonSettings developerHardwareButtons;
     private MediaEncryptionSettingsUseCase mediaEncryptionSettings;
+    private VideoMd5SettingsUseCase videoMd5Settings;
     private StorageSettingsUseCase storageSettings;
     private SettingsControlRenderer settingsRenderer;
     private DemoSettingsState demoSettings;
@@ -102,6 +107,9 @@ public final class MainActivity extends ComponentActivity {
     private AppLanguage[] renderedLanguages = new AppLanguage[0];
     private int devModeTapCount;
     private long devModeTapWindowStartedAtMs;
+    private boolean audioRecording;
+    private Long audioStartedAtMillis;
+    private Long videoStopRequestedAtMillis;
 
     @Override protected void attachBaseContext(Context newBase) {
         super.attachBaseContext(AndroidLanguagePreferenceStoreImpl.localizedContext(newBase));
@@ -112,10 +120,13 @@ public final class MainActivity extends ComponentActivity {
         composition = AppComposition.create(this);
         languageSettings = composition.languageSettingsUseCase();
         developerFeatureToggles = composition.developerFeatureToggles();
+        developerHardwareButtons = composition.developerHardwareButtonSettings();
         mediaEncryptionSettings = composition.mediaEncryptionSettingsUseCase();
+        videoMd5Settings = composition.videoMd5SettingsUseCase();
         storageSettings = composition.storageSettingsUseCase();
         settingsRenderer = new SettingsControlRenderer(this);
         demoSettings = new DemoSettingsState(mediaEncryptionSettings.isMediaEncryptionEnabled(),
+                videoMd5Settings.isVideoMd5Enabled(),
                 storageSettings.currentMode().ordinal());
         menuModel = new MainMenuModel();
         kioskController = new DcamKioskController(this);
@@ -130,6 +141,7 @@ public final class MainActivity extends ComponentActivity {
         permissionLauncher = registerForActivityResult(
                 new ActivityResultContracts.RequestMultiplePermissions(),
                 result -> {
+                    CameraXCameraGatewayImpl.warmUp(this);
                     if (captureRuntime != null) captureRuntime.bindCameraIfPermitted();
                 });
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
@@ -138,8 +150,9 @@ public final class MainActivity extends ComponentActivity {
 
         if (!DcamPermissions.allRuntimeGranted(this)) {
             permissionLauncher.launch(DcamPermissions.runtime());
+        } else {
+            CameraXCameraGatewayImpl.warmUp(this);
         }
-        captureRuntime = composition.createCaptureRuntime(this);
         openMedia = composition.createOpenMediaUseCase(this);
         viewModel = new ViewModelProvider(
                 this, new MainViewModelFactory(
@@ -149,9 +162,6 @@ public final class MainActivity extends ComponentActivity {
                         composition.operatorSessionUseCase(),
                         composition.manageOperatorUsersUseCase()))
                 .get(MainViewModel.class);
-        viewModel.bindCaptureEvents(captureRuntime.captureEvents());
-        hardwareButtons = composition.createHardwareButtonRouter(
-                captureRuntime.photoCapture(), captureRuntime.videoRecording(), captureRuntime.audioRecording());
         viewModel.state().observe(this, this::render);
     }
 
@@ -191,6 +201,7 @@ public final class MainActivity extends ComponentActivity {
     }
 
     private void renderCamera() {
+        ensureCaptureRuntime();
         clearScreenBindings();
         root.removeAllViews();
         cameraScreen = ScreenCameraBinding.inflate(getLayoutInflater(), root, false);
@@ -212,6 +223,7 @@ public final class MainActivity extends ComponentActivity {
     }
 
     private void renderLogin() {
+        releaseCaptureRuntime();
         clearScreenBindings();
         root.removeAllViews();
         loginScreen = ScreenLoginBinding.inflate(getLayoutInflater(), root, false);
@@ -297,6 +309,10 @@ public final class MainActivity extends ComponentActivity {
         }
         renderSettingsControls(screen, detail.settingsList);
         if (screen == MainScreen.DEVELOPER_SETTINGS) {
+            Button bindings = new Button(this);
+            bindings.setText(R.string.edit_key_bindings);
+            bindings.setOnClickListener(view -> viewModel.show(MainScreen.DEVELOPER_BUTTON_BINDINGS));
+            detail.settingsList.addView(bindings);
             Button users = new Button(this);
             users.setText(R.string.manage_developer_users);
             users.setOnClickListener(view -> viewModel.show(MainScreen.DEVELOPER_USERS));
@@ -315,6 +331,9 @@ public final class MainActivity extends ComponentActivity {
     private SettingsScreenModel settingsModel(MainScreen screen) {
         if (screen == MainScreen.DEVELOPER_SETTINGS) {
             return developerFeatureToggles.developerSettings();
+        }
+        if (screen == MainScreen.DEVELOPER_BUTTON_BINDINGS) {
+            return new SettingsScreenModel(List.of(developerHardwareButtonSection()));
         }
         SettingsScreenModel model;
         if (screen == MainScreen.RECORD_SETTINGS) model = demoSettings.recording();
@@ -351,23 +370,29 @@ public final class MainActivity extends ComponentActivity {
 
     private boolean isSettingVisible(MainScreen screen, SettingItem item) {
         for (FeatureGate gate : requiredGatesForSetting(screen, item)) {
-            if (!developerFeatureToggles.isEnabled(gate)) return false;
+            if (!developerFeatureToggles.isEffectivelyEnabled(gate)) return false;
         }
         return true;
     }
 
     private boolean isReadOnlySettingVisible(MainScreen screen, int index) {
         for (FeatureGate gate : requiredGatesForReadOnlySetting(screen, index)) {
-            if (!developerFeatureToggles.isEnabled(gate)) return false;
+            if (!developerFeatureToggles.isEffectivelyEnabled(gate)) return false;
         }
         return true;
     }
 
     private static FeatureGate[] requiredGatesForSetting(MainScreen screen, SettingItem item) {
         if (item.getId() == SettingId.LANGUAGE) return noGates();
+        if (item.getId() == SettingId.CREATE_VIDEO_MD5) {
+            return gates(FeatureGate.VIDEO_MD5);
+        }
+        if (item.getId() == SettingId.ENCRYPT_VIDEO_FILES) {
+            return gates(FeatureGate.MEDIA_ENCRYPTION);
+        }
         switch (screen) {
             case RECORD_SETTINGS:
-                return gates(FeatureGate.RECORDING_SETTINGS, FeatureGate.VIDEO_CAPTURE);
+                return gates(FeatureGate.VIDEO_CAPTURE);
             case STORAGE_SETTINGS:
                 return gates(FeatureGate.STORAGE_SETTINGS);
             case USER_SETTINGS:
@@ -382,13 +407,11 @@ public final class MainActivity extends ComponentActivity {
     private static FeatureGate[] requiredGatesForReadOnlySetting(MainScreen screen, int index) {
         switch (screen) {
             case CAMERA_SETTINGS:
-                return index == 1 || index == 3 || index == 6
-                        ? gates(FeatureGate.CAMERA_SETTINGS, FeatureGate.IMAGE_CAPTURE)
-                        : gates(FeatureGate.CAMERA_SETTINGS);
+                return gates(FeatureGate.IMAGE_CAPTURE);
             case VIDEO_STREAM_SETTINGS:
                 return gates(FeatureGate.VIDEO_STREAMING);
             case AUDIO_SETTINGS:
-                return gates(FeatureGate.AUDIO_SETTINGS, FeatureGate.AUDIO_CAPTURE);
+                return gates(FeatureGate.AUDIO_CAPTURE);
             case GPS_SETTINGS:
                 return gates(FeatureGate.GPS);
             case SERVER_SETTINGS:
@@ -421,10 +444,10 @@ public final class MainActivity extends ComponentActivity {
 
     private boolean isMenuTileVisible(MainScreen screen, FeatureGate gate) {
         if (screen == MainScreen.FILES) {
-            return gate == null || developerFeatureToggles.isEnabled(gate);
+            return gate == null || developerFeatureToggles.isEffectivelyEnabled(gate);
         }
         if (isSettingsScreen(screen)) return hasSettings(settingsModel(screen));
-        return gate == null || developerFeatureToggles.isEnabled(gate);
+        return gate == null || developerFeatureToggles.isEffectivelyEnabled(gate);
     }
 
     private static boolean isSettingsScreen(MainScreen screen) {
@@ -472,6 +495,19 @@ public final class MainActivity extends ComponentActivity {
     }
 
     private void selectSetting(SettingId id, int selectedIndex) {
+        ButtonRole buttonRole = developerButtonRole(id);
+        if (buttonRole != null) {
+            developerHardwareButtons.select(buttonRole, selectedIndex);
+            if (hardwareButtons != null) {
+                hardwareButtons.updateLayout(composition.applyDeveloperHardwareButtonLayout());
+            } else {
+                composition.applyDeveloperHardwareButtonLayout();
+            }
+            renderedScreen = null;
+            render(latestState);
+            Toast.makeText(this, "Button fallback applied", Toast.LENGTH_SHORT).show();
+            return;
+        }
         if (id == SettingId.LANGUAGE) {
             if (selectedIndex >= 0 && selectedIndex < renderedLanguages.length) {
                 changeLanguage(renderedLanguages[selectedIndex]);
@@ -489,15 +525,56 @@ public final class MainActivity extends ComponentActivity {
         demoSettings.select(id, selectedIndex);
     }
 
+    private SettingsSection developerHardwareButtonSection() {
+        List<String> options = developerHardwareButtons.optionLabels();
+        return new SettingsSection("Button-role bindings", List.of(
+                developerButtonChoice(SettingId.DEV_BUTTON_RECORD, "Record", ButtonRole.RECORD, options),
+                developerButtonChoice(SettingId.DEV_BUTTON_IMPORTANT_RECORDING,
+                        "Important recording", ButtonRole.IMPORTANT_RECORDING, options),
+                developerButtonChoice(SettingId.DEV_BUTTON_PHOTO_CAPTURE,
+                        "Photo capture", ButtonRole.PHOTO_CAPTURE, options),
+                developerButtonChoice(SettingId.DEV_BUTTON_AUDIO_CAPTURE,
+                        "Audio capture", ButtonRole.AUDIO_CAPTURE, options),
+                developerButtonChoice(SettingId.DEV_BUTTON_PTT, "PTT", ButtonRole.PTT, options),
+                developerButtonChoice(SettingId.DEV_BUTTON_SOS, "SOS", ButtonRole.SOS, options),
+                developerButtonChoice(SettingId.DEV_BUTTON_POWER, "Power", ButtonRole.POWER, options),
+                SettingItem.text("Activation", "Applied immediately")));
+    }
+
+    private SettingItem developerButtonChoice(
+            SettingId id, String label, ButtonRole role, List<String> options) {
+        return SettingItem.choice(id, label, options, developerHardwareButtons.selectedIndex(role));
+    }
+
+    private static ButtonRole developerButtonRole(SettingId id) {
+        switch (id) {
+            case DEV_BUTTON_RECORD: return ButtonRole.RECORD;
+            case DEV_BUTTON_IMPORTANT_RECORDING: return ButtonRole.IMPORTANT_RECORDING;
+            case DEV_BUTTON_PHOTO_CAPTURE: return ButtonRole.PHOTO_CAPTURE;
+            case DEV_BUTTON_AUDIO_CAPTURE: return ButtonRole.AUDIO_CAPTURE;
+            case DEV_BUTTON_PTT: return ButtonRole.PTT;
+            case DEV_BUTTON_SOS: return ButtonRole.SOS;
+            case DEV_BUTTON_POWER: return ButtonRole.POWER;
+            default: return null;
+        }
+    }
+
     private void updateNumberSetting(SettingId id, int value) {
         demoSettings.updateNumber(id, value);
     }
 
     private void updateBooleanSetting(SettingId id, boolean checked) {
-        if (developerFeatureToggles.setEnabled(id, checked)) return;
+        if (developerFeatureToggles.setEnabled(id, checked)) {
+            renderedScreen = null;
+            render(latestState);
+            return;
+        }
         demoSettings.updateBoolean(id, checked);
         if (id == SettingId.ENCRYPT_VIDEO_FILES && mediaEncryptionSettings != null) {
             mediaEncryptionSettings.setMediaEncryptionEnabled(checked);
+        }
+        if (id == SettingId.CREATE_VIDEO_MD5 && videoMd5Settings != null) {
+            videoMd5Settings.setVideoMd5Enabled(checked);
         }
     }
 
@@ -545,12 +622,14 @@ public final class MainActivity extends ComponentActivity {
     }
 
     private MainScreen safeScreen(MainScreen screen) {
-        if (screen == MainScreen.LOGIN || screen == MainScreen.DEVELOPER_USERS) return screen;
+        if (screen == MainScreen.LOGIN
+                || screen == MainScreen.DEVELOPER_USERS
+                || screen == MainScreen.DEVELOPER_BUTTON_BINDINGS) return screen;
         return menuModel.safeScreen(screen, this::isMenuTileVisible);
     }
 
     private void bindFeatureAction(View view, FeatureGate feature, Runnable action) {
-        boolean enabled = developerFeatureToggles.isEnabled(feature);
+        boolean enabled = developerFeatureToggles.isEffectivelyEnabled(feature);
         view.setVisibility(enabled ? View.VISIBLE : View.GONE);
         view.setOnClickListener(enabled
                 ? ignored -> developerFeatureToggles.runIfEnabled(feature, action)
@@ -571,6 +650,7 @@ public final class MainActivity extends ComponentActivity {
             case TRANSFER_SETTINGS: return R.string.transfer_settings;
             case ABOUT: return R.string.about;
             case DEVELOPER_SETTINGS: return R.string.developer_mode;
+            case DEVELOPER_BUTTON_BINDINGS: return R.string.button_role_bindings;
             case DEVELOPER_USERS: return R.string.developer_users;
             default: throw new IllegalArgumentException("No settings title for " + screen);
         }
@@ -595,9 +675,14 @@ public final class MainActivity extends ComponentActivity {
 
     private void updateStatus(MainUiState state) {
         if (cameraScreen != null) {
-            boolean idle = state.getCapture().getMode() == RecordingMode.IDLE;
-            cameraScreen.recordingBadge.setAlpha(idle
-                    ? RECORDING_BADGE_IDLE_ALPHA : RECORDING_BADGE_ACTIVE_ALPHA);
+            if (state.getCapture().getMode() == RecordingMode.IDLE) {
+                videoStopRequestedAtMillis = null;
+            }
+            boolean videoRecording = state.getCapture().getMode() != RecordingMode.IDLE
+                    && videoStopRequestedAtMillis == null;
+            cameraScreen.recordingBadge.setVisibility(videoRecording ? View.VISIBLE : View.GONE);
+            cameraScreen.recordingBadge.setAlpha(RECORDING_BADGE_ACTIVE_ALPHA);
+            cameraScreen.audioBadge.setVisibility(audioRecording ? View.VISIBLE : View.GONE);
             updateGpsStatusLine();
             if (state.getOperatorSession() != null) {
                 cameraScreen.operatorId.setText("USER " + state.getOperatorSession().getFileUserId());
@@ -676,14 +761,21 @@ public final class MainActivity extends ComponentActivity {
         if (cameraScreen == null) return;
         cameraScreen.currentTime.setText(clock.format(LocalDateTime.now()));
         MainUiState state = latestState;
-        cameraScreen.recordingTimer.setText(recordingDurationText(state));
+        boolean recording = state != null
+                && (state.getCapture().getMode() != RecordingMode.IDLE || audioRecording);
+        cameraScreen.recordingTimer.setVisibility(recording ? View.VISIBLE : View.GONE);
+        cameraScreen.recordingTimer.setText(recording ? captureDurationText(state) : "");
     }
 
-    private static String recordingDurationText(MainUiState state) {
-        if (state == null || state.getCapture().getMode() == RecordingMode.IDLE) return "00:00:00";
-        Long startedAtMillis = state.getCapture().getStartedAtMillis();
-        if (startedAtMillis == null) return "00:00:00";
+    private String captureDurationText(MainUiState state) {
+        if (state == null) return "";
+        Long startedAtMillis = audioRecording
+                ? audioStartedAtMillis : state.getCapture().getStartedAtMillis();
+        if (startedAtMillis == null) return "";
         long elapsedMs = Math.max(0L, System.currentTimeMillis() - startedAtMillis);
+        if (!audioRecording && videoStopRequestedAtMillis != null) {
+            elapsedMs = Math.max(0L, videoStopRequestedAtMillis - startedAtMillis);
+        }
         long totalSeconds = elapsedMs / 1_000L;
         long hours = totalSeconds / 3_600L;
         long minutes = (totalSeconds % 3_600L) / 60L;
@@ -697,7 +789,7 @@ public final class MainActivity extends ComponentActivity {
 
     private void updateGpsStatusLine() {
         if (cameraScreen == null) return;
-        boolean enabled = developerFeatureToggles.isEnabled(FeatureGate.GPS);
+        boolean enabled = developerFeatureToggles.isEffectivelyEnabled(FeatureGate.GPS);
         cameraScreen.gpsStatus.setVisibility(enabled ? View.VISIBLE : View.GONE);
         cameraScreen.gpsStatus.setText(enabled ? gpsCoordinatesText() : "");
     }
@@ -708,28 +800,66 @@ public final class MainActivity extends ComponentActivity {
         if (screen == MainScreen.CAMERA) viewModel.show(MainScreen.MENU);
         else if (screen == MainScreen.MENU) viewModel.show(MainScreen.CAMERA);
         else if (screen == MainScreen.FILES && viewModel.navigateMediaUp()) return;
-        else if (screen == MainScreen.DEVELOPER_USERS) viewModel.show(MainScreen.DEVELOPER_SETTINGS);
+        else if (screen == MainScreen.DEVELOPER_USERS
+                || screen == MainScreen.DEVELOPER_BUTTON_BINDINGS) {
+            viewModel.show(MainScreen.DEVELOPER_SETTINGS);
+        }
         else viewModel.show(MainScreen.MENU);
     }
 
     @Override public boolean onKeyDown(int keyCode, KeyEvent event) {
-        return hardwareButtons.onKeyDown(keyCode, event.getRepeatCount(), event.getEventTime())
+        return hardwareButtons != null
+                && hardwareButtons.onKeyDown(keyCode, event.getRepeatCount(), event.getEventTime())
                 || super.onKeyDown(keyCode, event);
     }
 
     @Override public boolean onKeyUp(int keyCode, KeyEvent event) {
-        return hardwareButtons.onKeyUp(keyCode) || super.onKeyUp(keyCode, event);
+        return hardwareButtons != null && hardwareButtons.onKeyUp(keyCode)
+                || super.onKeyUp(keyCode, event);
     }
 
     @Override protected void onDestroy() {
         DcamLogger.i("MainActivity destroyed");
         cameraClock.removeCallbacks(cameraClockTick);
-        if (viewModel != null && captureRuntime != null) {
-            viewModel.onCapturePlatformReleased(captureRuntime.captureEvents());
+        releaseCaptureRuntime();
+        super.onDestroy();
+    }
+
+    private void ensureCaptureRuntime() {
+        if (captureRuntime != null) return;
+        captureRuntime = composition.createCaptureRuntime(this);
+        viewModel.bindCaptureEvents(captureRuntime.captureEvents());
+        hardwareButtons = composition.createHardwareButtonRouter(
+                captureRuntime.photoCapture(), captureRuntime.videoRecording(),
+                captureRuntime.audioRecording(), this::setAudioRecording,
+                this::freezeVideoDuration);
+    }
+
+    private void setAudioRecording(boolean recording, String fileName) {
+        if (recording && !audioRecording) {
+            audioStartedAtMillis = System.currentTimeMillis();
+        }
+        audioRecording = recording;
+        if (!recording) {
+            audioStartedAtMillis = null;
+            if (fileName != null && captureRuntime != null) captureRuntime.showSaved(fileName);
+        }
+        if (latestState != null) updateStatus(latestState);
+    }
+
+    private void freezeVideoDuration() {
+        videoStopRequestedAtMillis = System.currentTimeMillis();
+        updateCameraClock();
+    }
+
+    private void releaseCaptureRuntime() {
+        if (captureRuntime == null) return;
+        if (viewModel != null) {
             viewModel.unbindCaptureEvents(captureRuntime.captureEvents());
         }
-        if (captureRuntime != null) captureRuntime.release();
-        super.onDestroy();
+        captureRuntime.release();
+        captureRuntime = null;
+        hardwareButtons = null;
     }
 
     private void clearScreenBindings() {

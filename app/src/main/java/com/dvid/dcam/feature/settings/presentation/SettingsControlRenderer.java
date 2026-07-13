@@ -40,6 +40,7 @@ public final class SettingsControlRenderer {
         for (SettingsSection section : model.getSections()) {
             section(parent, section.getTitle());
             for (SettingItem item : section.getItems()) {
+                int childCount = parent.getChildCount();
                 switch (item.getType()) {
                     case TEXT:
                         text(parent, item.getLabel(), item.getValue());
@@ -69,7 +70,28 @@ public final class SettingsControlRenderer {
                     default:
                         throw new IllegalArgumentException("Unsupported setting type " + item.getType());
                 }
+                if (!item.isEnabled() && parent.getChildCount() > childCount) {
+                    View row = parent.getChildAt(parent.getChildCount() - 1);
+                    row.setEnabled(false);
+                    row.setAlpha(0.45f);
+                    disableChildren(row);
+                }
+                if (item.getIndentLevel() > 0 && parent.getChildCount() > childCount) {
+                    View row = parent.getChildAt(parent.getChildCount() - 1);
+                    row.setPadding(row.getPaddingLeft() + dp(24 * item.getIndentLevel()),
+                            row.getPaddingTop(), row.getPaddingRight(), row.getPaddingBottom());
+                    row.setBackgroundColor(Color.rgb(22, 29, 37));
+                }
             }
+        }
+    }
+
+    private static void disableChildren(View view) {
+        view.setEnabled(false);
+        if (!(view instanceof ViewGroup)) return;
+        ViewGroup group = (ViewGroup) view;
+        for (int index = 0; index < group.getChildCount(); index++) {
+            disableChildren(group.getChildAt(index));
         }
     }
 

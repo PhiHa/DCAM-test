@@ -5,10 +5,9 @@ public enum FeatureGate {
     IMAGE_CAPTURE(true),
     VIDEO_CAPTURE(true),
     AUDIO_CAPTURE(false),
+    MEDIA_ENCRYPTION(false),
+    VIDEO_MD5(true),
     MEDIA_BROWSER(true),
-    RECORDING_SETTINGS(false),
-    CAMERA_SETTINGS(false),
-    AUDIO_SETTINGS(false),
     STORAGE_SETTINGS(true),
     DEVICE_SETTINGS(false),
     GPS(false),
@@ -38,3 +37,4 @@ public enum FeatureGate {
         return persistedKey == null ? name() : persistedKey;
     }
 }
+

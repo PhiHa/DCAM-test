@@ -121,4 +121,6 @@ public final class AndroidAudioRecorderImpl implements AudioRecorder {
             recorder.release(); recorder = null;
         }
     }
+
+    @Override public boolean isRecording() { return recorder != null; }
 }

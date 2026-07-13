@@ -47,12 +47,10 @@ public final class RecordingForegroundService extends Service {
     }
 
     @Override public int onStartCommand(Intent intent, int flags, int startId) {
-        String fileName = intent == null ? null : intent.getStringExtra(EXTRA_FILE_NAME);
-        String text = fileName == null || fileName.isBlank() ? "Recording in progress" : fileName;
         Notification notification = new Notification.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle("DCAM recording")
-                .setContentText(text)
+                .setContentText("Recording in progress")
                 .setOngoing(true)
                 .setCategory(Notification.CATEGORY_SERVICE)
                 .build();

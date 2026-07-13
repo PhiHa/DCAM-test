@@ -1,7 +1,7 @@
 # DCAM-BDMA Data Contract
 
 **Page ID**: 47743153  
-**Version**: 9  
+**Version**: 10  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47743153
 
@@ -24,11 +24,15 @@ Data Contract / Integration Contract
 
 Version
 
-Approved 1.8
+Approved 1.9
 
 Status
 
 Approved
+
+Approval Scope
+
+Global contract với authoritative Build 0.1 exchange profile
 
 Owner
 
@@ -52,7 +56,7 @@ PM/BA, Tech Lead, Android Developers, BDMA Developers, QA, Support, Cloud/WebSer
 
 Last Updated
 
-2026-07-10
+2026-07-13
 
 Related Jira
 
@@ -60,7 +64,7 @@ None
 
 Related Documents
 
-DCAM Factory Provisioning & Device Production SOP, DCAM Web Portal & Device API Contract, DCAM Device Provisioning Web Portal Design, DCAM Device Provisioning Web Portal App Design, DCAM Device Provisioning Web Portal Implementation Design, DCAM MVP Scope, DCAM Architecture Home, 04 - Device Configuration Requirements, 05 - User & Device Operation Requirements, 06 - Cloud Services, Update & Configuration Architecture, 07 - Logging & Diagnostics Requirements, 07 - Logging, Diagnostics, Performance & Security, DCAM Logging & Diagnostics Design, 09 - System Settings Requirements, DCAM SQLite Database Design, DCAM Android Operation Design, DCAM Recording & Capture Design, DCAM Storage Design, DCAM Security & Encryption Design, 05 - Data, Storage & BDMA Architecture, 08 - DCAM-BDMA Integration Boundary, DCAM QA Test Strategy & Test Matrix, DCAM Documentation Governance
+DCAM Factory Provisioning & Device Production SOP, DCAM Web Portal & Device API Contract, DCAM Device Provisioning Web Portal Design, DCAM Device Provisioning Web Portal App Design, DCAM Device Provisioning Web Portal Implementation Design, DCAM MVP Scope, DCAM Architecture Home, 04 - Device Configuration Requirements, 05 - User & Device Operation Requirements, 06 - Cloud Services, Update & Configuration Architecture, 07 - Logging & Diagnostics Requirements, 07 - Logging, Diagnostics, Performance & Security, DCAM Logging & Diagnostics Design, 09 - System Settings Requirements, DCAM SQLite Database Design, DCAM Android Operation Design, DCAM Recording & Capture Design, DCAM Storage Design, DCAM Security & Encryption Design, 05 - Data, Storage & BDMA Architecture, 08 - DCAM-BDMA Integration Boundary, DCAM QA Test Strategy & Test Matrix, DCAM Documentation Governance, Decision Brief – DCAM MVP Internal Build 0.1 – Working Recording Slice
 
 ## 1. Purpose
 
@@ -419,7 +423,9 @@ QR is business provisioning only; it is not Device Owner enrollment.
 QR must not contain ANDROID_ID, android_id_hash or long-lived secret.
 Exact QR/API details belong to Web Portal Design and API Contract.
 
-## 5. Storage Location Strategy
+## 5. Storage Location Strategy (General / non-Build 0.1 where applicable)
+
+Build 0.1 sử dụng authoritative override tại §16.
 
 Storage Type
 
@@ -531,7 +537,9 @@ Important/encrypted examples:
 DCAM_XXXXXX_ZZZZZZ_YYYYMMDD_HHMMSS_IMP.<ext>
 DCAM_XXXXXX_ZZZZZZ_YYYYMMDD_HHMMSS_enc.<ext>
 DCAM_XXXXXX_ZZZZZZ_YYYYMMDD_HHMMSS_IMP_enc.<ext>
-## 8. MD5 Checksum Contract
+## 8. MD5 Checksum Contract (General / non-Build 0.1 where applicable)
+
+Build 0.1 sử dụng authoritative override tại §16.
 
 `.md5` chỉ áp dụng cho video `.mp4`.
 
@@ -626,7 +634,9 @@ No media cleanup.
 
 BDMA không được cleanup `dcam_config.cson`, `dcam.db`, `logs.txt`, internal rotated logs, upload queue hoặc SD Identity File.
 
-## 10. Device Config CSON Contract
+## 10. Device Config CSON Contract (General / non-Build 0.1 where applicable)
+
+Build 0.1 sử dụng narrow operator exception tại §16.
 
 Path:
 
@@ -1159,3 +1169,106 @@ Internal rotated logs, upload queue, Loggly delivery state and Crashlytics repor
 BDMA reads logs.txt in read-only mode and must not modify or delete it.
 MD5 applies only to .mp4 video files.
 BDMA_READY means safe for BDMA scan/import, not already imported.
+## 16. Build 0.1 Authoritative Contract Profile
+
+Section này override các generic/legacy rules mâu thuẫn đối với DCAM MVP Internal Build 0.1. Behavior ngoài Build 0.1 không bị thay đổi.
+
+### 16.1 Storage and Scan Root
+
+Contract Item
+
+Build 0.1 Rule
+
+Active Storage
+
+Internal storage only
+
+External / Auto
+
+Not Applicable
+
+Fallback
+
+Không fallback sang External
+
+Pre-check Failure
+
+Không bắt đầu recording
+
+Runtime Failure
+
+Safe-stop và finalize MP4 nếu còn khả năng
+
+BDMA Scan
+
+Chỉ scan approved logical Internal final-media root; ignore Temp/Cache
+
+Physical Internal/ADB path vẫn Pending Device POC.
+
+### 16.2 MP4 MD5 and Readiness
+
+Contract Item
+
+Build 0.1 Rule
+
+Algorithm
+
+MD5
+
+Applicability
+
+Mọi MP4
+
+Purpose
+
+Integrity check only
+
+Sequence
+
+Finalize MP4 → async MD5 → BDMA_READY
+
+MD5 Failure
+
+Giữ MP4, log, Checksum Pending/Failed, không import
+
+Missing / Mismatch
+
+Block import, evidence và release gate
+
+Image
+
+Không yêu cầu MD5; behavior hiện có giữ nguyên
+
+Cleanup
+
+Không xóa MP4/MD5/protected artifact khi verification/import chưa success
+
+Legacy missing-MD5 → Unverified import và BDMA_READY-before-checksum không áp dụng cho Build 0.1.
+
+### 16.3 Operator Attribution
+
+Field
+
+Build 0.1 Value
+
+operator_id
+
+BUILD01_OPERATOR
+
+operator_name
+
+Build 0.1 Operator
+
+Mutability
+
+Không thể sửa từ UI/runtime configuration
+
+Meaning
+
+Technical traceability; không phải authenticated identity
+
+Hai fields được phép trong SQLite, CSON và log tại nơi approved schema yêu cầu. Exact placement/serialization vẫn cần Technical Review.
+
+### 16.4 Evidence Boundary
+
+GitHub code, PR, build hoặc test chỉ được dùng làm authoritative evidence sau khi Confluence/Jira ghi rõ repository mapping. Mapping chưa được phê duyệt bởi changeset này.

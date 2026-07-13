@@ -81,7 +81,7 @@ public final class MainViewModel extends ViewModel {
                 MediaBrowserState.root(),
                 null,
                 null,
-                true));
+                false));
         initializeAuthentication();
     }
 
@@ -232,7 +232,7 @@ public final class MainViewModel extends ViewModel {
             case RECORDING_STARTED:
                 state.setValue(current().withCapture(
                         new CaptureState(event.getMode(), event.getFileName(), System.currentTimeMillis()),
-                        "Recording " + event.getFileName()));
+                        "Recording"));
                 break;
             case RECORDING_COMPLETED:
                 state.setValue(current().withCapture(new CaptureState(), "Saved " + event.getFileName()));

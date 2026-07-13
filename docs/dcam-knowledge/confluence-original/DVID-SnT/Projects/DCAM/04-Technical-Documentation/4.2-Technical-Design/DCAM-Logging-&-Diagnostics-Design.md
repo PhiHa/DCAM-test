@@ -1,7 +1,7 @@
 # DCAM Logging & Diagnostics Design
 
 **Page ID**: 51019937  
-**Version**: 4  
+**Version**: 7  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/51019937
 
@@ -24,11 +24,15 @@ Technical Design / Logging & Diagnostics
 
 Version
 
-Draft 0.2
+Approved 0.4
 
 Status
 
-Draft
+Approved
+
+Approval Scope
+
+Build 0.1 operational logging cho approved decisions; không thay Security Profile
 
 Owner
 
@@ -52,7 +56,7 @@ Tech Lead, Android Developers, Backend Developers, QA, Security Reviewer, Suppor
 
 Last Updated
 
-2026-07-10
+2026-07-13
 
 Related Jira
 
@@ -60,28 +64,31 @@ None
 
 Related Documents
 
-07 - Logging, Diagnostics, Performance & Security, 07 - Logging & Diagnostics Requirements, DCAM-BDMA Data Contract, DCAM Security & Encryption Design, DCAM Performance Budget & Resource Constraints, DCAM Android Operation Design, DCAM Recording & Capture Design, DCAM Storage Design, DCAM SQLite Database Design, DCAM Self Update Design, DCAM Android Device Owner & Kiosk Policy Design, DCAM Web Portal & Device API Contract, DCAM QA Test Strategy & Test Matrix, DCAM Device POC & Hardware Validation Report, DCAM Documentation Governance
+07 - Logging, Diagnostics, Performance & Security, 07 - Logging & Diagnostics Requirements, DCAM-BDMA Data Contract, DCAM Security & Encryption Design, DCAM Performance Budget & Resource Constraints, DCAM Android Operation Design, DCAM Recording & Capture Design, DCAM Storage Design, DCAM SQLite Database Design, DCAM Self Update Design, DCAM Android Device Owner & Kiosk Policy Design, DCAM Web Portal & Device API Contract, DCAM QA Test Strategy & Test Matrix, DCAM Device POC & Hardware Validation Report, DCAM Documentation Governance, Decision Brief – DCAM MVP Internal Build 0.1 – Working Recording Slice
 
 ## 1. Purpose
 
 Tài liệu này là source of truth cho implementation design của logging và diagnostics trong DCAM.
 
-Architecture baseline:
+Provider ownership và cross-project logging baseline được reference từ:
 
-Operational Logging uses Loggly as the primary centralized operational observability provider.
-Firebase Crashlytics is used for crash, unexpected non-fatal exception, ANR and application stability monitoring.
-Crashlytics does not replace Operational Logging.
-Operational Logging is local-first, asynchronous, bounded and provider-independent.
-Tài liệu này định nghĩa:
+DCAM Project Home / DCAM Architecture Home.
+
+07 - Logging, Diagnostics, Performance & Security.
+
+07 - Logging & Diagnostics Requirements.
+
+DCAM-BDMA Data Contract.
+
+Trang này không restate full provider baseline. Local implementation scope:
 
 Logging abstraction and ownership
 Operational event schema
 Log category and level rules
 Internal local-first files and rotation
 Persistent upload queue
-Stable BDMA-facing Logs/logs.txt export
-Backend Relay → Loggly
-Firebase Crashlytics boundary
+Backend Relay delivery integration
+Firebase Crashlytics integration boundary
 Error classification
 Sensitive data sanitization
 Correlation context
@@ -1079,16 +1086,50 @@ TBD / Security
 
 ## 22. Practical Conclusion
 
-DCAM has two logical logging channels.
-Operational Logging is the primary operational observability channel.
-Loggly is the centralized Operational Logging provider.
-Firebase Crashlytics is the Crash & Stability Monitoring provider.
-Production Android routes operational logs through authenticated Backend Relay.
-Operational Logging is local-first, asynchronous, bounded and provider-independent.
-Internal active/rotated logs and upload queue are implementation-private.
-Logs/logs.txt is the stable sanitized BDMA-facing artifact.
-BDMA reads logs.txt only and does not depend on internal rotated files or provider state.
-Crashlytics reports are not BDMA Data Contract artifacts.
-Logging must not block critical DCAM operation.
-All sinks sanitize sensitive data independently.
-Provider failure must not fail the primary operation.
+DCAM Logging & Diagnostics Design sở hữu implementation detail, không sở hữu lại cross-project provider decision.
+
+Trang này định nghĩa logging abstraction, event schema, local file/rotation, persistent queue, Backend Relay integration và Crashlytics adapter boundary.
+
+Internal active/rotated log và upload queue là implementation-private.
+
+`Logs/logs.txt` là sanitized BDMA-facing artifact theo DCAM-BDMA Data Contract.
+
+Mỗi sink phải sanitize độc lập; logging/provider failure không được block critical DCAM operation.
+
+Provider ownership hoặc baseline thay đổi được cập nhật tại Architecture Home/Logging Architecture trước; trang này chỉ cập nhật local integration impact.
+
+## 16. Build 0.1 Decision Event Mapping
+
+Event Group
+
+Required Context
+
+Storage Pre-check
+
+Internal free storage, result và non-start reason
+
+Storage Runtime Failure
+
+Failure reason, safe-stop result và finalization result
+
+MP4 MD5
+
+Start, success, pending, failed, missing hoặc mismatch
+
+BDMA Readiness
+
+Readiness transition hoặc blocked reason
+
+Operator
+
+BUILD01_OPERATOR / Build 0.1 Operator tại nơi schema yêu cầu; technical traceability only
+
+Device Status
+
+Battery level, Internal free storage, GPS Available/Unavailable/Unsupported
+
+POC Evidence
+
+Reference model, OS/API, firmware và physical device identifier
+
+Không log credential, token, coordinates hoặc route. MD5 không được mô tả như encryption, authentication hoặc security signature.

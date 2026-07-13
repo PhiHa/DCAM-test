@@ -1,7 +1,7 @@
 # 02 - Architecture Principles
 
 **Page ID**: 47120416  
-**Version**: 12  
+**Version**: 13  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47120416
 
@@ -24,7 +24,7 @@ Software Architecture Document / Principles
 
 Version
 
-Approved 1.6
+Approved 1.7
 
 Status
 
@@ -48,450 +48,192 @@ Parent Folder
 
 Target Audience
 
-PM/BA, Tech Lead, Android Developers, QA
+PM/BA, Tech Lead, Android Developers, QA, BDMA Team, Cloud/WebServer Team
 
 Last Updated
 
-2026-07-08
-
-Related Jira
-
-None
+2026-07-10
 
 Related Documents
 
-DCAM Architecture Home, 01 - Architecture Overview, 03 - Android Platform & Compatibility Strategy, 04 - Application & Module Architecture, DCAM Documentation Governance, 05 - User & Device Operation Requirements, DCAM-BDMA Data Contract, DCAM Device Capability & Feature Eligibility Design, DCAM Security & Encryption Design, DCAM Android Operation Design, DCAM Recording & Capture Design, DCAM SQLite Database Design
+DCAM Architecture Home, DCAM Release & Build Applicability Matrix, DCAM Performance Budget & Resource Constraints, DCAM Logging & Diagnostics Design, 06 - Cloud Services, Update & Configuration Architecture, DCAM Security & Encryption Design, DCAM-BDMA Data Contract
 
 ## 1. Purpose
 
-Trang này định nghĩa các nguyên tắc kiến trúc bắt buộc cho DCAM.
+Trang này định nghĩa các architecture principles dùng xuyên suốt DCAM. Detailed behavior thuộc authoritative Requirements, ADR, Technical Design, API/Data Contract và QA documents.
 
-Mọi thiết kế chi tiết, coding guideline và ADR sau này cần tuân theo các nguyên tắc này hoặc ghi rõ lý do nếu có ngoại lệ.
+Build applicability thuộc **DCAM Release & Build Applicability Matrix**. Target Architecture không đồng nghĩa mọi module đều bắt buộc trong Build `0.1`.
 
-## 2. Principle Summary
+## 2. Core Principles
 
 Principle
 
-Status
-
-Meaning
-
-Offline-first Architecture
-
-Decided
-
-Core features và operator login phải chạy khi không có Internet.
+Direction
 
 Reliability First
 
-Decided
+Recording, finalization và evidence preservation có priority cao hơn optional features.
 
-Không mất dữ liệu quan trọng là ưu tiên số một.
+Offline First
 
-Operator-attributed Evidence
+Core local operation hoạt động khi cloud/provider unavailable sau provisioning.
 
-Decided
+Define Once, Reference Elsewhere
 
-Normal recording/capture evidence phải gắn với authenticated operator session.
+Shared rule chỉ định nghĩa tại authoritative document.
 
-Emergency Override Auditability
+Adapter-based Architecture
 
-Decided
+Domain logic không phụ thuộc trực tiếp Android, cloud hoặc vendor SDK.
 
-Emergency recording without login dùng `EMERGENCY_OVERRIDE_ADMIN` và phải auditable.
+Capability-aware
 
-Runtime-recoverable Design
+Runtime chỉ start feature `ENABLED` hoặc approved `DEGRADED`.
 
-Decided
+State-driven Safety
 
-App phải recover an toàn sau crash/reboot/service/storage/DB/session issues.
+Critical transition phải qua approved runtime guard.
 
-Capability-based Design
+Local-first Diagnostics
 
-Decided
+Operational event được persist local trước hoặc độc lập với cloud delivery.
 
-Không giả định mọi BodyCamera giống nhau, kể cả login method capability.
+Evidence Preservation
 
-Platform Abstraction Layer
+Khi state không chắc chắn, preserve artifact và reconcile.
 
-Decided
+MVP before Expansion
 
-Không gọi trực tiếp Android SDK, hardware-specific APIs hoặc cloud provider SDK từ business logic.
+Working Recording Slice phải có trước platform expansion.
 
-Cloud Provider Abstraction
+## 3. Current Provider Decisions
 
-Decided
+Domain
 
-Cloud services phải đi qua abstraction; Firebase chỉ là một provider có thể dùng.
-
-BDMA-compatible by Design
-
-Decided
-
-Dữ liệu sinh ra và user/operator data phải phục vụ BDMA ngay từ đầu.
-
-Modular Architecture
-
-Decided
-
-Module tách trách nhiệm rõ ràng.
-
-Configuration over Hardcode
-
-Decided
-
-Config phải externalize, không hardcode.
-
-Observability
-
-Decided
-
-Luồng quan trọng phải có log/tracing đủ để debug.
-
-Backward Compatibility
-
-Decided
-
-Data Contract / schema / settings / user sync phải được versioned để bảo đảm compatibility.
-
-Security-aware Design
-
-Decided
-
-Không ghi thông tin nhạy cảm vào log và bảo vệ media/config/operator data khi cần.
-
-## 3. Offline-first Architecture
-
-DCAM phải hoạt động với các chức năng cốt lõi ngay cả khi không có Internet.
-
-Các chức năng sau không được phụ thuộc vào Cloud/Firebase:
-
-Video recording.
-
-Image capture.
-
-Local operator login.
-
-Local storage.
-
-Metadata generation.
-
-Logging.
-
-Basic device status.
-
-BDMA ingest readiness.
-
-Cloud services chỉ là phần mở rộng, không phải điều kiện bắt buộc cho core capture hoặc operator login.
-
-## 4. Reliability First
-
-Trong các luồng chính, ưu tiên bảo toàn dữ liệu hơn UI đẹp hoặc feature phụ.
-
-Area
-
-Requirement
-
-Recording
-
-Không được mất file khi app pause/background/crash nếu có thể recover.
-
-Operator attribution
-
-Media/session phải giữ operator snapshot tại thời điểm recording/capture.
-
-Emergency override
-
-Emergency recording without login phải dùng auditable system operator.
-
-Storage
-
-Cần phân biệt temporary file và completed file.
-
-Database
-
-Runtime state và DB/file/session mismatch phải recoverable nếu có thể.
-
-Metadata
-
-Metadata phải tạo đủ để BDMA nhận biết trạng thái file.
-
-Error
-
-Lỗi phải ghi log và có trạng thái phục hồi nếu có thể.
-
-Crash
-
-Crash log cần hỗ trợ truy vết nguyên nhân.
-
-## 5. Capability-based Design
-
-DCAM không được giả định tất cả thiết bị BodyCamera có cùng phần cứng hoặc firmware.
-
-Capability
-
-Handling Direction
-
-Camera
-
-Detect camera availability và các supported mode trước khi bật tính năng camera.
-
-Microphone
-
-Required cho audio/video và PTT; nếu unavailable thì phải có fallback phù hợp.
-
-GPS
-
-Optional cho metadata/tracking; app phải xử lý được trường hợp GPS unavailable.
-
-Storage
-
-Check availability và free space trước khi recording.
-
-Login methods
-
-Password/pattern/face/QR/NFC availability phải tuân theo device capability và security policy.
-
-Network
-
-Required cho cloud/remote features, không phải điều kiện bắt buộc cho core capture/login.
-
-GMS
-
-Chỉ required cho một số SDK-based cloud features; không phải hard blocker cho tất cả cloud services.
-
-Battery / Thermal
-
-Dùng cho operational warning, degraded mode và temporary unavailability.
-
-Official feature eligibility states được định nghĩa bởi **DCAM Device Capability & Feature Eligibility Design**.
-
-## 6. Platform Abstraction Layer
-
-Business logic không được gọi trực tiếp Android SDK, Firebase SDK hoặc provider SDK khác.
-
-Business logic phải đi qua interface/service layer.
-
-Use Case / Repository
-        ↓
-Platform Interface
-        ↓
-Android / Device-specific / Cloud Provider Implementation
-Implementation detail được quản lý bởi **DCAM Android Development Standard**.
-
-## 7. Cloud Provider Abstraction
-
-Cloud services phải được thiết kế theo hướng provider-agnostic.
-
-Firebase có thể là provider ban đầu, nhưng không được trở thành dependency trực tiếp của business logic.
-
-Application / Use Case
-        ↓
-Cloud Service Interface
-        ↓
-Provider Implementation
-        ├── Firebase Provider
-        ├── REST API Provider
-        ├── Desktop-side Provider
-        └── Local Provider
-
-Area
-
-Direction
-
-Remote Config
-
-Dùng RemoteConfigProvider; implementation có thể là Firebase, REST hoặc local.
-
-Crash Reporting
-
-Dùng CrashReportProvider; implementation có thể là cloud provider, custom REST hoặc local logs.
-
-Device Cloud State
-
-Dùng Cloud/Device provider interface.
-
-Performance Metrics
-
-Dùng metrics abstraction; implementation provider vẫn TBD.
-
-GMS/non-GMS
-
-GMS là device capability, không phải global cloud blocker.
-
-## 8. BDMA-compatible by Design
-
-Mọi media, metadata, status, user/operator data và folder structure phải được thiết kế để BDMA ingest, sync và mapping được.
-
-Area
-
-Direction
-
-File naming
-
-Tuân theo DCAM-BDMA Data Contract.
-
-Metadata
-
-Tuân theo DCAM-BDMA Data Contract và related technical design.
-
-Device ID
-
-Tuân theo DCAM-BDMA Data Contract.
-
-User/Operator
-
-Được stored/managed through `dcam.db` theo SQLite Database Design và Data Contract.
-
-User sync
-
-BDMA/DCAM user sync phải versioned, auditable và conflict-aware.
-
-Operator attribution
-
-Media/session giữ operator snapshot hoặc emergency override identity.
+Current Provider / Baseline
 
 Status
 
-Media/session/import/status tuân theo SQLite Database Design và Data Contract.
+Web frontend
 
-Schema version
+Firebase Hosting
 
-Required cho compatibility.
+Approved
 
-## 9. Configuration over Hardcode
+Web authentication
 
-Configurable values không nên hardcode nếu chúng có thể thay đổi theo device/customer/environment.
+Firebase Authentication
 
-Priority:
+Approved
 
-Runtime Override
-    ↓
-Cloud Remote Config if available
-    ↓
-Local Config / dcam.db
-    ↓
-Default Config
-Operational settings được lưu trong `dcam.db`; `dcam_config.cson` chỉ dành cho device information.
+Web backend
 
-## 10. Observability
+Firebase Cloud Functions
 
-DCAM phải đủ observable để hỗ trợ field support và debugging.
+Approved
 
-Area
+Cloud provisioning/device storage
 
-Minimum Observability
+Firebase Cloud Firestore
 
-Login/session
+Approved
 
-login success/failure, session restore, reboot expiration, emergency override.
+Firebase Realtime Database
 
-User sync
+Không dùng trong current storage baseline
 
-sync started/completed/conflict/rejected write-back.
+Not Applicable
 
-Recording
+Operational Logging
 
-start/stop/result/error/recovery/operator resolution.
+Loggly qua local-first queue và authenticated Backend Relay
 
-Capture
+Approved
 
-trigger/result/error.
+Crash & Stability Monitoring
 
-Storage
+Firebase Crashlytics
 
-root/free space/finalization/BDMA readiness/error.
+Approved
 
-Database
+Self Update artifact source
 
-open/migration/transaction/external write/recovery.
+Approved APK artifact provider
 
-GPS
+Approved boundary; exact deployment TBD
 
-available/unavailable/accuracy nếu có.
+Provider abstraction vẫn bắt buộc. Alternative-provider hoặc migration strategy chỉ cần quyết định khi deployment có yêu cầu mới.
 
-Permission
+## 4. Performance Observability
 
-granted/denied/revoked.
+`Performance metrics provider` không còn là `TBD`.
 
-Cloud Services
+Numeric targets
+    → DCAM Performance Budget & Resource Constraints
 
-enabled/disabled/provider/fallback.
+[PERF] / [THREAD] operational events
+    → Operational Logging
+    → Loggly
 
-Update
+Fatal crash / ANR / approved unexpected non-fatal
+    → Firebase Crashlytics
+Crashlytics custom context không thay thế Operational Logging.
 
-method/version/result/error/deferred reason.
+## 5. Current Architecture Baselines
 
-## 11. Remaining TBD Items
+serial_number = Hardware Identity / primary recovery key
+dcam_cloud_device_id = Cloud Identity
+SD Identity File = recovery cache only
+No ANDROID_ID / android_id_hash production identity
+No external EMM / Android Management API / Managed Google Play
+DCAM-as-DPC / local Device Owner is preferred when supported
+Controlled Maintenance Mode requires Maintenance Password Gate
+Primary update path = DCAM Self Update / approved APK update
+Device-specific feasibility và exact security parameters vẫn thuộc Device POC/Security Review.
 
-Item
-
-Status
-
-CameraX vs Camera2/vendor SDK final decision
-
-TBD sau BodyCamera POC
-
-Cloud provider list and fallback strategy
-
-TBD theo deployment/provider decision
-
-Performance metrics provider
-
-TBD
-
-Streaming protocol
-
-TBD / future design
-
-PTT protocol
-
-TBD / future design
-
-Exact login method implementation details
-
-TBD trong Security Design / device POC
-
-Encryption algorithm and key management
-
-TBD trong Security Design / ADR
-
-Items previously marked as TBD but now resolved:
+## 6. Remaining Decisions
 
 Item
 
-Current Source of Truth
+Current Status
 
-Storage folder structure
+CameraX vs Camera2/vendor SDK
 
-DCAM-BDMA Data Contract + DCAM Storage Design
+TBD / Device POC
 
-Local database choice
+Target BodyCamera model/firmware
 
-SQLite / DCAM SQLite Database Design
+TBD / Device POC
 
-User/Operator runtime data direction
+Current domain providers
 
-DCAM SQLite Database Design
+Approved in Section 3
 
-Operator login/session policy
+Alternative-provider migration strategy
 
-05 - User & Device Operation Requirements + Android Operation Design
+Future / Deployment TBD
 
-Emergency override identity
+Performance telemetry routing
 
-05 - User & Device Operation Requirements + Recording & Capture Design
+Approved: Operational events → Loggly; crash/ANR → Crashlytics
 
-Feature eligibility state set
+Numeric performance targets
 
-DCAM Device Capability & Feature Eligibility Design
+Defined provisionally; Device POC validation required
 
-Recording/storage/db recovery direction
+Streaming/PTT protocol
 
-Android Operation, Recording, Storage and SQLite designs
+Future / TBD
 
-## 12. Practical Conclusion
+Media encryption/key management
 
-Các nguyên tắc này là baseline cho mọi trang architecture phía sau. Khi một thiết kế chi tiết đi ngược lại các nguyên tắc này, cần tạo ADR để ghi rõ lý do và trade-off.
+TBD / Security Review
 
-Các quyết định còn TBD trên trang này là open decisions thật sự cần POC, thiết bị thật, security review, provider decision hoặc ADR.
+## 7. Practical Conclusion
+
+DCAM providers are approved by domain, not globally undefined.
+Firebase Hosting/Auth/Functions/Firestore form the Web Portal baseline.
+Loggly owns centralized Operational Logging.
+Crashlytics owns Crash & Stability Monitoring.
+Performance Budget owns numeric targets.
+Only device-, deployment-, security- and future-feature-specific choices remain TBD.

@@ -1,6 +1,25 @@
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
+const assert = require('assert');
+
+const BLOCKED_PAGE_TITLES = new Set([
+  'Developer Mode',
+  'Notes | FAQ',
+  'Building a JavaFX Application and NSIS Installer Steps'
+]);
+
+function isBlockedPage(title) {
+  return BLOCKED_PAGE_TITLES.has(title.trim());
+}
+
+if (process.argv[2] === '--self-test') {
+  assert(isBlockedPage('Developer Mode'));
+  assert(isBlockedPage(' Notes | FAQ '));
+  assert(!isBlockedPage('DCAM Android Development Standard'));
+  console.log('Blacklist self-test passed.');
+  process.exit(0);
+}
 
 function readProperties(filepath) {
   if (!fs.existsSync(filepath)) return {};
@@ -239,14 +258,9 @@ async function downloadPages() {
     
     // Download each page
     let downloaded = 0;
+    let blocked = 0;
     for (const page of pages) {
       try {
-        console.log(`Downloading [${downloaded + 1}/${pages.length}]: ${page.title}`);
-        
-        const fullPage = requestedPageId ? page : await fetchPageContent(page.id);
-        const body = fullPage.body?.view?.value || fullPage.body?.storage?.value || '';
-        const markdown = htmlToMarkdown(body);
-        
         // Build path from ancestors
         const pathParts = [];
         const ancestors = page.ancestors || [];
@@ -266,6 +280,19 @@ async function downloadPages() {
         // Save page content
         const filename = sanitizeFilename(page.title) + '.md';
         const filepath = path.join(currentPath, filename);
+
+        if (isBlockedPage(page.title)) {
+          if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
+          console.log(`Blocked credential-bearing page: ${page.title}`);
+          blocked++;
+          continue;
+        }
+
+        console.log(`Downloading [${downloaded + 1}/${pages.length}]: ${page.title}`);
+
+        const fullPage = requestedPageId ? page : await fetchPageContent(page.id);
+        const body = fullPage.body?.view?.value || fullPage.body?.storage?.value || '';
+        const markdown = htmlToMarkdown(body);
         
         const content = [
           `# ${page.title}\n`,
@@ -296,6 +323,7 @@ async function downloadPages() {
     
     // A targeted refresh preserves the complete-space index.
     if (!requestedPageId) {
+      indexLines[2] = 'Total pages: ' + downloaded + '\n\n';
       fs.writeFileSync(
         path.join(CONFIG.outputDir, 'INDEX.md'),
         indexLines.join(''),
@@ -305,6 +333,7 @@ async function downloadPages() {
     
     console.log(`\nDownload complete! ${downloaded} pages saved to:`);
     console.log(CONFIG.outputDir);
+    console.log(`Blocked pages: ${blocked}`);
     
   } catch (error) {
     console.error('Error:', error.message);

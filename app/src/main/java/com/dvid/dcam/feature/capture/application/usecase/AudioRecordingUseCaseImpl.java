@@ -15,4 +15,6 @@ public final class AudioRecordingUseCaseImpl implements AudioRecordingUseCase {
     @Override public String toggleAudio() {
         return audio.toggle(config);
     }
+
+    @Override public boolean isAudioRecording() { return audio.isRecording(); }
 }

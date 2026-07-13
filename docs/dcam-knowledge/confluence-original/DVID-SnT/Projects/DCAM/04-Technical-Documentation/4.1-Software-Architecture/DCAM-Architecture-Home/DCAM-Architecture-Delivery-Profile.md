@@ -24,11 +24,15 @@ Architecture Delivery Profile / MVP Implementation Architecture Guardrail
 
 Version
 
-Approved 1.1
+1.2
 
 Status
 
-Approved
+Approved for Build DCAM MVP Internal Build 0.1
+
+Approval Scope
+
+Architecture guardrails cho Working Recording Slice; không phải Production/fleet approval
 
 Owner
 
@@ -52,7 +56,7 @@ PM/BA, Tech Lead, Android Developers, QA, BDMA Team, Factory, Stakeholders
 
 Last Updated
 
-2026-07-09
+2026-07-13
 
 Related Jira
 
@@ -60,7 +64,7 @@ None
 
 Related Documents
 
-DCAM MVP Scope, DCAM 9-Month Development Plan, 04 - Application & Module Architecture, DCAM Android Development Standard, DCAM Android Operation Design, DCAM Recording & Capture Design, DCAM Storage Design, DCAM SQLite Database Design, DCAM-BDMA Data Contract
+DCAM MVP Scope, DCAM 9-Month Development Plan, 04 - Application & Module Architecture, DCAM Android Development Standard, DCAM Android Operation Design, DCAM Recording & Capture Design, DCAM Storage Design, DCAM SQLite Database Design, DCAM-BDMA Data Contract, Decision Brief – DCAM MVP Internal Build 0.1 – Working Recording Slice
 
 ## 1. Purpose
 
@@ -732,3 +736,38 @@ Recommended Phase 1 limits:
 ≤ 7 runtime states
 ≤ 8 P0 dependency rules
 1 working recording/storage/BDMA vertical slice trước khi platform expansion
+## 13. Build 0.1 Controlled Delivery Profile
+
+Area
+
+Required Build 0.1 Subset
+
+Reference Device
+
+NCC-036V / Android 12 / API 31 / 877AOOAKN1_RK2_V009; Pending Device POC.
+
+Camera
+
+Android platform Camera API qua CameraService; vendor SDK Not Applicable; Camera1/Camera2 chờ POC.
+
+Storage
+
+Internal only; no fallback; failed pre-check blocks start; runtime failure safe-stop/finalize if possible.
+
+Finalization
+
+MP4 finalized trước; async MD5; BDMA_READY chỉ sau valid MD5.
+
+Operator
+
+No login UI; BUILD01_OPERATOR / Build 0.1 Operator; technical traceability only.
+
+Device Status
+
+Battery level, Internal free storage, GPS Available/Unavailable/Unsupported.
+
+Coverage
+
+Ít nhất một identifiable physical reference device; không đại diện Production/fleet/multi-model readiness.
+
+Build 0.1 phải tuân theo Decision Brief và Release & Build Applicability Matrix khi target-state design rộng hơn profile này.

@@ -1,7 +1,7 @@
 # 01 - Recording & Capture Requirements
 
 **Page ID**: 47743356  
-**Version**: 4  
+**Version**: 6  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47743356
 
@@ -24,11 +24,15 @@ Functional Requirements
 
 Version
 
-Approved 1.2
+Approved 1.4
 
 Status
 
 Approved
+
+Approval Scope
+
+Recording requirements và Build 0.1 checksum/finalization profile
 
 Owner
 
@@ -52,7 +56,7 @@ PM/BA, Tech Lead, Android Developers, QA
 
 Last Updated
 
-2026-07-07
+2026-07-13
 
 Related Jira
 
@@ -60,13 +64,15 @@ None
 
 Related Documents
 
-DCAM Requirements Home, DCAM-BDMA Data Contract, DCAM MVP Scope, 09 - System Settings Requirements, DCAM Recording & Capture Design, DCAM State Machine Design, DCAM Non-functional Requirements, 06 - Cloud Services, Update & Configuration Architecture
+DCAM Requirements Home, DCAM Requirement–Design–Test Traceability Matrix, DCAM-BDMA Data Contract, DCAM MVP Scope, 09 - System Settings Requirements, DCAM Recording & Capture Design, DCAM State Machine Design, DCAM Non-functional Requirements, DCAM Security & Encryption Design, 06 - Cloud Services, Update & Configuration Architecture, Decision Brief – DCAM MVP Internal Build 0.1 – Working Recording Slice
 
 ## 1. Purpose
 
 Trang này ghi nhận các yêu cầu chức năng liên quan đến **recording và capture** trên thiết bị BodyCamera.
 
 Các yêu cầu trong trang này là baseline cho **DCAM Recording & Capture Design**, **DCAM State Machine Design**, **DCAM Storage Design** và các test case liên quan đến video/image/audio capture.
+
+Exact encryption algorithm, mode, key generation/storage/rotation/recovery và BDMA decryption boundary không thuộc tài liệu Requirements này. Các quyết định đó thuộc **DCAM Security & Encryption Design** và chỉ có hiệu lực khi một approved Security Profile được ban hành.
 
 ## 2. Recording & Capture Scope
 
@@ -158,15 +164,15 @@ Approved
 
 REC-VID-004
 
-Nếu AES-256 encryption được bật, encrypted video phải dùng suffix `_enc`; important encrypted video dùng `_IMP_enc`.
+Nếu media encryption được bật theo approved Security Profile, encrypted video phải dùng suffix `_enc`; important encrypted video dùng `_IMP_enc` theo DCAM-BDMA Data Contract. Exact algorithm, mode và key management thuộc DCAM Security & Encryption Design.
 
-Approved
+Approved Direction / Security Review dependent
 
 REC-VID-005
 
-`.md5` chỉ áp dụng cho video `.mp4` nếu MD5 feature/policy được bật.
+Build 0.1 yêu cầu mọi final video MP4 có MD5 sidecar; đối với build khác, applicability theo approved build profile.
 
-Approved
+Approved for Build DCAM MVP Internal Build 0.1
 
 REC-VID-006
 
@@ -408,9 +414,9 @@ Approved Direction
 
 REC-EMG-005
 
-Nếu AES-256 enabled, emergency encrypted clip phải dùng `_IMP_enc`.
+Nếu media encryption được bật theo approved Security Profile, emergency encrypted clip phải dùng suffix `_IMP_enc` theo Data Contract. Exact algorithm, mode và key management thuộc Security Design.
 
-Approved Direction
+Approved Direction / Security Review dependent
 
 REC-EMG-006
 
@@ -540,6 +546,10 @@ Document
 
 Relationship
 
+DCAM Requirement–Design–Test Traceability Matrix
+
+Mapping từng Requirement ID active sang Build, Design/Contract, QA, Jira và evidence.
+
 09 - System Settings Requirements
 
 Định nghĩa settings cho pre-record/post-record, emergency detection và future SOS.
@@ -562,7 +572,11 @@ DCAM Non-functional Requirements
 
 DCAM-BDMA Data Contract
 
-Đảm bảo chỉ final media được expose cho BDMA import; emergency clip là Important Media.
+Đảm bảo chỉ final media được expose cho BDMA import; emergency clip là Important Media và encrypted-media naming nếu feature active.
+
+DCAM Security & Encryption Design
+
+Sở hữu exact algorithm, mode, key management, encryption activation profile và BDMA decryption boundary.
 
 06 - Cloud Services, Update & Configuration Architecture
 
@@ -571,3 +585,27 @@ DCAM-BDMA Data Contract
 ## 11. Notes
 
 Chi tiết kỹ thuật về rolling cache, temp/cache storage, merge/append cache vào final video, emergency event source abstraction, SOS retry policy, error recovery và performance impact sẽ được bổ sung trong **DCAM Recording & Capture Design**, **DCAM State Machine Design** và các future WebServer/SOS technical design pages.
+
+Encrypted naming requirement does not approve a cryptographic algorithm.
+Encryption becomes implementation/release mandatory only when the Applicability Matrix activates an approved Security Profile.
+## 14. Build 0.1 Controlled Requirements
+
+Requirement ID
+
+Requirement
+
+Status
+
+REC-VID-007
+
+MP4 phải được finalize trước, sau đó MD5 được tạo bất đồng bộ; artifact chỉ được chuyển sang BDMA_READY sau khi MD5 thành công.
+
+Approved for Build DCAM MVP Internal Build 0.1
+
+REC-VID-008
+
+Nếu MD5 generation failed, missing hoặc mismatch, DCAM phải giữ MP4, ghi log, duy trì Checksum Pending/Failed và không cho BDMA import.
+
+Approved for Build DCAM MVP Internal Build 0.1
+
+MD5 chỉ dùng cho integrity check; không phải encryption, authentication hoặc security signature. Exact state enum và performance threshold cần Technical Review/Device POC.

@@ -1,7 +1,7 @@
 # DCAM Project Charter
 
 **Page ID**: 41156610  
-**Version**: 17  
+**Version**: 18  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/41156610
 
@@ -958,28 +958,28 @@ Project Sponsor
 
 DVID
 
-Pending
+Approved
 
 Product Owner
 
 Hoàng Ngọc Quyền
 
-Pending
+Approved
 
 Project Manager
 
 Hoàng Ngọc Quyền
 
-Pending
+Approved
 
 Technical Lead
 
 Hoàng Ngọc Quyền
 
-Pending
+Approved
 
 BDMA Lead
 
 Dinh Nhan
 
-Pending
+Approved

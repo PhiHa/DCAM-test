@@ -7,9 +7,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import android.view.KeyEvent;
 import com.dvid.dcam.core.feature.application.usecase.FeatureGateSettingsUseCase;
 import com.dvid.dcam.core.feature.domain.FeatureGate;
+import com.dvid.dcam.core.input.domain.ButtonRole;
+import com.dvid.dcam.core.input.domain.PhysicalButtonType;
 import com.dvid.dcam.feature.capture.application.usecase.AudioRecordingUseCase;
 import com.dvid.dcam.feature.capture.application.usecase.PhotoCaptureUseCase;
 import com.dvid.dcam.feature.capture.application.usecase.VideoRecordingUseCase;
+import com.dvid.dcam.feature.capture.domain.RecordingMode;
 import java.util.EnumMap;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -55,12 +58,61 @@ public class HardwareButtonHandlerTest {
         assertFalse(router.onKeyDown(KeyEvent.KEYCODE_A, 0, 0L));
     }
 
+    @Test public void bodyCameraUsesFKeysWithoutBwcReleaseStop() {
+        FakePhotoCaptureUseCaseImpl photos = new FakePhotoCaptureUseCaseImpl();
+        FakeVideoRecordingUseCaseImpl videos = new FakeVideoRecordingUseCaseImpl();
+        FakeAudioRecordingUseCaseImpl audio = new FakeAudioRecordingUseCaseImpl();
+        boolean[] audioRecording = { false };
+        HardwareButtonRouter router = new HardwareButtonRouter(
+                photos, videos, audio, null, null, HardwareButtonProfiles.resolve(
+                        new HardwareDeviceIdentity("BodyCamera", "k69v1_64_k419", "mt6768")),
+                (recording, fileName) -> audioRecording[0] = recording, () -> {});
+
+        assertTrue(router.onKeyDown(KeyEvent.KEYCODE_F5, 0, 0L));
+        assertTrue(router.onKeyUp(KeyEvent.KEYCODE_F5));
+        assertTrue(router.onKeyDown(KeyEvent.KEYCODE_F1, 0, 0L));
+        assertTrue(router.onKeyDown(KeyEvent.KEYCODE_F2, 0, 0L));
+        assertTrue(router.onKeyDown(KeyEvent.KEYCODE_F3, 0, 0L));
+        assertTrue(audioRecording[0]);
+        assertTrue(router.onKeyUp(KeyEvent.KEYCODE_F3));
+        assertTrue(router.onKeyDown(KeyEvent.KEYCODE_F3, 0, 1L));
+        assertFalse(router.onKeyDown(KeyEvent.KEYCODE_POWER, 0, 0L));
+        assertFalse(router.onKeyDown(KeyEvent.KEYCODE_F4, 0, 0L));
+        assertEquals(1, videos.videoToggles);
+        assertEquals(0, videos.stops);
+        assertEquals(1, videos.sosToggles);
+        assertEquals(1, photos.photos);
+        assertEquals(2, audio.toggles);
+        assertFalse(audioRecording[0]);
+    }
+
+    @Test public void allThreePropertiesMustMatchDeviceProfile() {
+        HardwareButtonLayout bodyCamera = HardwareButtonProfiles.resolve(
+                new HardwareDeviceIdentity("BodyCamera", "k69v1_64_k419", "mt6768"));
+        HardwareButtonLayout wrongPlatform = HardwareButtonProfiles.resolve(
+                new HardwareDeviceIdentity("BodyCamera", "k69v1_64_k419", "other"));
+        HardwareButtonLayout bwc = HardwareButtonProfiles.resolve(
+                new HardwareDeviceIdentity("BWC", "k69v1_64_k419", "mt6768"));
+
+        HardwareButtonBinding bodyCameraRecord =
+                bodyCamera.findByButtonKeyCode(KeyEvent.KEYCODE_F5);
+        HardwareButtonBinding bwcRecord = bwc.findByButtonKeyCode(KeyEvent.KEYCODE_F10);
+        assertEquals(ButtonRole.RECORD, bodyCameraRecord.role());
+        assertEquals(PhysicalButtonType.BUTTON, bodyCameraRecord.type());
+        assertEquals(ButtonRole.RECORD, bwcRecord.role());
+        assertEquals(PhysicalButtonType.SWITCH, bwcRecord.type());
+        assertTrue(bodyCamera.has(ButtonRole.IMPORTANT_RECORDING));
+        assertFalse(bwc.has(ButtonRole.IMPORTANT_RECORDING));
+        assertTrue(wrongPlatform.findByButtonKeyCode(KeyEvent.KEYCODE_F5) == null);
+    }
+
     @Test public void disabledCameraKeyIsConsumedWithoutTakingPhoto() {
         FakePhotoCaptureUseCaseImpl photos = new FakePhotoCaptureUseCaseImpl();
         FakeFeatureGateSettingsUseCaseImpl gates = new FakeFeatureGateSettingsUseCaseImpl();
         gates.setEnabled(FeatureGate.IMAGE_CAPTURE, false);
         HardwareButtonRouter router = new HardwareButtonRouter(
-                photos, new FakeVideoRecordingUseCaseImpl(), new FakeAudioRecordingUseCaseImpl(), gates);
+                photos, new FakeVideoRecordingUseCaseImpl(), new FakeAudioRecordingUseCaseImpl(),
+                gates, null, bwcLayout(), (recording, fileName) -> {}, () -> {});
 
         assertTrue(router.onKeyDown(KeyEvent.KEYCODE_CAMERA, 0, 0L));
         assertEquals(0, photos.photos);
@@ -68,7 +120,14 @@ public class HardwareButtonHandlerTest {
 
     private static HardwareButtonRouter router(
             FakePhotoCaptureUseCaseImpl photos, FakeVideoRecordingUseCaseImpl videos) {
-        return new HardwareButtonRouter(photos, videos, new FakeAudioRecordingUseCaseImpl());
+        return new HardwareButtonRouter(
+                photos, videos, new FakeAudioRecordingUseCaseImpl(), null, null, bwcLayout(),
+                (recording, fileName) -> {}, () -> {});
+    }
+
+    private static HardwareButtonLayout bwcLayout() {
+        return HardwareButtonProfiles.resolve(
+                new HardwareDeviceIdentity("BWC", "k69v1_64_k419", "mt6768"));
     }
 
     private static final class FakePhotoCaptureUseCaseImpl implements PhotoCaptureUseCase {
@@ -81,16 +140,23 @@ public class HardwareButtonHandlerTest {
         int starts;
         int stops;
         int sosToggles;
+        int videoToggles;
+        RecordingMode mode = RecordingMode.IDLE;
 
-        @Override public void toggleVideo() {}
+        @Override public void toggleVideo() { videoToggles++; }
         @Override public void startVideo() { starts++; }
         @Override public void startSos() {}
         @Override public void stopRecording() { stops++; }
         @Override public void toggleSos() { sosToggles++; }
+        @Override public RecordingMode currentMode() { return mode; }
     }
 
     private static final class FakeAudioRecordingUseCaseImpl implements AudioRecordingUseCase {
-        @Override public String toggleAudio() { return null; }
+        int toggles;
+        boolean recording;
+
+        @Override public String toggleAudio() { toggles++; recording = !recording; return null; }
+        @Override public boolean isAudioRecording() { return recording; }
     }
 
     private static final class FakeFeatureGateSettingsUseCaseImpl implements FeatureGateSettingsUseCase {

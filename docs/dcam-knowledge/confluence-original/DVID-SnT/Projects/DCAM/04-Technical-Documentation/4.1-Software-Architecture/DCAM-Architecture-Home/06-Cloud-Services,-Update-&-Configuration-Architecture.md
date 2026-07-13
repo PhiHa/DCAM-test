@@ -1,7 +1,7 @@
 # 06 - Cloud Services, Update & Configuration Architecture
 
 **Page ID**: 47120459  
-**Version**: 26  
+**Version**: 27  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47120459
 
@@ -24,7 +24,7 @@ Software Architecture Document / Cloud, Update & Configuration Architecture
 
 Version
 
-Approved 3.1
+Approved 3.2
 
 Status
 
@@ -48,712 +48,259 @@ Parent Folder
 
 Target Audience
 
-PM/BA, Tech Lead, Android Developers, AI/ML Engineer, QA, BDMA Team, Cloud/WebServer Team
+PM/BA, Tech Lead, Android Developers, Web/Backend Developers, QA, Factory, Cloud Team
 
 Last Updated
 
-2026-07-09
-
-Related Jira
-
-None
+2026-07-10
 
 Related Documents
 
-DCAM Factory Provisioning & Device Production SOP, DCAM Web Portal & Device API Contract, DCAM Architecture Home, 04 - Device Configuration Requirements, 09 - System Settings Requirements, DCAM Device Provisioning Web Portal Design, DCAM Android Device Owner & Kiosk Policy Design, DCAM In-App Operation, Device Settings & Media Console Design, ADR - DCAM Android Dedicated Device / Device Owner / Lock Task Decision, DCAM Android Operation Design, DCAM SQLite Database Design, DCAM Security & Encryption Design, DCAM Self Update Design, DCAM Device Capability & Feature Eligibility Design, DCAM State Machine Design
+DCAM Web Portal & Device API Contract, DCAM Device Provisioning Web Portal Design, DCAM Device Provisioning Web Portal App Design, DCAM Device Provisioning Web Portal Implementation Design, DCAM Factory Provisioning & Device Production SOP, 09 - System Settings Requirements, DCAM Android Device Owner & Kiosk Policy Design, DCAM Self Update Design, DCAM Security & Encryption Design
 
 ## 1. Purpose
 
-Trang này mô tả kiến trúc cloud provider, Firebase Cloud Firestore storage baseline, device identity, Web Provisioning Portal boundary, remote configuration, kiosk requested-policy boundary, update provider và future WebServer/service adapters của DCAM.
+Trang này định nghĩa cloud/provider boundary cho provisioning, device identity, remote config và update.
 
-Tài liệu này follows [**DCAM Factory Provisioning & Device Production SOP**](/wiki/spaces/DVID/pages/49545629/DCAM+Factory+Provisioning+Device+Production+SOP) làm chuẩn định danh thiết bị:
+Current baseline:
+
+Web frontend = Firebase Hosting
+Web authentication = Firebase Authentication
+Web backend = Firebase Cloud Functions
+Cloud storage = Firebase Cloud Firestore
+Firebase Realtime Database = not used
+Primary update path = DCAM Self Update / approved APK artifact provider
+## 2. Identity and Provisioning Baseline
 
 serial_number = Hardware Identity / primary recovery key
 dcam_cloud_device_id = Cloud Identity / primary cloud device id
-SD Identity File = recovery cache trên thẻ nhớ ngoài, không phải Hardware Identity
-Không dùng ANDROID_ID
-Không dùng android_id_hash
-Không dùng device_lookup/{android_id_hash}
-Tài liệu này chỉ định nghĩa **architecture boundary**. API/data schema chi tiết thuộc **DCAM Web Portal & Device API Contract**. Luồng nghiệp vụ chi tiết của Web Portal Provisioning thuộc **DCAM Device Provisioning Web Portal Design**. Chi tiết Device Owner / Lock Task / User Restrictions thuộc **DCAM Android Device Owner & Kiosk Policy Design**. Chi tiết Self Update / APK install flow thuộc **DCAM Self Update Design**.
+serial_lookup/{serial_number} = create/restore lookup
+SD Identity File = recovery cache only
+No production dependency on `ANDROID_ID`, `android_id_hash` or `device_lookup/{android_id_hash}`.
 
-Current baseline:
+Approved business flow:
 
-No external EMM.
-No Android Management API.
-No Managed Google Play policy-driven update.
-Firebase Cloud Firestore is the selected backend storage baseline.
-Firebase Realtime Database is not used for the current storage baseline.
-Primary update path = DCAM Self Update / APK update.
-Optional manual Google Play Store fallback only if device has GMS/Play Store and approved maintenance/factory account/process exists.
-Device cloud identity is created/restored by serial_lookup/{serial_number}.
-## 2. Authoritative References
+DSetup verifies imported serial
+    ↓
+DCAM displays provisioning QR
+    ↓
+Factory Worker logs in
+    ↓
+Workspace scans QR and shows serial read-only
+    ↓
+Factory Worker enters owner/date and submits
+    ↓
+Cloud Functions creates/restores cloud identity
+Device Owner setup is separate from Web business provisioning.
 
-Topic
+## 3. Current Cloud Components
 
-Authoritative Document
+Component
 
-Local Summary
-
-Factory provisioning, DSetup, serial injection and SD Identity File
-
-DCAM Factory Provisioning & Device Production SOP
-
-DSetup resolves serial from SD Identity File or barcode and injects serial into DCAM.
-
-Device config file and device information requirement
-
-04 - Device Configuration Requirements
-
-`serial_number` là Hardware Identity/recovery key; owner name và manufacture date là device information.
-
-API/data contract and Firestore collection/document direction
-
-DCAM Web Portal & Device API Contract
-
-Source of truth cho API/path/schema/error code và Firestore collection/document baseline.
-
-Device provisioning business flow, screens, QR, states and audit
-
-DCAM Device Provisioning Web Portal Design
-
-Source of truth cho DCAM Web Portal business provisioning flow.
-
-Kiosk policy
-
-DCAM Android Device Owner & Kiosk Policy Design
-
-Source of truth cho DCAM-as-DPC/local Device Owner, Lock Task, User Restrictions, Home/Launcher, Maintenance Mode, no external EMM baseline and policy recovery.
-
-In-app console / controlled maintenance
-
-DCAM In-App Operation, Device Settings & Media Console Design
-
-Source of truth for Setting hub, Controlled Mode, Maintenance Password Gate and optional manual Play Store fallback UX.
-
-Remote config validation and setting apply
-
-09 - System Settings Requirements
-
-Remote config chỉ cung cấp requested values; DCAM validate/cache/apply theo runtime guard.
-
-Kiosk requested-policy settings
-
-09 - System Settings Requirements
-
-Cloud/WebServer may publish requested kiosk policy values; Android validates and applies only when policy authority and runtime guard allow.
-
-Device identity local persistence
-
-DCAM SQLite Database Design
-
-Lưu `dcam_cloud_device_id`, `serial_number`, device information, provisioning state và config cache.
-
-Startup restore/provisioning/kiosk verification runtime
-
-DCAM Android Operation Design
-
-Android startup xử lý local identity, serial-based recovery, provisioning-required state and kiosk policy verification.
-
-Identity/provisioning/security/policy security
-
-DCAM Security & Encryption Design
-
-Không dùng/log Android system identifier; provisioning, policy, update and maintenance actions must be auditable.
-
-Feature eligibility and runtime pruning
-
-DCAM Device Capability & Feature Eligibility Design
-
-Remote config/update does not override capability; GMS/Play Store availability is capability-detected.
-
-AutoUpdate preconditions
-
-09 - System Settings Requirements
-
-Cloud/update flow phải check approved preconditions from System Settings.
-
-Self Update download/validation/install flow
-
-DCAM Self Update Design
-
-APK artifact provider is primary current update path.
-
-Update state machine / priority
-
-DCAM State Machine Design
-
-Update has lower priority than recording, emergency, finalizing, policy recovery and unsafe runtime states.
-
-DCAM-BDMA compatibility contract
-
-DCAM-BDMA Data Contract
-
-App/data/media/encoder contract version dùng để BDMA nhận dạng app; không dùng `bdma_decoder_profile_id`.
-
-## 3. Core Decisions
-
-Area
-
-Decision
+Responsibility
 
 Status
 
-Cloud Storage Baseline
+Firebase Hosting
 
-Firebase Cloud Firestore is the selected backend storage baseline.
+Host Web Portal frontend.
 
 Approved
 
-Realtime Database
+Firebase Authentication
 
-Firebase Realtime Database is not used for current backend storage.
+Authenticate Factory Worker.
+
+Approved
+
+Firebase Cloud Functions
+
+Backend authority for provisioning and audit.
+
+Approved
+
+Firebase Cloud Firestore
+
+Worker profile, serial lookup, device and audit data.
+
+Approved
+
+Firebase Realtime Database
+
+Không dùng.
 
 Not Applicable
 
-Cloud Provider Boundary
+Android cloud adapter
 
-DCAM should keep provider interfaces so implementation can use Firestore now and adapt later if required.
-
-Approved
-
-Device Primary Key
-
-Firestore/WebServer primary key là `dcam_cloud_device_id`.
-
-Approved
-
-Hardware Identity
-
-`serial_number` là Hardware Identity / primary recovery key.
-
-Approved
-
-Recovery Lookup
-
-`serial_lookup/{serial_number}` được dùng để create/restore existing `dcam_cloud_device_id`.
-
-Approved
-
-SD Identity File
-
-SD Identity File là recovery cache trên thẻ nhớ ngoài; không phải Hardware Identity.
-
-Approved
-
-Owner Name
-
-`owner_name` là mutable/semi-static device information, không phải primary key.
-
-Approved
-
-Manufacture Date
-
-`manufacture_date` là semi-static device information, format `YYYY-MM-DD`, không phải primary key.
-
-Approved
-
-Android ID
-
-`ANDROID_ID`, `android_id_hash` và `device_lookup/{android_id_hash}` không dùng trong current production baseline.
-
-Approved
-
-Advertising ID
-
-Advertising ID không được dùng làm DCAM identity key.
-
-Approved
-
-DCAM Business Provisioning Method
-
-Default factory DCAM business provisioning dùng serial-number based Web Portal/Firebase flow.
-
-Approved
-
-Device Owner / Kiosk Setup
-
-Device Owner/DPC setup is separate from DCAM Web Portal business provisioning and must be validated by Device POC.
+Fetch/restore identity/config through approved API/provider interface.
 
 Approved Direction
 
-External EMM / Managed Google Play
+APK Artifact Provider
 
-Not current baseline. Do not assume Android Management API or Managed Google Play policy-driven update.
+Manifest/APK delivery for Self Update.
 
-Approved Direction
+Approved boundary; exact deployment TBD
 
-Provisioning Business Flow
+Provider abstraction remains required even though current implementations are selected.
 
-Detailed flow, screens, QR, states và audit thuộc DCAM Device Provisioning Web Portal Design.
+## 4. Firestore Logical Contract
 
-Approved
+Logical paths are defined in **DCAM Web Portal & Device API Contract**:
 
-API / Firestore Contract
+workers/{firebase_uid}
+serial_lookup/{serial_number}
+devices/{dcam_cloud_device_id}
+audit_events/{audit_event_id}
+These names are no longer generally `TBD`. Environment-specific project/database identifiers, index definitions, retention and exact Security Rules remain deployment/security details.
 
-API/path/schema/error code and Firestore collection/document direction belong to DCAM Web Portal & Device API Contract.
+Frontend access rule:
 
-Approved
+Frontend authenticates with Firebase Authentication.
+Frontend calls Cloud Functions/backend.
+Frontend must not direct-write serial_lookup, devices or audit_events.
+## 5. Provisioning API Boundary
 
-Remote Config
+Logical endpoint:
 
-Provider publishes target config revision; DCAM fetch/validate/cache/apply safely. Initial setting groups are defined; exact field-level payload schema remains open.
+```
+POST /v1/factory/provisioning/devices
+```
 
-Approved Baseline / Exact Fields TBD
+Concrete Cloud Function name, Hosting rewrite and physical deployed URL remain implementation/deployment details.
 
-Kiosk Requested Policy
+Backend responsibilities:
 
-Cloud/WebServer may publish requested kiosk policy values, but Android validates policy authority and runtime guard before apply. Initial key groups are defined; exact field-level schema remains open.
+verify Firebase identity token
+verify active Factory Worker profile
+validate QR-derived serial and business fields
+create/restore device identity transactionally
+write audit event
+return stable result/reason code
+## 6. QR Contract Boundary
 
-Approved Direction / Exact Fields TBD
+Minimum logical fields are defined:
 
-Capability Boundary
-
-Capability/eligibility dùng Device Capability Design, không copy state list tại đây.
-
-Approved
-
-App / Contract Compatibility
-
-Firestore/WebServer may store app/version/data/media/encoder contract metadata for BDMA/support compatibility checks.
-
-Approved Direction
-
-BDMA Decoder Profile
-
-`bdma_decoder_profile_id` is not used; BDMA uses built-in logic based on app + contract version.
-
-Approved
-
-App Update
-
-Primary path is DCAM Self Update / APK update via approved artifact provider.
-
-Approved Direction
-
-Optional Manual Play Store Fallback
-
-Optional only if GMS/Play Store exists and approved maintenance/factory account/process exists.
-
-Conditional / POC Required
-
-Policy-safe Update
-
-Update must satisfy System Settings preconditions and Kiosk Policy Design constraints.
-
-Approved Direction
-
-Future Model Update
-
-Model package nếu có phải được validate và check compatibility.
-
-Future / TBD
-
-Future WebServer
-
-Live Streaming, PTT, SOS, JT808 và optional server analytics đi qua adapter.
-
-Future / Approved Direction
-
-## 4. Device Identity Model
-
-DCAM sử dụng stable server-side device record và serial-number based recovery lookup.
-
-Field
-
-Role
-
-Storage
-
-`dcam_cloud_device_id`
-
-Firestore/WebServer primary cloud key.
-
-Cloud Firestore `devices/{dcam_cloud_device_id}` + `dcam.db`.
-
-`serial_number`
-
-Hardware Identity / primary recovery key.
-
-App-private storage, `dcam_config.cson`, `dcam.db` mirror, Cloud Firestore, SD Identity File cache.
-
-`serial_lookup/{serial_number}`
-
-Recovery/create/restore lookup mapping.
-
-Cloud Firestore `serial_lookup/{serial_number}` → `dcam_cloud_device_id`.
-
-SD Identity File
-
-External SD card recovery cache containing `serial_number`.
-
-`<SD_CARD>/DCAM_FACTORY/device_identity.json` or approved equivalent.
-
-`owner_name`
-
-Owner/customer/agency display information.
-
-`dcam_config.cson`, `dcam.db` mirror, Cloud Firestore.
-
-`manufacture_date`
-
-Device manufacture date using ISO `YYYY-MM-DD`.
-
-`dcam_config.cson`, `dcam.db` mirror, Cloud Firestore.
-
-`serial_history`
-
-Lịch sử serial values if approved rework/admin flow changes serial.
-
-Cloud Firestore, optional DB mirror.
-
-`firebase_installation_id`
-
-Current app-install instance metadata.
-
-Cloud Firestore + `dcam.db` metadata. Not a device identity key.
-
-`app_code` / `app_package_name`
-
-App identity metadata.
-
-Cloud Firestore + optional local mirror.
-
-`dcam_data_contract_version`
-
-Overall DCAM-BDMA contract version.
-
-Cloud Firestore + optional local mirror.
-
-`media_contract_version`
-
-Media folder/naming/checksum/import/cleanup version.
-
-Cloud Firestore + optional local mirror.
-
-`encoder_contract_version`
-
-Fixed DCAM encoder contract version.
-
-Cloud Firestore + optional local mirror.
-
-Rules:
-
-Cloud Firestore primary device record key = dcam_cloud_device_id.
-Hardware Identity / recovery key = serial_number.
-Recovery lookup = serial_lookup/{serial_number}.
-SD Identity File is recovery cache only and must not override app-private serial while DCAM is running.
-owner_name must not be used as primary key.
-manufacture_date must not be used as primary key.
-Advertising ID must not be used as primary key.
-ANDROID_ID, android_id_hash and device_lookup/{android_id_hash} are not used in the current production baseline.
-bdma_decoder_profile_id is not part of the cloud/device contract.
-## 5. First Install / Identity Recovery Flow
-
-DCAM startup
-    ↓
-Android Operation verifies required kiosk policy state if production profile requires it
-    ↓
-Open dcam.db and read dcam_config.cson
-    ↓
-If dcam_cloud_device_id and serial_number exist locally:
-    use local dcam_cloud_device_id
-    sync SD Identity File if needed
-    ↓
-If local dcam_cloud_device_id missing but serial_number exists:
-    lookup Cloud Firestore/API:
-        serial_lookup/{serial_number}
-    ↓
-    If found:
-        fetch devices/{dcam_cloud_device_id}
-        restore local identity and device information
-        sync SD Identity File if needed
-    ↓
-    If not found:
-        enter PROVISIONING_REQUIRED or factory/admin provisioning flow
-    ↓
-If local serial_number is missing:
-    require DSetup serial injection from SD Identity File recovery or barcode scan
-Device information restored from server may include:
-
+payload_type
+payload_version
 serial_number
-owner_name
-manufacture_date
+app_package_name
+app_version_name
+app_version_code
 device_model
 firmware_version
-app/contract metadata if applicable
-Factory reset recovery:
+Optional fields include nonce, timestamps, signature and contract metadata. Exact serialization/signature/expiration/replay policy remains TBD under API Contract and Security Design.
 
-Factory reset clears local app-private identity.
-DSetup runs again.
-DSetup reads SD Identity File if available.
-If valid:
-    DSetup recovers serial_number without barcode scan.
-If missing/invalid:
-    Operator scans barcode.
-DSetup injects serial_number into DCAM.
-DCAM restores dcam_cloud_device_id through serial_lookup/{serial_number}.
-## 6. Web Provisioning Portal Boundary
+## 7. Remote Configuration
 
-Default DCAM business provisioning method cho new/reworked BodyCamera devices là **serial-number based Web Provisioning Portal / Firebase flow**.
+Remote Config baseline is approved:
 
-Architecture-level summary:
-
-DSetup resolves serial_number from SD Identity File or barcode scan
+publish target revision
     ↓
-DSetup injects serial_number into DCAM after Device Owner verification
+device fetches by dcam_cloud_device_id
     ↓
-DCAM syncs SD Identity File if available
+validate schema/version/allowed fields/capability
     ↓
-Factory/Admin opens Web Provisioning Portal if business provisioning UI is required
+cache pending config in dcam.db
     ↓
-Admin logs in and verifies serial_number
+apply only when runtime guard allows
     ↓
-Admin enters/selects owner_name if required
+report applied revision/result
+Initial setting groups and kiosk requested-policy keys are defined in **09 - System Settings Requirements**. Exact field-level schema, rollout algorithm, wake-up/polling values and profile model remain TBD.
+
+Remote config does not directly modify Android system policy or `dcam_config.cson` operational settings.
+
+## 8. Device Owner / Kiosk Boundary
+
+Current direction is not wholly TBD:
+
+No external EMM / Android Management API / Managed Google Play
+Preferred model = DCAM-as-DPC / local Device Owner when supported
+Factory baseline = DSetup + ADB dpm set-device-owner when required
+Maintenance entry = authorized role + Maintenance Password Gate + Controlled Mode
+Exact DPC component/wrapper, OEM feasibility, restriction support and package allowlist remain Device POC/implementation details.
+
+## 9. Update Boundary
+
+Approved update guard:
+
+Self Update request
     ↓
-Admin enters/selects manufacture_date if required
+check runtime and AutoUpdate preconditions
     ↓
-Backend creates/restores Cloud Firestore device record and serial lookup mapping
+load manifest/download APK
     ↓
-BodyCamera receives/restores identity + device information + initial remote config metadata
+validate identity/checksum/signature/version/compatibility
     ↓
-BodyCamera writes dcam.db and dcam_config.cson
+install through approved target-device path
     ↓
-Device becomes ACTIVE if runtime/policy guards allow
-Important clarification:
+verify version and restore kiosk policy
+Policy-safe update behavior is defined by System Settings, State Machine, Kiosk Policy and Self Update Design. Only artifact provider deployment, manifest fields, algorithms and target-device install mechanics remain TBD.
 
-Web Portal QR Flow does not make DCAM Device Owner.
-DCAM business provisioning is separate from Android device policy setup.
-QR, if used, must not contain ANDROID_ID or android_id_hash.
-## 7. Remote Configuration and Kiosk Requested Policy Flow
-
-Remote config core flow, identity boundary, cache/apply policy and initial setting groups are defined. Exact field-level payload schema and field names remain TBD for System Settings / future Remote Config design.
-
-Web Admin / Cloud Firestore / WebServer
-        ↓
-Publish config profile revision
-        ↓
-Assign target revision to device/profile/group
-        ↓
-DCAM fetches effective config by dcam_cloud_device_id
-        ↓
-DCAM validates schema/version/allowed fields/capability/policy authority if affected
-        ↓
-DCAM stores pending_config in dcam.db
-        ↓
-DCAM applies only when runtime guard allows
-        ↓
-DCAM reports applied_config_revision and result
-Kiosk requested-policy may include:
-
-kiosk.enabled
-kiosk.lock_task_enabled
-kiosk.allowed_packages
-kiosk.lock_task_features
-kiosk.home_app_enabled
-kiosk.user_restriction_profile
-maintenance.enabled
-maintenance.exit_method
-maintenance.approved_target_packages
-maintenance.approved_settings_targets
-Important distinction:
-
-Publishing a revision does not directly modify device files or Android system policy.
-Device must fetch, validate and apply.
-Kiosk settings are requested policy.
-Actual Device Owner / Lock Task / User Restrictions apply behavior belongs to Kiosk Policy Design.
-dcam_config.cson is updated only for device information fields such as serial_number, owner_name, manufacture_date, device model or firmware information.
-Operational settings and kiosk requested-policy settings are stored in dcam.db, not dcam_config.cson.
-External EMM/Android Management API policy values are not part of current baseline.
-## 8. Provider Abstraction
-
-Application / Use Case
-        ↓
-Provider Interface
-        ↓
-Provider Implementation
-        ├── Cloud Firestore Device Identity Provider
-        ├── Cloud Firestore / WebServer Remote Config Provider
-        ├── Web Provisioning Portal Backend
-        ├── Kiosk Policy Config Provider (requested policy only)
-        ├── APK Artifact Provider for Self Update
-        ├── Optional Google Play Store Manual Fallback Target if GMS exists
-        ├── Future WebServer Provider
-        ├── Future Model Provider
-        └── Local / No-op Provider
-Provider abstraction giúp DCAM không để Android runtime bị coupling cứng vào một implementation cụ thể, dù current storage baseline đã chốt là Cloud Firestore.
-
-## 9. Update Architecture Alignment
-
-Current baseline:
-
-Primary update path = DCAM Self Update / APK update.
-Update artifact provider may be WebServer/R2/local factory source or another approved provider.
-Managed Google Play / Android Management API policy-driven update = not applicable.
-Manual Google Play Store update = optional fallback only from Controlled Maintenance Mode if enabled and device supports it.
-Self Update architecture:
-
-Update Requested
-    ↓
-Check System Settings AutoUpdate Preconditions
-    ↓
-Check Android Operation state and State Machine guard
-    ↓
-Check Kiosk Policy Design constraints if Device Owner / Lock Task policy is active
-    ↓
-Load approved version manifest
-    ↓
-Download APK artifact
-    ↓
-Validate package identity / signature / checksum / version / compatibility
-    ↓
-Install via approved Android/package policy path
-    ↓
-Verify app version and restore kiosk policy
-    ↓
-Verify serial_number / dcam_cloud_device_id local identity remains valid
-    ↓
-Sync SD Identity File if needed
-Cloud/update architecture must not bypass Lock Task / Maintenance Mode constraints.
-
-## 10. Manual Google Play Store Fallback Boundary
-
-Manual Google Play Store update is not the production baseline. It is a controlled fallback only.
-
-Rule
-
-Direction
-
-PLAY-FB-001
-
-Only available if target BodyCamera has GMS/Play Store and Product/Security approve fallback.
-
-PLAY-FB-002
-
-Must be launched only from Admin / Maintenance Controlled Mode after Maintenance Password Gate.
-
-PLAY-FB-003
-
-Only DCAM/approved apps may be updated.
-
-PLAY-FB-004
-
-Personal Google account is not allowed for production maintenance.
-
-PLAY-FB-005
-
-Approved maintenance/factory Google account handling is TBD and must be audited if used.
-
-PLAY-FB-006
-
-Must not permit unrestricted Play Store browsing/install.
-
-PLAY-FB-007
-
-After fallback update, return to DCAM and restore Lock Task/User Restrictions.
-
-## 11. Open Items / TBD
+## 10. Resolved and Remaining Decisions
 
 Item
 
 Status
 
-Exact Firestore collection/document names
+Web frontend/auth/backend/storage
 
-TBD trong API Contract
+Approved: Hosting/Auth/Functions/Firestore
 
-Exact Firestore security rules / backend service authorization boundary
+REST/backend vs direct Firestore writes
 
-TBD trong API Contract + Security
+Resolved: frontend calls backend; no direct production writes
 
-REST backend vs direct Firestore SDK/API usage
+Logical Firestore paths
 
-TBD trong API Contract + Backend
+Approved in API Contract
 
-Exact SD Identity File path/schema/signature/checksum policy
+Logical provisioning endpoint
 
-TBD trong Factory SOP + Security
+Approved
 
-Exact remote config payload fields
+Web Portal actor/UI model
 
-Initial setting groups defined in System Settings; exact field-level schema TBD
+Approved: Factory Worker, Login + Workspace, QR-only
 
-Exact kiosk policy payload fields
+QR minimum logical fields
 
-Initial requested-policy keys defined in System Settings/Kiosk Policy Design; exact field-level schema TBD
+Approved
 
-Config profile schema and rollout algorithm
+DCAM-as-DPC ownership direction
+
+Approved direction; feasibility POC required
+
+Factory Device Owner method
+
+Approved baseline: DSetup + ADB `dpm set-device-owner`
+
+Policy-safe update contract
+
+Approved direction
+
+Environment-specific Firebase Security Rules/indexes
+
+TBD / Security + Deployment
+
+QR cryptographic policy
+
+TBD / API + Security
+
+Remote config exact payload/rollout/wake-up
 
 TBD
 
-FCM/direct/topic wake-up policy
+APK provider deployment and install mechanics
 
-TBD
+TBD / Deployment + Device POC
 
-Polling interval exact value
+Owner validation/account lifecycle
 
-TBD
+TBD / Product + Factory + Security
 
-Web Portal detailed UI wireframe
+## 11. Practical Conclusion
 
-TBD trong Web Portal Provisioning Design
-
-QR payload signature/expiration format
-
-TBD trong Web Portal Provisioning Design
-
-DCAM-as-DPC / Device Owner setup method
-
-TBD trong Kiosk Policy Design / Device POC
-
-Owner name validation rules
-
-TBD / Admin UX
-
-Manufacture date source and correction policy
-
-TBD / Admin UX
-
-Self Update artifact provider exact implementation
-
-TBD / Self Update Design
-
-APK validation details and silent install feasibility
-
-TBD / Self Update + Device POC
-
-Manual Play Store fallback availability
-
-TBD / Device POC
-
-Maintenance/factory Google account handling
-
-TBD / Security + Product
-
-Policy-safe update / maintenance window contract
-
-TBD / Kiosk Policy + Self Update
-
-## 12. Practical Conclusion
-
-Cloud architecture defines providers and boundaries.
-Firebase Cloud Firestore is the selected backend storage baseline.
-Firebase Realtime Database is not used for the current storage baseline.
-DCAM Web Portal & Device API Contract owns API/path/schema/error code and Firestore collection/document direction.
-DCAM Device Provisioning Web Portal Design owns DCAM business provisioning flow.
-DCAM Factory Provisioning & Device Production SOP owns DSetup, serial injection and SD Identity File recovery cache.
-DCAM Android Device Owner & Kiosk Policy Design owns DCAM-as-DPC / Lock Task / User Restrictions policy behavior.
-dcam_cloud_device_id is Firestore/WebServer primary key.
-serial_number is Hardware Identity / primary recovery key.
-serial_lookup/{serial_number} is the create/restore path for dcam_cloud_device_id.
-SD Identity File is recovery cache on external SD card, not Hardware Identity.
-owner_name is mutable/semi-static device information.
-manufacture_date is semi-static device information using YYYY-MM-DD.
-Do not use ANDROID_ID, android_id_hash or device_lookup/{android_id_hash} in the current production baseline.
-BDMA compatibility uses app/data/media/encoder contract metadata.
-bdma_decoder_profile_id is not used.
-System Settings owns settings and AutoUpdate rules.
-Kiosk requested-policy settings are requested values only; Android validates and applies when safe.
-Device Capability owns eligibility/runtime pruning rules.
-Self Update owns APK artifact and install flow and is the primary update path for current no-external-EMM baseline.
-Manual Google Play Store update is optional controlled fallback only if GMS/Play Store exists and approved process exists.
-Managed Google Play / Android Management API policy-driven update is not applicable for current baseline.
+Cloud/Web implementation and logical provisioning contract are already selected.
+The remaining TBDs are deployment, cryptographic, policy-value and target-device details—not the overall architecture.

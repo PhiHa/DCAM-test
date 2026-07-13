@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Locale;
 import java.util.regex.Matcher;
+import java.util.function.BooleanSupplier;
 import java.util.regex.Pattern;
 
 /** Conservative startup recovery. Invalid, encrypted or ambiguous artifacts remain in Temp. */
@@ -17,12 +18,22 @@ final class DcamStagedMediaRecovery {
     private final DcamStorage storage;
     private final DcamMediaFinalizer finalizer;
     private final DcamMediaValidator validator;
+    private final BooleanSupplier createVideoMd5;
 
     DcamStagedMediaRecovery(
             DcamStorage storage, DcamMediaFinalizer finalizer, DcamMediaValidator validator) {
+        this(storage, finalizer, validator, null);
+    }
+
+    DcamStagedMediaRecovery(
+            DcamStorage storage,
+            DcamMediaFinalizer finalizer,
+            DcamMediaValidator validator,
+            BooleanSupplier createVideoMd5) {
         this.storage = storage;
         this.finalizer = finalizer;
         this.validator = validator;
+        this.createVideoMd5 = createVideoMd5;
     }
 
     StagedMediaRecoveryReport recover() {
@@ -51,7 +62,7 @@ final class DcamStagedMediaRecovery {
                     continue;
                 }
                 try {
-                    finalizer.finalizeMedia(mediaFile);
+                    finalizer.finalizeMedia(mediaFile, shouldCreateMd5(type));
                     recovered++;
                 } catch (Exception failure) {
                     preserved++;
@@ -70,6 +81,12 @@ final class DcamStagedMediaRecovery {
         for (File partial : partials) {
             try { java.nio.file.Files.deleteIfExists(partial.toPath()); } catch (Exception ignored) { }
         }
+    }
+
+    private boolean shouldCreateMd5(DcamFileType type) {
+        return "mp4".equals(type.getExtension())
+                && createVideoMd5 != null
+                && createVideoMd5.getAsBoolean();
     }
 
     private static DcamFileType type(Matcher matcher, String name) {

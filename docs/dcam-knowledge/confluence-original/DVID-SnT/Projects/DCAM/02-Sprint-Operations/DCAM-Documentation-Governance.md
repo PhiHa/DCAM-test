@@ -1,7 +1,7 @@
 # DCAM Documentation Governance
 
 **Page ID**: 47120620  
-**Version**: 13  
+**Version**: 16  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47120620
 
@@ -24,7 +24,7 @@ Documentation Governance
 
 Version
 
-Approved 1.11
+Approved 1.14
 
 Status
 
@@ -38,568 +38,396 @@ Last Updated
 
 2026-07-10
 
-## 1. Authoritative Document Rule
+Related Documents
 
-Shared rules must be defined once in the authoritative document and referenced elsewhere.
+DCAM Document Status Registry, DCAM Requirement–Design–Test Traceability Matrix, DCAM Release & Build Applicability Matrix, DCAM Project Home, DCAM Architecture Home, DCAM Requirements Home
+
+## 1. Authoritative Document Rule
 
 Define once.
 Reference elsewhere.
-Avoid copying full rule tables into many documents.
-A dependent document may summarize an authoritative rule only when the summary is required for its audience or local execution context.
+Avoid copying full rules into many documents.
+A dependent document may summarize an authoritative rule only for its local audience/execution context.
+
+### 1.1 Baseline Restatement Rule
+
+Full cross-project baselines may be retained only in documents commonly read standalone:
+
+DCAM Project Home
+DCAM Architecture Home
+DCAM-BDMA Data Contract
+Authoritative ADR / Contract / SOP when the baseline is the subject of that document
+Technical Design pages must use this pattern:
+
+See <Authoritative Document> for the current baseline.
+This document only defines <local implementation impact>.
+Technical Design pages must not copy the complete Device Identity, Operational Logging/Crashlytics or Device Owner/EMM/Kiosk baseline. Local fields, states, guards, schemas, test conditions and implementation rules remain in the Technical Design page when required to implement that domain.
+
+When a baseline changes, update the authoritative document first. Dependent pages should require only reference validation and local-impact review.
 
 ## 2. Rule Ownership Matrix
 
-Shared Topic
+Topic
 
 Authoritative Document
 
-Documentation hierarchy, ownership and change process
+Documentation hierarchy/change process
 
 DCAM Documentation Governance
 
-Project navigation and current decision summary
+Document version/status/approval summary
+
+DCAM Document Status Registry
+
+Requirement → Build → Design → QA → Jira → Evidence traceability
+
+DCAM Requirement–Design–Test Traceability Matrix
+
+Project navigation/current summary
 
 DCAM Project Home
 
-Architecture navigation and architecture-level alignment
+Build/phase feature, requirement and QA applicability
+
+DCAM Release & Build Applicability Matrix
+
+Product direction
+
+DCAM Product Vision / Roadmap / MVP Scope
+
+Execution plan
+
+DCAM 9-Month Development Plan
+
+Requirements navigation
+
+DCAM Requirements Home
+
+Architecture/Technical Design navigation
 
 DCAM Architecture Home
 
-Feature eligibility states
+MVP vs Target Architecture
 
-DCAM Device Capability & Feature Eligibility Design
+DCAM Architecture Delivery Profile
 
-Runtime transition guards
+Device identity
 
-DCAM State Machine Design
+Device Identity ADR + 04 - Device Configuration Requirements
 
-Android dedicated-device decision
-
-ADR - DCAM Android Dedicated Device / Device Owner / Lock Task Decision
-
-Device Owner / approved DPC policy
-
-DCAM Android Device Owner & Kiosk Policy Design
-
-Lock Task Mode
-
-DCAM Android Device Owner & Kiosk Policy Design
-
-User Restrictions
-
-DCAM Android Device Owner & Kiosk Policy Design
-
-Home/Launcher policy
-
-DCAM Android Device Owner & Kiosk Policy Design
-
-Maintenance Mode policy
-
-DCAM Android Device Owner & Kiosk Policy Design
-
-In-app console navigation and Setting hub
-
-DCAM In-App Operation, Device Settings & Media Console Design
-
-Maintenance Password Gate UX / controlled target flow
-
-DCAM In-App Operation, Device Settings & Media Console Design + DCAM Security & Encryption Design
-
-Full Android unrestricted mode policy
-
-DCAM Android Device Owner & Kiosk Policy Design + DCAM In-App Operation, Device Settings & Media Console Design
-
-AutoUpdate preconditions
-
-09 - System Settings Requirements
-
-Self Update flow
-
-DCAM Self Update Design
-
-Policy-safe update constraints
-
-DCAM Android Device Owner & Kiosk Policy Design
-
-No external EMM / No Android Management API / No Managed Google Play decision
-
-ADR - DCAM Android Dedicated Device / Device Owner / Lock Task Decision
-
-Device identity baseline
-
-ADR - DCAM Device Identity Baseline: serial_number + dcam_cloud_device_id + 04 - Device Configuration Requirements
-
-Factory production procedure and final acceptance
-
-DCAM Factory Provisioning & Device Production SOP
-
-DSetup tool behavior, serial recovery/injection and imported-serial verification
-
-DCAM DSetup Factory Tool Design
-
-SD Identity File production/recovery execution
-
-DCAM Factory Provisioning & Device Production SOP + DCAM DSetup Factory Tool Design
-
-Serial-based Web Portal/Firebase API/data contract
-
-DCAM Web Portal & Device API Contract
-
-`serial_lookup/{serial_number}` create/restore contract
-
-DCAM Web Portal & Device API Contract
-
-Web Portal device record and `devices/{dcam_cloud_device_id}` schema
-
-DCAM Web Portal & Device API Contract
-
-Web Portal provisioning business flow
+Web Portal business flow
 
 DCAM Device Provisioning Web Portal Design
 
-Web Portal user-facing account, Login/Workspace model, panels and app behavior
+Web Portal Login/Workspace behavior
 
 DCAM Device Provisioning Web Portal App Design
 
-Web Portal frontend/backend modules and Firebase implementation
+Web Portal Firebase implementation
 
 DCAM Device Provisioning Web Portal Implementation Design
 
-Web Portal request/response/path/schema/reason code
+Web/API schema/path/reason code
 
 DCAM Web Portal & Device API Contract
 
-Web Portal authentication/authorization/security constraints
+Security/authorization
 
-DCAM Security & Encryption Design + DCAM Web Portal & Device API Contract
+DCAM Security & Encryption Design
 
-Remote config API/schema contract
+Device Owner/Lock Task/Maintenance
 
-DCAM Web Portal & Device API Contract + 09 - System Settings Requirements
+DCAM Android Device Owner & Kiosk Policy Design
 
-Self Update check/result API contract
-
-DCAM Web Portal & Device API Contract + DCAM Self Update Design
-
-Factory production record API contract
-
-DCAM Web Portal & Device API Contract + DCAM Factory Provisioning & Device Production SOP
-
-Factory production states, ready-to-ship checklist and quarantine rules
+Factory production/final acceptance
 
 DCAM Factory Provisioning & Device Production SOP
 
-Factory SOP approval gates and real-device evidence
+DSetup tool behavior
 
-DCAM Device POC & Hardware Validation Report + DCAM QA Test Strategy & Test Matrix
+DCAM DSetup Factory Tool Design
 
-Production record security constraints
-
-DCAM Factory Provisioning & Device Production SOP + DCAM Security & Encryption Design
-
-Media naming, folders, MD5 and BDMA cleanup
+Media/BDMA contract
 
 DCAM-BDMA Data Contract
 
-BDMA-facing logs artifact location/format/access contract
-
-DCAM-BDMA Data Contract
-
-Internal operational log files, rotation, queue and provider routing
-
-DCAM Logging & Diagnostics Design
-
-Recording and emergency media flow
-
-DCAM Recording & Capture Design
-
-Logging provider ownership and two-channel architecture
+Logging provider ownership
 
 07 - Logging, Diagnostics, Performance & Security
 
-Required logging behavior/events and sensitive logging requirements
+Logging requirements
 
 07 - Logging & Diagnostics Requirements
 
-Operational Logging implementation, event schema, local-first queue, Loggly routing and Crashlytics boundary
+Logging implementation
 
 DCAM Logging & Diagnostics Design
 
-Logging security constraints and forbidden sensitive fields
-
-DCAM Security & Encryption Design + 07 - Logging & Diagnostics Requirements
-
-Logging and diagnostics release validation
+QA/release validation
 
 DCAM QA Test Strategy & Test Matrix
 
-Measurable performance targets and release thresholds
+Performance targets
 
 DCAM Performance Budget & Resource Constraints
 
-Security and encryption implementation
+Real-device evidence
 
-DCAM Security & Encryption Design
+DCAM Device POC & Hardware Validation Report
 
-Kiosk exit and Maintenance Mode security constraints
+## 3. Release / Build Applicability Rule
 
-DCAM Security & Encryption Design
+**DCAM Release & Build Applicability Matrix** decides when a requirement, design rule, feature or QA test group becomes mandatory.
 
-Remote config and DB apply
+Status
 
-09 - System Settings Requirements
+Meaning
 
-Kiosk requested-policy settings
+Required
 
-09 - System Settings Requirements
+Must be implemented and pass applicable QA for the build.
 
-Actual kiosk policy apply behavior
+Conditional
 
-DCAM Android Device Owner & Kiosk Policy Design
+Required only when the stated condition/feature is enabled.
 
-## 3. Reference Format
+Deferred
 
-See <Authoritative Document> for the full rule.
-This document only applies that rule to <local context>.
-When multiple documents share a boundary, state which part each document owns instead of using a generic combined reference.
+Valid target capability but not a blocker for the current build.
 
-## 4. Change Rule
+Not Applicable
 
-Update the authoritative document first. Dependent documents update only their reference, local application notes, implementation details or verification coverage.
+Excluded from that build profile.
 
-General sequence:
+POC Blocked
 
-Decision / Requirement
+Waits for Device POC/decision evidence before production implementation.
+
+Document priority is not build applicability.
+A document-level P0 does not automatically mean P0 for every build.
+A QA P0 is a release blocker only when its feature/test group is applicable to the active build.
+Current baseline:
+
+Active Build = DCAM MVP Internal Build 0.1
+Active Gate = Working Recording Slice
+When build scope changes:
+
+Update Applicability Matrix first
     ↓
-Architecture / ADR
+Update Roadmap / MVP Scope / Development Plan if phase scope changes
     ↓
-Technical Design / Contract
+Update Requirements/Design/API only when behavior/contract changes
     ↓
-Implementation Design
+Update QA applicability
     ↓
-QA / Device POC
+Update Traceability Matrix
     ↓
-Factory SOP / Release execution
-    ↓
-Project Home / Architecture Home navigation sync
-## 5. Web Portal Governance Rule
+Update Project Home only when navigation/current summary changes
+An isolated Jira task must not promote a feature from `Deferred` to `Required` without a Matrix update or approved exception.
 
-The Web Portal document set has four distinct ownership layers:
+## 4. Domain Governance Baselines
 
-DCAM Device Provisioning Web Portal Design
-    → business flow
+### 4.1 Web Portal
 
-DCAM Device Provisioning Web Portal App Design
-    → Factory Worker account, Login/Workspace model,
-      panels/states and user-facing behavior
-
-DCAM Device Provisioning Web Portal Implementation Design
-    → frontend/backend modules, Firebase Hosting/Auth/Functions/Firestore implementation
-
-DCAM Web Portal & Device API Contract
-    → request, response, path, schema, reason code and Firestore contract
-Security ownership:
-
-DCAM Security & Encryption Design
-    → authentication/authorization constraints,
-      QR/serial/security boundaries and sensitive-data rules
-Approved dependency order:
-
-Business Flow approved
-    ↓
-App Design approved
-    ↓
-API/Security contract aligned
-    ↓
-Implementation Design approved/reapproved
-    ↓
-QA coverage updated
-Web Portal documents must not redefine:
-
-Device Owner setup
-DSetup serial injection
-Factory PASS / FAIL / QUARANTINED / READY_TO_SHIP
-Android runtime identity persistence
+Business Flow → Web Portal Design
+Login/Workspace behavior → App Design
+Firebase modules → Implementation Design
+API/schema → API Contract
+Security constraints → Security Design
 Current user-facing baseline:
 
 Factory Worker only
-Login and Workspace only
-QR displayed by DCAM is the Web Portal serial source
+Login + Workspace only
+QR displayed by DCAM is the serial source
 serial_number is read-only
-no manual serial entry
-no direct serial barcode scan
-## 6. Device Identity / Recovery Governance Rule
+### 4.2 Device Identity
 
-ADR - DCAM Device Identity Baseline
-    → owns architecture decision
-
-04 - Device Configuration Requirements
-    → owns requirement-level identity rules
-
-DCAM DSetup Factory Tool Design
-    → owns factory tool resolution/injection/verification behavior
-
-DCAM Factory Provisioning & Device Production SOP
-    → owns physical production execution and acceptance
-
-DCAM Web Portal & Device API Contract
-    → owns serial_lookup/devices schema
-
-DCAM Android Operation Design
-    → owns Android runtime restore/apply behavior
-
-DCAM SQLite Database Design
-    → owns local persistence/cache
-
-DCAM Security & Encryption Design
-    → owns identifier/security/logging constraints
-Current baseline:
-
-serial_number = Hardware Identity / primary recovery key
-dcam_cloud_device_id = Cloud Identity / primary cloud device id
+serial_number = Hardware Identity / recovery key
+dcam_cloud_device_id = Cloud Identity
 SD Identity File = recovery cache
-serial_lookup/{serial_number} = cloud create/restore lookup
-Do not use ANDROID_ID, android_id_hash or device_lookup/{android_id_hash}
-## 7. Logging / Diagnostics Governance Rule
+serial_lookup/{serial_number} = create/restore lookup
+### 4.3 Logging
 
-07 - Logging, Diagnostics, Performance & Security
-    → owns two-channel architecture and provider ownership
+Loggly = Operational Logging provider
+Crashlytics = Crash & Stability provider
+Logging Design owns internal files/queue/routing
+Data Contract owns Logs/logs.txt
+QA owns validation
+### 4.4 Factory
 
-07 - Logging & Diagnostics Requirements
-    → owns required behavior, events, local-first requirements,
-      provider failure expectations and sensitive logging requirements
+DSetup ends at imported serial verification.
+DSetup completion does not mean production acceptance.
+Factory/QA owns official record and READY_TO_SHIP / QUARANTINED.
+## 5. Approval, Status and Reference Rules
 
-DCAM Logging & Diagnostics Design
-    → owns logging facade, event schema, categories/levels,
-      internal active/rotated files, local queue, upload,
-      Backend Relay → Loggly and Crashlytics classification
+A downstream document must not be approved against an upstream Draft unless an exception is documented.
 
-DCAM-BDMA Data Contract
-    → owns stable BDMA-facing Logs/logs.txt artifact,
-      encoding/record boundary and read-only access
+When an approved dependency changes materially, downstream content must be reapproved, marked Draft, assigned a qualified approval status, or documented as unaffected.
 
-DCAM Security & Encryption Design
-    → owns forbidden fields, provider credentials and security constraints
+### 5.1 Approval Integrity Rule
 
+Rule ID
+
+Rule
+
+APR-001
+
+A page must not show `Status = Approved` while any required row in its Approval table remains `Pending`.
+
+APR-002
+
+Status, version label, approval table and revision history must describe the same approval state.
+
+APR-003
+
+A page whose numeric values depend on hardware evidence must not use unqualified `Approved` as a production claim.
+
+APR-004
+
+A page whose algorithm, key management or security policy is unresolved must not use unqualified `Approved` as a production-security claim.
+
+APR-005
+
+Approval scope and remaining dependency must be recorded in page metadata or DCAM Document Status Registry.
+
+### 5.2 Status Taxonomy
+
+The complete operational taxonomy is maintained in **DCAM Document Status Registry**.
+
+Status
+
+Usage Summary
+
+Draft
+
+Content/review incomplete.
+
+Approved Direction
+
+Direction accepted; exact implementation/evidence incomplete.
+
+Approved Provisional Baseline
+
+Usable current baseline, adjustable by evidence.
+
+Approved Pending Device POC
+
+Production validity depends on target-device evidence.
+
+Approved Pending Security Review
+
+Security algorithm/key/policy values remain open.
+
+Approved for Build `<profile>`
+
+Release baseline only for the named build.
+
+Production Approved
+
+Required evidence and production approval gates completed.
+
+Superseded / Archived
+
+Historical, not current source of truth.
+
+`Approved` without qualifier is allowed only when the decision is complete and remaining POC/Security/Deployment details cannot materially change the meaning of the baseline.
+
+### 5.3 Version and Status Registry Rule
+
+Each page owns its own current metadata.
+DCAM Document Status Registry is the only cross-document version/status summary.
+Project Home, Architecture Home and Requirements Home must not copy mutable version/status tables.
+When page metadata and registry differ, page metadata is the immediate source; the registry discrepancy must be corrected in the same change window.
+
+### 5.4 Reference Naming Rule
+
+Use current page names:
+
+DCAM Requirements Home
+DCAM Architecture Home
+DCAM Release & Build Applicability Matrix
 DCAM QA Test Strategy & Test Matrix
-    → owns test coverage and release validation
-
-DCAM Device POC & Hardware Validation Report
-    → owns real-device/non-GMS/provider compatibility evidence
-Mandatory separation:
-
-Internal rotated logs ≠ BDMA contract artifact
-Local upload queue ≠ logs.txt
-Loggly delivery state ≠ BDMA artifact
-Crashlytics report/cache ≠ logs.txt
-Logging change triggers:
-
-Trigger
-
-Required Governance Action
-
-Provider ownership changes
-
-Update architecture page first, then Logging Design, Requirements, QA and navigation pages.
-
-Required event coverage changes
-
-Update Logging Requirements first, then Logging Design and QA.
-
-Internal event schema/category/level changes
-
-Update Logging Design; update QA if acceptance changes.
-
-Local rotation/queue changes without BDMA impact
-
-Update Logging Design only, plus QA as needed.
-
-`logs.txt` location/encoding/record format/access changes
-
-Update Data Contract, Logging Design, BDMA implementation and QA together.
-
-Backend Relay API/schema/auth changes
-
-Update Logging Design, API Contract, Security Design, backend implementation and QA.
-
-Sensitive-field policy changes
-
-Update Security Design and Logging Requirements first, then Design/QA.
-
-Crashlytics classification changes
-
-Update Logging Design and QA; architecture only if provider ownership changes.
-
-## 8. API Contract Governance Rule
-
-API Contract must not redefine product UI flow, Android runtime behavior or security policy.
-
-API Contract defines request/response/path/schema/error-code boundaries.
-Web Portal Business Flow defines what Factory Worker does.
-Web Portal App Design defines user-facing screens/panels/behavior.
-Implementation Design defines modules and selected implementation stack.
-Android Operation Design defines Android runtime consumption.
-Security Design defines what is allowed or forbidden.
-API Contract must be updated when:
-
-Trigger
-
-Required Governance Action
-
-QR payload fields change
-
-Update API Contract, Business Flow, App/Implementation Design and Security if affected.
-
-`serial_lookup/{serial_number}` behavior changes
-
-Update API Contract, Android Operation, Factory SOP and Security if affected.
-
-Device record schema changes
-
-Update API Contract, SQLite Design and Factory SOP if production record is affected.
-
-Remote config schema changes
-
-Update System Settings and API Contract.
-
-Update manifest/check/result changes
-
-Update Self Update Design and API Contract.
-
-Factory production record fields change
-
-Update Factory SOP, API Contract and Security review.
-
-Operational Log Backend Relay API/schema/auth changes
-
-Update Logging Design, API Contract, Security Design and QA together.
-
-Authentication/security model changes
-
-Update Security Design first, then API Contract and Implementation Design.
-
-## 9. Factory SOP Governance Rule
-
-Factory SOP applies approved technical baselines to physical device production. It must not redefine implementation rules.
-
-If SOP needs a new policy, security, provisioning, update, logging or BDMA rule,
-update the authoritative design/requirement first,
-then update SOP with execution steps.
-Factory SOP must be updated when:
-
-Trigger
-
-Required Governance Action
-
-Device Owner setup method changes
-
-Update Kiosk Policy Design / DSetup Design / Device POC first.
-
-Required Lock Task/User Restrictions profile changes
-
-Update Kiosk Policy Design and QA first.
-
-Web Portal business flow changes
-
-Update Business Flow, App Design, API/Security and Implementation Design first.
-
-Device identity baseline changes
-
-Update Identity ADR first, then dependent documents.
-
-SD Identity File recovery behavior changes
-
-Update DSetup Design and Factory SOP, then runtime/security/QA as needed.
-
-APK validation process changes
-
-Update Self Update/Security/Release/API docs first.
-
-Factory acceptance checklist changes
-
-Update QA and Factory SOP together.
-
-Production record fields change
-
-Update Factory SOP, API Contract and Security review.
-
-Play Store fallback decision changes
-
-Update Console, Self Update, Security and POC/QA first.
-
-DSetup completion alone does not mean production acceptance.
-
-## 10. Self Update / Release Artifact Governance Rule
-
-DCAM Self Update Design owns artifact/download/validation/install flow.
-DCAM Web Portal & Device API Contract owns update check/result API schema.
-09 - System Settings Requirements owns AutoUpdate preconditions.
-DCAM Security & Encryption Design owns package/signature/checksum/security constraints.
-DCAM QA Test Strategy & Test Matrix owns validation coverage.
-DCAM Factory Provisioning & Device Production SOP owns factory verification steps.
-## 11. No-EMM Baseline Reference Rule
-
-The decision is defined once in:
+DCAM Factory Provisioning & Device Production SOP
+DCAM Document Status Registry
+DCAM Requirement–Design–Test Traceability Matrix
+Do not use obsolete/non-existing names:
+
+DCAM Functional Requirements
+DCAM System Architecture & Technical Notes
+DCAM Android Architecture
+DCAM Release Plan
+Dependent documents should not pin a mutable version such as `Factory SOP Draft 1.0` unless an immutable audit/release baseline explicitly requires it.
+
+Recommended wording:
 
 ```
-ADR - DCAM Android Dedicated Device / Device Owner / Lock Task Decision
+Aligned with the current authoritative DCAM Factory Provisioning & Device Production SOP.
 ```
 
-Allowed reference:
+## 6. Traceability Governance
 
-```
-Current device baseline: No external EMM / No Android Management API / No Managed Google Play. (See ADR.)
-```
+An active implementation requirement is considered fully traceable only when the following chain is visible:
 
-Do not repeat the complete decision block multiple times in one document.
+Requirement ID
+    → Build Applicability
+    → Architecture / Technical Design / Contract section
+    → QA Test ID
+    → Jira implementation item
+    → Verification evidence
 
-## 12. Approval Dependency Rule
+Rule ID
 
-A downstream document must not be approved against an upstream Draft unless the exception is explicitly documented.
+Rule
 
-Examples:
+TRACE-GOV-001
 
-Implementation Design depends on approved Business Flow and App Design.
-Factory SOP depends on approved/accepted technical behavior for the step it executes.
-QA release criteria depend on approved requirements/contracts or an explicit test-baseline exception.
-When an approved dependency changes materially, downstream approved documents must be reviewed and either:
+Every requirement activated for a build must have Design/Contract and QA mappings.
 
-reapproved with a new version
-marked Draft until alignment is completed
-or documented as unaffected with review evidence
-## 13. Navigation Synchronization Rule
+TRACE-GOV-002
 
-After authoritative versions/status/ownership change, update:
+Document-level related links alone do not count as complete traceability.
+
+TRACE-GOV-003
+
+Jira items must identify Build Profile, Requirement Inputs, Design Inputs and QA Group.
+
+TRACE-GOV-004
+
+`Covered` requires evidence or an explicit evidence owner/location.
+
+TRACE-GOV-005
+
+POC/Security blockers must be visible in the traceability row.
+
+TRACE-GOV-006
+
+Requirement behavior changes update Requirements first; applicability-only changes update the Matrix first.
+
+## 7. Navigation Synchronization Rule
+
+After navigation, ownership or build-summary changes, update:
 
 DCAM Project Home
-DCAM Architecture Home if architecture/technical ownership is affected
-Navigation pages summarize; they do not become source of truth for the detailed rule.
+DCAM Architecture Home when technical ownership/reading order changes
+DCAM Requirements Home when requirement structure/reading order changes
+After version or status changes, update:
 
-## 14. Practical Conclusion
+Authoritative page metadata
+DCAM Document Status Registry
+Do not update navigation pages only to copy a changed version/status value.
 
-Documentation Governance prevents rule drift.
+Navigation pages summarize and do not replace authoritative detail.
+
+## 8. Practical Conclusion
+
 Requirements own what DCAM must do.
-Architecture/ADR own major decisions and boundaries.
+Architecture/ADR own decisions and boundaries.
 Technical Design owns how DCAM works.
-App Design owns user-facing application behavior.
-Implementation Design owns selected modules and implementation stack.
-API Contract owns request/data boundaries.
-Data Contract owns BDMA-visible artifacts and interoperability.
-QA owns how behavior is verified.
+Contracts own interoperability.
+Release & Build Applicability Matrix owns when scope becomes mandatory.
+Traceability Matrix owns Requirement → Build → Design → QA → Jira → Evidence mapping.
+Document Status Registry owns the cross-document version/status summary.
+QA owns how applicable behavior is verified.
 Device POC owns real-device evidence.
-Factory SOP owns how a physical BodyCamera becomes ready to ship.
-Project Home and Architecture Home own navigation only.
-Current logging ownership:
-
-Loggly = Operational Logging provider.
-Firebase Crashlytics = Crash & Stability Monitoring provider.
-Logging Design owns internal files/queue/routing.
-Data Contract owns Logs/logs.txt for BDMA.
-QA owns end-to-end verification.
-Current Web Portal ownership:
-
-Business Flow → Web Portal Design
-Login/Workspace app behavior → App Design
-Firebase/frontend/backend modules → Implementation Design
-API/schema → API Contract
-Security constraints → Security Design
+Factory SOP owns physical production/final acceptance.
+Project Home, Architecture Home and Requirements Home own navigation only.

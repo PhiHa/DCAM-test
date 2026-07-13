@@ -1,13 +1,16 @@
-# DCAM Sprint 0 Summary
+﻿# DCAM Sprint 0 Summary
 
 **Created:** 2026-07-10  
+**Last refreshed against Confluence:** 2026-07-13  
 **Purpose:** Quick reference for Sprint 0 completion
 
 ---
 
 ## What is Sprint 0?
 
-Validate hardware assumptions before building. Prevents major rework when real device behaves differently than emulator.
+Validate hardware, SDK, storage, BDMA import, and offline-first assumptions before building. Prevents major rework when real device behaves differently than emulator.
+
+Latest gap report: `docs/local-dev/evidence/confluence-refresh-gap-report-2026-07-13.md`.
 
 ---
 
@@ -50,7 +53,7 @@ initializeCloudStateAsync(context, deviceInfo);
 - What are physical storage paths?
 - Can BDMA read via ADB?
 
-**Why critical:** Emulator behavior ≠ real device. Samsung/Xiaomi/vendor firmware all behave differently.
+**Why critical:** Emulator behavior â‰  real device. Samsung/Xiaomi/vendor firmware all behave differently.
 
 **How long:** 2-3 days to test + document.
 
@@ -63,15 +66,15 @@ Run 5 test groups on real device, document results.
 
 ### 2. Write 8 ADRs (docs/local-dev/adr/)
 - ADR-001: Architecture confirmation
-- ADR-002: Camera API (CameraX vs Camera2) ⚠️
+- ADR-002: Camera API (CameraX vs Camera2) âš ï¸
 - ADR-003: Room + BDMA concurrency
-- ADR-004: FGS ownership ⚠️
-- ADR-005: Storage roots + finalization ⚠️
-- ADR-006: Force encryption OFF ⚠️
+- ADR-004: FGS ownership âš ï¸
+- ADR-005: Storage roots + finalization âš ï¸
+- ADR-006: Force encryption OFF âš ï¸
 - ADR-007: Auth + emergency policy
 - ADR-008: BDMA write-back protocol
 
-⚠️ = Blocking next sprint
+âš ï¸ = Blocking next sprint
 
 ### 3. Code Cleanup
 - Remove startup cloud init
@@ -83,11 +86,11 @@ Run 5 test groups on real device, document results.
 
 ## Exit Criteria
 
-✅ POC executed on ≥1 real device  
-✅ POC report written  
-✅ 8 ADRs written + reviewed  
-✅ Code cleanup complete  
-✅ Team aligned on Camera/FGS/Storage
+âœ… POC executed on â‰¥1 real device  
+âœ… POC report written  
+âœ… 8 ADRs written + reviewed  
+âœ… Code cleanup complete  
+âœ… Team aligned on Camera/FGS/Storage
 
 **Then:** Proceed to Sprint 1.
 
@@ -115,7 +118,7 @@ Run 5 test groups on real device, document results.
 
 ## Questions?
 
-- **"Can we skip POC?"** No. Emulator ≠ real device. High rework risk.
+- **"Can we skip POC?"** No. Emulator â‰  real device. High rework risk.
 - **"Can we write ADRs without POC?"** No. ADRs need evidence.
 - **"What if POC finds CameraX doesn't work?"** Switch to Camera2. Better to know now.
 - **"Timeline impact?"** 3 days now saves weeks of rework later.
@@ -123,3 +126,5 @@ Run 5 test groups on real device, document results.
 ---
 
 **Bottom line:** Sprint 0 = validate assumptions before building. Low cost, high value.
+
+

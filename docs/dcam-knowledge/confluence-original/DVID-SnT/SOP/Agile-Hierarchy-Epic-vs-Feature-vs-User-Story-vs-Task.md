@@ -452,7 +452,7 @@ Dễ planning hơn
 
 Dễ estimate hơn
 
-D�� tracking progress hơn
+Dễ tracking progress hơn
 
 Giảm confusion giữa PM / Dev / QA
 
