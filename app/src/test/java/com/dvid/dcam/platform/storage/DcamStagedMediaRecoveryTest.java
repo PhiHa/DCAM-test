@@ -85,9 +85,45 @@ final class DcamStagedMediaRecoveryTest {
         assertTrue(media.getFile().isFile());
     }
 
+    @Test
+    void createsMd5ForRecoveredVideoWhenPolicyEnabled() throws Exception {
+        DcamStorage storage = new DcamStorage(root.toFile());
+        DcamMediaFile media = staged(storage, false);
+        Files.writeString(media.getFile().toPath(), "abc");
+
+        recovery(storage, (type, file) -> true, () -> true).recover();
+
+        File published = storage.finalFile(media);
+        Path sidecar = published.toPath().resolveSibling(
+                published.getName().replaceFirst("\\.mp4$", ".md5"));
+        assertTrue(sidecar.toFile().isFile());
+        assertTrue(Files.readString(sidecar).trim()
+                .equals("900150983cd24fb0d6963f7d28e17f72"));
+    }
+
+    @Test
+    void skipsMd5ForRecoveredVideoWhenPolicyDisabled() throws Exception {
+        DcamStorage storage = new DcamStorage(root.toFile());
+        DcamMediaFile media = staged(storage, false);
+        Files.writeString(media.getFile().toPath(), "abc");
+
+        recovery(storage, (type, file) -> true, () -> false).recover();
+
+        File published = storage.finalFile(media);
+        Path sidecar = published.toPath().resolveSibling(
+                published.getName().replaceFirst("\\.mp4$", ".md5"));
+        assertFalse(sidecar.toFile().exists());
+    }
     private DcamStagedMediaRecovery recovery(DcamStorage storage, DcamMediaValidator validator) {
+        return recovery(storage, validator, null);
+    }
+
+    private DcamStagedMediaRecovery recovery(
+            DcamStorage storage,
+            DcamMediaValidator validator,
+            java.util.function.BooleanSupplier createVideoMd5) {
         return new DcamStagedMediaRecovery(
-                storage, new DcamMediaFinalizer(storage), validator);
+                storage, new DcamMediaFinalizer(storage), validator, createVideoMd5);
     }
 
     private static DcamMediaFile staged(DcamStorage storage, boolean encrypted) throws Exception {

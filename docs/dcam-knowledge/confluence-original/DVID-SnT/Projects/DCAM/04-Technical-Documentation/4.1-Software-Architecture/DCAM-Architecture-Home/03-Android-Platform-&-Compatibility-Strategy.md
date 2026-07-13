@@ -104,7 +104,7 @@ Approved
 
 Dedicated-device Policy First
 
-Production kiosk control phải dựa trên DCAM-as-DPC/local Device Owner nếu khả thi, Lock Task Mode và User Restrictions; fullscreen/Home app không đủ.
+Production kiosk control phải dựa trên DCAM-as-DPC/local Device Owner nếu khả thi, Lock Task Mode và User Restrictions; fullscreen/Home app không đ��.
 
 Approved Direction
 

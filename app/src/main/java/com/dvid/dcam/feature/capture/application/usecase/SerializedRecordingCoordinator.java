@@ -77,13 +77,12 @@ public final class SerializedRecordingCoordinator
 
     @Override public void toggleSos() {
         queue.execute(() -> {
-            if (phase == Phase.RECORDING && currentMode == RecordingMode.SOS) stop();
-            else if (phase == Phase.IDLE) start(RecordingMode.SOS);
-            else if (phase == Phase.RECORDING) {
+            if (phase == Phase.IDLE) start(RecordingMode.SOS);
+            else if (phase == Phase.RECORDING && currentMode != RecordingMode.SOS) {
                 requestedMode = RecordingMode.SOS;
                 phase = Phase.SWITCHING_TO_SOS;
                 camera().startSos();
-            }
+            } else stop();
         });
     }
 

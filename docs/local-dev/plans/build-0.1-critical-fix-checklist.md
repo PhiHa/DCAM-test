@@ -15,8 +15,8 @@ must include focused automated tests and must not silently expand into a Build 0
 | 5 | Close, validate and safely publish Temp/staging media to its final path | Complete | Focused publication/recovery tests and `gradlew test assembleDebug` passed on 2026-07-11 |
 | 6 | Persist the minimal media/finalization state and mark `BDMA_READY` only after file and DB success | Replaced | Build 0.1 uses safe publication into `Media/*` as its filesystem readiness boundary; per-media DB schema/retention is deferred |
 | 7 | Add bounded DB-busy retry/timeout behavior for finalization | Not applicable | Finalization has no Build 0.1 DB dependency after the item 6 decision |
-| 8 | Move recording lifetime out of the Activity lifecycle boundary | Pending | Activity recreation test proves one uninterrupted recording authority |
-| 9 | Recover or preserve artifacts after process death during recording/finalization | Pending | Startup and `MEDIA_MOUNTED` recovery are implemented; one BWC force-stop sample recovered 30.104 s and one reboot sample preserved 27.400 s, but physical remount/repetition/power-cut proof remains |
+| 8 | Move recording lifetime out of the Activity lifecycle boundary | Complete | Activity recreation test plus `gradlew test assembleDebug` passed on 2026-07-13 |
+| 9 | Recover or preserve artifacts after process death during recording/finalization | Pending | 2026-07-13 ADB rerun recovered an 11 s force-stop sample and an 11 s reboot sample; physical remount/repetition/power-cut proof remains |
 | 10 | Prove the Build 0.1 sample flow with BDMA through ADB | Pending | 30-second video and image are finalized, detected and imported |
 
 ## Completed item: 1 — encryption default
@@ -157,7 +157,23 @@ The rebooted device USB-shares removable storage, so mount-event recovery, repea
 power-cut test remain open. See the evidence page for commands, measurements and discovered Android
 API compatibility fixes.
 
-## Next item: 8 — Activity-independent recording lifetime
+## Completed item: 8 — Activity-independent recording lifetime
 
-Move the recording authority outside the Activity lifecycle before claiming uninterrupted capture
-across Activity recreation. Item 9 then completes real process/reboot/remount recovery proof.
+Scope:
+
+- `AppComposition` is retained at app scope instead of recreated per Activity instance.
+- One app-scoped `SerializedRecordingCoordinator` owns recording commands/events across Activity recreation.
+- One process-lifetime CameraX gateway remains bound while Activity previews attach and detach.
+- Activity teardown no longer reports an in-progress recording as failed only because UI was recreated.
+
+Verification:
+
+- Activity recreation unit test proves the bound capture events preserve `VIDEO` mode across UI unbind/rebind.
+- Full local unit-test suite passes.
+- Debug APK builds successfully.
+
+## Next item: 9 — Process-death and remount recovery proof
+
+Complete destructive ADB/device evidence for force-stop, reboot, physical remount and power-cut cases.
+
+Latest evidence: `docs/local-dev/evidence/build-0.1-item-9-adb-recovery-2026-07-13.md`.

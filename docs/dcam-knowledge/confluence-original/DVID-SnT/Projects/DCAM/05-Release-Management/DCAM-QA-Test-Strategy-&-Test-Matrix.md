@@ -1,7 +1,7 @@
 # DCAM QA Test Strategy & Test Matrix
 
 **Page ID**: 49545345  
-**Version**: 10  
+**Version**: 12  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/49545345
 
@@ -24,11 +24,15 @@ QA Strategy / Test Matrix
 
 Version
 
-Approved 1.8
+Approved 2.0
 
 Status
 
 Approved
+
+Approval Scope
+
+Test definition baseline; execution status vẫn nằm ở từng Test ID và release evidence. DB/CSON exact physical assertions cần Technical Review.
 
 Owner
 
@@ -52,116 +56,138 @@ PM/BA, Tech Lead, Android Developers, QA, BDMA Team, Cloud/WebServer Team, Secur
 
 Last Updated
 
-2026-07-10
+2026-07-13
 
 Related Jira
 
-Không có
+Not linked
+
+Dependencies / Blockers
+
+Technical Review cho minimal DB/CSON physical assertions; Jira/PR/build/test evidence chưa được link.
 
 Related Documents
 
-DCAM Requirements Home, DCAM Non-functional Requirements, 07 - Logging & Diagnostics Requirements, 07 - Logging, Diagnostics, Performance & Security, DCAM Logging & Diagnostics Design, DCAM Performance Budget & Resource Constraints, DCAM-BDMA Data Contract, DCAM Web Portal & Device API Contract, DCAM Android Device Owner & Kiosk Policy Design, DCAM In-App Operation, Device Settings & Media Console Design, ADR - DCAM Android Dedicated Device / Device Owner / Lock Task Decision, DCAM Android Operation Design, DCAM Recording & Capture Design, DCAM Storage Design, DCAM SQLite Database Design, DCAM Security & Encryption Design, DCAM State Machine Design, DCAM Device Capability & Feature Eligibility Design, DCAM Device Provisioning Web Portal Design, DCAM Device Provisioning Web Portal App Design, DCAM Device Provisioning Web Portal Implementation Design, 09 - System Settings Requirements, DCAM Self Update Design, DCAM Android Development Standard, DCAM Device POC & Hardware Validation Report, DCAM Factory Provisioning & Device Production SOP
+[DCAM Requirement–Design–Test Traceability Matrix](/wiki/spaces/DVID/pages/51085669/DCAM+Requirement+Design+Test+Traceability+Matrix), [DCAM Document Status Registry](/wiki/spaces/DVID/pages/51085647/DCAM+Document+Status+Registry), DCAM Release & Build Applicability Matrix, DCAM Requirements Home, DCAM Non-functional Requirements, 07 - Logging & Diagnostics Requirements, 07 - Logging, Diagnostics, Performance & Security, DCAM Logging & Diagnostics Design, DCAM Performance Budget & Resource Constraints, DCAM-BDMA Data Contract, DCAM Web Portal & Device API Contract, DCAM Android Device Owner & Kiosk Policy Design, DCAM In-App Operation, Device Settings & Media Console Design, ADR - DCAM Android Dedicated Device / Device Owner / Lock Task Decision, DCAM Android Operation Design, DCAM Recording & Capture Design, DCAM Storage Design, DCAM SQLite Database Design, DCAM Security & Encryption Design, DCAM State Machine Design, DCAM Device Capability & Feature Eligibility Design, DCAM Device Provisioning Web Portal Design, DCAM Device Provisioning Web Portal App Design, DCAM Device Provisioning Web Portal Implementation Design, 09 - System Settings Requirements, DCAM Self Update Design, DCAM Android Development Standard, DCAM Device POC & Hardware Validation Report, DCAM Factory Provisioning & Device Production SOP
 
 ## 1. Purpose
 
 Tài liệu này định nghĩa QA strategy và test matrix cho **DCAM Android BodyCamera Application**.
 
-Mục tiêu:
+Tài liệu bao phủ cả Target System, nhưng release blocking luôn được quyết định theo Active Build Profile.
 
-Xác định phạm vi test cho DCAM MVP.
+Priority answers: How severe is failure when the test is applicable?
+Build Applicability answers: Must this test run and pass for this build?
 
-Liên kết test coverage với Requirements, Architecture, Technical Design, Performance Budget, API Contract, Data Contract, Device POC và Factory SOP.
+Release Blocker = Priority P0 AND Applicability Required
+Conditional P0 becomes blocker only when its activation condition is true.
+Deferred / Not Applicable P0 does not block the active build.
+Source of truth cho `Required / Conditional / Deferred / Not Applicable / POC Blocked` là **DCAM Release & Build Applicability Matrix**.
 
-Định nghĩa test level, test environment, test device matrix, performance test group, logging/diagnostics test group và exit criteria.
+Current baseline:
 
-Chuẩn hóa cách QA kiểm tra các luồng critical như recording, storage, user login, emergency override, BDMA import, provisioning, dedicated-device/kiosk policy, in-app operation/device/media console, controlled maintenance, update, recovery, performance, security, Operational Logging và Crash & Stability Monitoring.
+Active Build = DCAM MVP Internal Build 0.1
+Active Gate = Working Recording Slice
+### 1.1 Build 0.1 Mandatory QA Scope
 
-Xác nhận current baseline: **không external EMM / Android Management API / Managed Google Play policy-driven update**, **Self Update / APK update là primary path**, **Play Store manual fallback là optional controlled maintenance flow**.
+Working Recording Slice
+Recording and image capture
+Storage and critical finalization
+Minimal DB / CSON / logs.txt
+BDMA sample detect/import
+Critical-path concurrency and MainThread safety
+MVP performance subset
+Sensitive-data sanitization
+Core offline/provider-degradation behavior when implemented
+The following do not block Build 0.1 unless explicitly activated by Matrix exception:
 
-Current logging baseline:
-
-Operational Logging = primary operational observability channel.
-Loggly = centralized Operational Logging provider.
-Firebase Crashlytics = Crash & Stability Monitoring provider.
-Crashlytics does not replace Operational Logging.
-Operational Logging is local-first, asynchronous and bounded.
+Web Portal provisioning
+Cloud identity
+Full User/Auth
+Full Device Owner / Kiosk / Maintenance
+Remote Config
+Self Update
+Factory READY_TO_SHIP
+Live Streaming / PTT / Full GPS Route / AI
 ## 2. Scope
 
 Area
 
-In Scope
+Target-system QA Scope
 
-Android Runtime
-
-Kiểm tra startup, boot, foreground service, session restore, safe mode, policy verification, console readiness và recovery.
-
-Logging & Diagnostics
-
-Kiểm tra logging abstraction, local-first persistence, bounded files/queue, Backend Relay/Loggly delivery, retry, provider outage, Crashlytics fatal/non-fatal/ANR classification, sanitization và BDMA log access.
-
-Performance Budget
-
-Kiểm tra MVP-required performance metrics: recording latency, critical finalization, memory, storage I/O, free-space, ANR, DB busy retry và long-running stability.
-
-Kiosk Policy
-
-Kiểm tra DCAM-as-DPC/local Device Owner, Lock Task Mode, User Restrictions, Home/Launcher behavior, Maintenance Mode, Maintenance Password Gate và policy recovery.
-
-No External EMM Baseline
-
-Kiểm tra test/implementation không phụ thuộc external EMM, Android Management API hoặc Managed Google Play policy-driven update.
-
-In-app Operation / Device / Media Console
-
-Kiểm tra Record/Live View default screen, Setting hub, Back behavior, App Operation Settings, Device/System Settings proxy, Login Settings, Admin-only User Settings, Storage Dashboard, read-only File/Storage Manager, read-only Media Viewer và future placeholders.
-
-Controlled Maintenance
-
-Kiểm tra Exit Kiosk temporarily chỉ đi qua Admin/Maintenance + Maintenance Password Gate; chỉ mở approved targets; không có full unrestricted Android.
-
-Update
-
-Kiểm tra DCAM Self Update / APK update primary path, package validation, defer logic, policy-safe update recovery và optional manual Play Store fallback nếu được enable.
-
-Factory Production SOP
-
-Kiểm tra factory procedure từ raw/factory-reset BodyCamera đến quyết định READY_TO_SHIP / QUARANTINED.
-
-User / Auth
-
-Kiểm tra Login, no-timeout session, reboot login, Login Settings, User Settings và emergency override.
+Build 0.1 Interpretation
 
 Recording / Capture
 
-Kiểm tra normal recording, emergency recording, image/audio capture và operator attribution.
+Normal/emergency recording, image/audio capture, operator attribution.
+
+Normal recording + image capture required; emergency/audio conditional or deferred unless activated.
 
 Storage
 
-Kiểm tra internal/external storage, temp/final, `BDMA_READY`, low storage, free-space budget, read-only File/Media và recovery.
+Temp/final, `BDMA_READY`, low/full storage, recovery.
 
-SQLite
+Required.
 
-Kiểm tra user/auth/session/media/config state, console settings, optional policy snapshot, update audit, migration, recovery, DB transaction duration và write-back.
+SQLite / CSON / Logs
+
+Runtime state, contract artifacts, migration/write-back.
+
+Minimal Build 0.1 subset required; full migration/write-back deferred.
 
 BDMA Integration
 
-Kiểm tra ADB discovery, media import, `.mp4` MD5 verification, user sync, logs artifact access và cleanup.
+ADB discovery, import, checksum, logs and cleanup.
+
+Sample detect/import and applicable contract behavior required.
+
+Performance / Concurrency
+
+Latency, ANR, DB/I/O, memory and stability.
+
+MVP subset required.
+
+Logging & Diagnostics
+
+Local-first logging, sanitization, provider relay/Crashlytics.
+
+Local-first and sanitization required; cloud provider tests conditional when enabled.
+
+User / Auth
+
+Login/session/emergency override.
+
+Deferred except approved Build 0.1 placeholder/operator policy.
 
 Provisioning
 
-Kiểm tra Factory Worker QR Flow, `serial_lookup/{serial_number}`, identity restore, provisioning state và `dcam_cloud_device_id` assignment.
+Web Portal QR and cloud identity.
 
-Remote Config
+Deferred.
 
-Kiểm tra fetch/cache/apply/defer/reject behavior, bao gồm kiosk requested-policy, console setting và update setting defer/reject.
+Kiosk / Maintenance
+
+Device Owner, Lock Task, restrictions and controlled maintenance.
+
+Deferred / POC only if explicitly activated.
+
+Remote Config / Self Update
+
+Fetch/apply/reject/update/recovery.
+
+Deferred.
+
+Factory Production
+
+READY_TO_SHIP / QUARANTINED.
+
+Not Applicable for Build 0.1; required for shipment build.
 
 Security
 
-Kiểm tra sensitive logging, credential handling, identity protection, Maintenance Password Gate, factory Wi-Fi credential non-disclosure, Google account/manual update constraints, admin console audit và encryption direction.
+Sensitive logging, credentials, identity, update and encryption.
 
-Device POC Feedback
-
-Kiểm tra POC outcomes đã được phản ánh trong test plan, release decision, Performance Budget adjustment, provider compatibility và Factory SOP.
+Sanitization required; full cryptographic profile pending Security Review.
 
 ## 3. Out of Scope
 
@@ -191,7 +217,7 @@ Không áp dụng cho current device baseline.
 
 Future Live Stream / PTT / AI Mode full behavior
 
-Future requirements/designs chưa approved.
+Future requirements/designs chưa approved/activated.
 
 Battery/thermal numeric budget
 
@@ -202,6 +228,14 @@ Deferred until Device POC theo Performance Budget.
 Test Area
 
 Source of Truth
+
+Build Applicability
+
+DCAM Release & Build Applicability Matrix
+
+Requirement-to-test mapping
+
+DCAM Requirement–Design–Test Traceability Matrix
 
 Functional Requirements
 
@@ -247,10 +281,6 @@ In-app Console
 
 DCAM In-App Operation, Device Settings & Media Console Design
 
-Dedicated-device Decision
-
-ADR - DCAM Android Dedicated Device / Device Owner / Lock Task Decision
-
 Recording
 
 DCAM Recording & Capture Design
@@ -271,31 +301,11 @@ State Guards
 
 DCAM State Machine Design
 
-Feature Eligibility
-
-DCAM Device Capability & Feature Eligibility Design
-
-Provisioning
-
-DCAM Device Provisioning Web Portal Design + App Design + Implementation Design
-
-Remote Config / AutoUpdate
-
-09 - System Settings Requirements
-
-Self Update
-
-DCAM Self Update Design
-
-Development Standard
-
-DCAM Android Development Standard
-
 Device POC Evidence
 
 DCAM Device POC & Hardware Validation Report
 
-Factory Acceptance / Ready-to-Ship
+Factory Acceptance
 
 DCAM Factory Provisioning & Device Production SOP
 
@@ -309,87 +319,57 @@ Owner
 
 Unit Test
 
-Kiểm tra domain logic, validators, state transitions, config validation, logging classification, sanitization, queue policy, maintenance gate validation, update validation, policy validation và eligibility rules.
+Domain logic, validators, state transitions, naming, sanitization and eligibility.
 
 Android Dev
 
 Integration Test
 
-Kiểm tra module boundary: DB, StorageService, RecordingController, OperatorSessionManager, KioskPolicyManager, ConsoleSettingCoordinator, SelfUpdateManager, OperationalLogger, StabilityReporter và Backend Relay client.
+DB, StorageService, RecordingController, logging and BDMA boundaries.
 
 Android Dev / QA
 
-Logging Integration Test
+Contract Test
 
-Kiểm tra local file/queue, rotation, retry, relay delivery, Loggly ingestion, Crashlytics classification, provider outage và sensitive-field filtering.
+Data Contract, API Contract, file naming, checksum, DB/schema and access boundaries.
 
-QA / Android Dev / Backend Team / Security Reviewer
+QA / BDMA / Backend
 
 Performance Test
 
-Kiểm tra MVP-required metrics trong Performance Budget: recording latency, critical finalization, MainThread block, State Coordinator latency, DB transaction, storage I/O, free-space và stability.
+Active-build metrics from Performance Budget.
 
 QA / Android Dev
 
 Device Test
 
-Kiểm tra trên BodyCamera thật: camera, storage, foreground service, reboot, screen off, Lock Task, User Restrictions, in-app console, logging providers, Self Update và ADB.
+Camera, storage, boot, lifecycle, ADB and active device-policy scope on BodyCamera.
 
 QA / Android Dev
 
-Contract Test
-
-Kiểm tra Data Contract, API Contract, log artifact contract, file naming, MD5, DB schema, media status và BDMA read/write behavior.
-
-QA / BDMA Team / Backend Team
-
-Kiosk Policy Test
-
-Kiểm tra DCAM-as-DPC/Device Owner feasibility, Lock Task, Home/Launcher, Maintenance Mode và restriction behavior.
-
-QA / Android Dev / Security Reviewer
-
-In-app Console Test
-
-Kiểm tra các settings/media/storage/admin actions được phép khi Android Settings/File Manager bị hạn chế.
-
-QA / Android Dev / Security Reviewer
-
-Update Test
-
-Kiểm tra Self Update/APK primary path, optional Play Store fallback nếu được enable, và không giả định Managed Google Play.
-
-QA / Android Dev / Security Reviewer
-
-Factory SOP Test
-
-Kiểm tra raw/factory-reset BodyCamera có thể được chuẩn bị theo SOP và được đánh dấu đúng READY_TO_SHIP hoặc QUARANTINED.
-
-QA / Factory / Android Dev
-
 Recovery Test
 
-Kiểm tra crash, reboot, service kill, DB lock/corruption, policy failure, logging provider failure, queue recovery, console setting failure và interrupted finalization/update.
+Crash, reboot, service kill, DB/storage/provider failure and interrupted finalization.
 
 QA
 
 Security Test
 
-Kiểm tra sensitive logging, credential handling, identity protection, Maintenance Password Gate, factory Wi-Fi password non-disclosure, Google account/manual update constraints và invalid config/package.
+Sensitive-data protection and active security profile.
 
 Security Reviewer / QA
 
 Regression Test
 
-Chạy trước mỗi release candidate.
+Only groups activated for the release Build Profile.
 
 QA
 
 Acceptance Test
 
-Kiểm tra MVP flow end-to-end, bao gồm factory-ready-to-ship path nếu release có shipment thiết bị.
+Build-specific end-to-end gate; Factory path only for shipment builds.
 
-PM / QA / Factory / Stakeholders
+PM / QA / Stakeholders
 
 ## 6. Test Environment Matrix
 
@@ -397,111 +377,117 @@ Environment
 
 Purpose
 
-Required
+Build 0.1
+
+Later Build / Condition
 
 Android Emulator
 
-Chỉ dùng cho early UI/domain/unit integration test.
+Early UI/domain/unit integration.
+
+Optional
 
 Optional
 
 Android Phone
 
-Dùng cho development smoke test.
+Development smoke test.
 
 Optional
 
-BodyCamera Device - Model A
+Optional
 
-Thiết bị target chính để test, performance baseline, logging behavior và Device POC.
+BodyCamera Device - selected model
+
+Recording/storage/performance/ADB baseline.
 
 Required
 
-BodyCamera Device - Model B
-
-Test compatibility và compare performance/provider variance.
-
-Recommended
-
-Non-GMS Device
-
-Kiểm tra core app, local logging và diagnostics không phụ thuộc cứng vào GMS/Crashlytics delivery.
-
-Required nếu target deployment bao gồm non-GMS
-
-GMS / Play Store Device
-
-Kiểm tra Crashlytics/provider compatibility và optional manual Play Store fallback nếu supported.
-
-Conditional
-
-DCAM-as-DPC / Device Owner Test Device
-
-Kiểm tra local Device Owner/DPC/kiosk behavior without external EMM.
-
-Required cho production kiosk profile
-
-Factory-reset Device
-
-Kiểm tra SOP từ raw/clean device đến ready-to-ship state.
-
-Required trước pilot/production shipment
+Required
 
 Windows PC with BDMA
 
-Kiểm tra ADB import/user sync và read-only logs artifact.
+Sample detect/import and logs artifact.
 
 Required
-
-Web Portal Test Backend
-
-Kiểm tra provisioning và remote config.
-
-Required
-
-Operational Log Backend Relay Test Environment
-
-Kiểm tra authenticated relay, accepted/rejected payload, retry, timeout và Loggly forwarding.
-
-Required trước production logging enablement
-
-Loggly Test Source / Environment
-
-Kiểm tra operational event ingestion, tags, structured fields và duplicate tolerance.
-
-Required trước production logging enablement
-
-Firebase Crashlytics Test Project
-
-Kiểm tra fatal, approved non-fatal, ANR/custom context và sanitization.
-
-Required nếu Crashlytics enabled trên target profile
-
-Artifact Provider Test Backend
-
-Kiểm tra Self Update manifest/APK download.
 
 Required
 
 Offline Environment
 
-Kiểm tra offline-first, local login, local queue, recording và BDMA readiness.
+Core offline operation.
+
+Required
+
+Required
+
+Near-full / Full Storage Environment
+
+Finalization and recovery safety.
+
+Required
 
 Required
 
 Provider Failure Environment
 
-Simulate no network, relay unavailable, Loggly unavailable và Crashlytics unavailable.
+Ensure diagnostics provider failure does not block core.
 
-Required
+Conditional when cloud provider integrated
 
-Maintenance / Factory Test Environment
+Required when provider enabled
 
-Kiểm tra Maintenance Mode, gate, policy relaxation và restore.
+Non-GMS Device
 
-Required cho kiosk profile
+Non-GMS compatibility.
+
+Conditional if target includes non-GMS
+
+Required if target profile includes non-GMS
+
+Web Portal Test Backend
+
+Provisioning and remote config.
+
+Deferred
+
+Required for Build 0.2 provisioning scope
+
+DCAM-as-DPC / Device Owner Device
+
+Kiosk behavior.
+
+Deferred / POC exception
+
+Required when kiosk profile active
+
+Artifact Provider Backend
+
+Self Update.
+
+Deferred
+
+Required when Self Update active
+
+Factory-reset Device
+
+Factory SOP.
+
+Not Applicable
+
+Required before shipment
+
+Loggly / Crashlytics test projects
+
+Cloud observability.
+
+Conditional when enabled
+
+Required when enabled for release profile
 
 ## 7. Master Test Matrix
+
+`Priority` and `Build 0.1` are independent columns. Later-build applicability remains controlled by the Release & Build Applicability Matrix.
 
 Test ID
 
@@ -511,19 +497,37 @@ Scenario
 
 Priority
 
-Source Document
+Build 0.1
+
+Source
 
 Status
+
+QA-WRS-001
+
+Working Recording Slice
+
+APK runs; record 30s; finalize; capture image; write minimal DB/CSON/logs; BDMA detects/imports sample artifacts.
+
+P0
+
+Required
+
+MVP Scope + Architecture Delivery Profile
+
+Draft
 
 QA-LOG-001
 
 Operational Logging
 
-Operational event được persist local hoặc durable queue trước/độc lập với cloud delivery.
+Operational event persists locally or in durable queue independently of cloud delivery.
 
 P0
 
-Logging Requirements + Logging Design
+Required
+
+Logging Requirements + Design
 
 Draft
 
@@ -531,11 +535,13 @@ QA-LOG-002
 
 Operational Logging
 
-Local log files và upload queue có bounded rotation/retention/size behavior; không làm đầy storage.
+Local files/queue are bounded and do not fill storage.
 
 P0
 
-Logging Design + Storage Design
+Required
+
+Logging Design + Storage
 
 Draft
 
@@ -543,9 +549,11 @@ QA-LOG-003
 
 Backend Relay / Loggly
 
-Authenticated Backend Relay nhận valid operational event và forward tới Loggly với structured fields/correlation context.
+Authenticated relay forwards structured event to Loggly.
 
 P0
+
+Deferred
 
 Logging Design + API Contract
 
@@ -555,11 +563,13 @@ QA-LOG-004
 
 Provider Failure
 
-Relay/Loggly unavailable không block recording, emergency, finalization hoặc core offline operation; event được retry theo policy.
+Provider outage does not block recording/finalization/core offline operation.
 
 P0
 
-Logging Requirements + Logging Design
+Conditional when provider client exists
+
+Logging Requirements + Design
 
 Draft
 
@@ -567,11 +577,13 @@ QA-LOG-005
 
 Crashlytics
 
-Fatal crash được Crashlytics capture với bounded safe context khi provider available.
+Fatal crash captured with safe bounded context.
 
 P0
 
-Logging Requirements + Logging Design
+Conditional when enabled
+
+Logging Design
 
 Draft
 
@@ -579,9 +591,11 @@ QA-LOG-006
 
 Crashlytics
 
-Approved unexpected handled exception được record non-fatal; expected timeout/validation/retry/degraded state không tạo Crashlytics spam.
+Unexpected non-fatal recorded; expected failures do not create spam.
 
 P0
+
+Conditional when enabled
 
 Logging Design
 
@@ -591,11 +605,13 @@ QA-LOG-007
 
 Sensitive Logging
 
-Password, token, maintenance credential, factory Wi-Fi password, raw Android identifier, QR/provisioning secret và sensitive payload không xuất hiện trong local logs, queue, relay, Loggly hoặc Crashlytics.
+Secrets and sensitive payloads are absent from every active logging channel.
 
 P0
 
-Security Design + Logging Requirements
+Required
+
+Security + Logging Requirements
 
 Draft
 
@@ -603,9 +619,11 @@ QA-LOG-008
 
 Non-GMS / Fallback
 
-Khi Crashlytics/GMS/provider unavailable, local Operational Logging và BDMA diagnostics artifact vẫn hoạt động.
+Local logs and BDMA artifact work without GMS/provider.
 
 P0
+
+Conditional if target is non-GMS
 
 Logging Requirements + Device POC
 
@@ -615,11 +633,13 @@ QA-LOG-009
 
 BDMA Logs Contract
 
-BDMA đọc approved `logs.txt` artifact ở chế độ read-only; không modify, truncate hoặc delete; active/rotated log handling đúng Data Contract.
+BDMA reads `logs.txt` read-only and does not modify/delete it.
 
 P1
 
-DCAM-BDMA Data Contract + Logging Design
+Required
+
+Data Contract + Logging Design
 
 Draft
 
@@ -627,11 +647,13 @@ QA-LOG-010
 
 Correlation / Quality
 
-Event có timestamp, category, stable event name, level, safe reason code và correlation identifier khi applicable.
+Events contain safe timestamp/category/name/reason/correlation fields.
 
 P1
 
-Logging Requirements + Logging Design
+Required
+
+Logging Requirements + Design
 
 Draft
 
@@ -639,9 +661,11 @@ QA-PERF-001
 
 Performance
 
-Recording start latency đạt `PERF-REC-001` trên warm camera path.
+Recording start meets `PERF-REC-001`.
 
 P0
+
+Required
 
 Performance Budget
 
@@ -651,9 +675,11 @@ QA-PERF-002
 
 Performance
 
-Recording stop latency đạt `PERF-REC-002`.
+Recording stop meets `PERF-REC-002`.
 
 P0
+
+Required
 
 Performance Budget
 
@@ -663,11 +689,13 @@ QA-PERF-003
 
 Performance
 
-Critical finalization latency đạt `PERF-REC-003`; checksum không block `BDMA_READY`.
+Critical finalization meets `PERF-REC-003`; checksum does not block `BDMA_READY`.
 
 P0
 
-Performance Budget + Concurrency Model
+Required
+
+Performance Budget + Concurrency
 
 Draft
 
@@ -675,11 +703,13 @@ QA-PERF-004
 
 Performance
 
-MainThread block duration đạt `PERF-ANR-001`; StrictMode debug không phát hiện disk/network trên MainThread trong critical path.
+MainThread block meets `PERF-ANR-001`; no disk/network on MainThread critical path.
 
 P0
 
-Performance Budget + Android Development Standard
+Required
+
+Performance Budget + Dev Standard
 
 Draft
 
@@ -687,11 +717,13 @@ QA-PERF-005
 
 Performance
 
-State Coordinator queue latency và Camera callback processing đạt `PERF-ANR-002/003`.
+State Coordinator and camera callback meet `PERF-ANR-002/003`.
 
 P0
 
-Performance Budget + Concurrency Model
+Required
+
+Performance Budget + Concurrency
 
 Draft
 
@@ -699,11 +731,13 @@ QA-PERF-006
 
 Performance
 
-DB transaction duration và DB busy retry đạt `PERF-IO-004` và `PERF-ANR-007`.
+DB transaction and busy retry meet `PERF-IO-004/PERF-ANR-007`.
 
 P0
 
-Performance Budget + SQLite Design
+Required
+
+Performance Budget + SQLite
 
 Draft
 
@@ -711,11 +745,13 @@ QA-PERF-007
 
 Performance
 
-Recording precheck enforce minimum free-space budget `PERF-STOR-001`.
+Recording precheck enforces `PERF-STOR-001`.
 
 P0
 
-Performance Budget + Storage Design
+Required
+
+Performance Budget + Storage
 
 Draft
 
@@ -723,11 +759,13 @@ QA-PERF-008
 
 Performance
 
-Storage full / near full không corrupt media và trigger safe stop/finalization/recovery.
+Near-full/full storage does not corrupt media and triggers safe handling.
 
 P0
 
-Performance Budget + Storage Design
+Required
+
+Performance Budget + Storage
 
 Draft
 
@@ -735,9 +773,11 @@ QA-PERF-009
 
 Performance
 
-App-owned steady-state thread count đạt `PERF-STAB-005`; total process thread count được đo trong Device POC.
+App-owned thread count measured; total count recorded during POC.
 
 P1
+
+Recommended / POC
 
 Performance Budget + Device POC
 
@@ -747,11 +787,83 @@ QA-PERF-010
 
 Performance
 
-Continuous recording stability đạt MVP-required long-running stability metric.
+Continuous recording meets active long-running stability target.
 
 P0
 
+Required
+
 Performance Budget
+
+Draft
+
+QA-IMG-001
+
+Image Capture
+
+Capture and finalize `.jpg` successfully on selected BodyCamera.
+
+P0
+
+Required
+
+Recording Requirements + Design
+
+Draft
+
+QA-IMG-002
+
+Image Contract
+
+Image naming/folder follows Data Contract; image không yêu cầu `.md5`; BDMA imports it without MP4 checksum enforcement.
+
+P0
+
+Required
+
+Recording Requirements + Data Contract
+
+Draft
+
+QA-IMG-003
+
+Image Performance
+
+Image capture meets `PERF-REC-004`.
+
+P0
+
+Required
+
+Performance Budget
+
+Draft
+
+QA-IMG-004
+
+Image Recovery
+
+Camera/storage/permission failure is controlled and does not crash app.
+
+P0
+
+Required
+
+REC-IMG-005 + Recording Design
+
+Draft
+
+QA-MEDIA-IMP-001
+
+Important Media
+
+`_IMP` naming/folder behavior is correct when Important Media is activated.
+
+P0
+
+Conditional
+
+Recording Requirements + Data Contract
 
 Draft
 
@@ -759,11 +871,13 @@ QA-BOOT-001
 
 Android Operation
 
-Lần launch app đầu tiên mở DB, resolve identity và đi tới login/provisioning state.
+Startup reaches the state required by the active Build Profile.
 
 P0
 
-DCAM Android Operation Design
+Required
+
+Android Operation + Delivery Profile
 
 Draft
 
@@ -771,11 +885,13 @@ QA-KIOSK-001
 
 Kiosk Policy
 
-Production device boot với DCAM-as-DPC / Device Owner state bắt buộc và verify policy.
+Production boot verifies required Device Owner state.
 
 P0
 
-DCAM Android Device Owner & Kiosk Policy Design
+Deferred
+
+Kiosk Design
 
 Draft
 
@@ -783,11 +899,13 @@ QA-KIOSK-002
 
 Kiosk Policy
 
-Khi Device Owner state bắt buộc bị thiếu, app vào `DEVICE_POLICY_REQUIRED` hoặc approved degraded state.
+Missing required policy enters controlled required/degraded state.
 
 P0
 
-DCAM Android Device Owner & Kiosk Policy Design
+Deferred
+
+Kiosk Design
 
 Draft
 
@@ -795,11 +913,13 @@ QA-KIOSK-003
 
 Lock Task
 
-DCAM package được allowlisted và enter Lock Task Mode sau startup.
+Package is allowlisted and enters Lock Task.
 
 P0
 
-DCAM Android Device Owner & Kiosk Policy Design
+Deferred
+
+Kiosk Design
 
 Draft
 
@@ -807,11 +927,13 @@ QA-KIOSK-004
 
 Lock Task
 
-Home/Recents/Back behavior không cho user thoát khỏi approved kiosk experience.
+Home/Recents/Back cannot escape approved kiosk experience.
 
 P0
 
-DCAM Android Device Owner & Kiosk Policy Design
+Deferred
+
+Kiosk Design
 
 Draft
 
@@ -819,23 +941,27 @@ QA-KIOSK-005
 
 User Restrictions
 
-Factory reset, app uninstall/app control và safe boot restrictions được apply hoặc unsupported reason được log.
+Required restrictions apply or unsupported reason is recorded.
 
 P0
 
-DCAM Android Device Owner & Kiosk Policy Design
+Deferred
+
+Kiosk Design
 
 Draft
 
 QA-KIOSK-006
 
-Maintenance Mode
+Maintenance
 
-Maintenance Mode được authorized có thể enter/exit, có audit và production restrictions được restore.
+Authorized maintenance enter/exit restores policy and records audit.
 
 P0
 
-Kiosk Policy + Security + In-App Console
+Deferred
+
+Kiosk + Security + Console
 
 Draft
 
@@ -843,11 +969,13 @@ QA-KIOSK-007
 
 Policy Recovery
 
-Khi app crash/process kill trong lúc Lock Task required, app recover và re-enter Lock Task hoặc policy recovery.
+Crash/process kill restores Lock Task or controlled recovery.
 
 P0
 
-Android Operation + Kiosk Policy
+Deferred
+
+Android Operation + Kiosk
 
 Draft
 
@@ -855,21 +983,25 @@ QA-KIOSK-008
 
 No External EMM
 
-Device/profile không phụ thuộc external EMM, Android Management API hoặc Managed Google Play để pass release baseline.
+Active profile has no external EMM/AMA/Managed Google Play dependency.
 
 P0
 
-Kiosk Policy + Self Update
+Deferred / POC
+
+Kiosk + Self Update
 
 Draft
 
 QA-CONSOLE-001
 
-In-app Console
+Console
 
-Kiosk user không thể thoát DCAM nhưng vẫn truy cập được các in-app console functions được phép.
+Kiosk user accesses only approved in-app functions.
 
 P0
+
+Deferred
 
 In-App Console
 
@@ -879,9 +1011,11 @@ QA-CONSOLE-002
 
 Navigation
 
-App mở `Record / Live View` mặc định; Back chuyển sang Setting và Back ở Setting quay lại Record.
+Record/Setting/Back behavior matches design.
 
 P0
+
+Deferred
 
 In-App Console
 
@@ -891,9 +1025,11 @@ QA-CONSOLE-003
 
 Navigation
 
-Back từ mọi child module quay lại Setting và không bao giờ exit DCAM.
+Child Back returns to Setting and never exits DCAM.
 
 P0
+
+Deferred
 
 In-App Console
 
@@ -901,49 +1037,57 @@ Draft
 
 QA-CONSOLE-004
 
-App Operation Settings
+Settings
 
-Admin đổi video resolution khi app idle; setting được validate, persist và apply cho lần recording kế tiếp.
+Idle setting change validates/persists/applies next recording.
 
 P0
 
-In-App Console + System Settings + Recording Design
+Deferred
+
+Console + System Settings + Recording
 
 Draft
 
 QA-CONSOLE-005
 
-App Operation Settings
+Settings Guard
 
-Admin đổi video resolution/pre-record khi đang recording; thay đổi bị defer/reject và recording hiện tại không bị gián đoạn.
+Recording-time setting change is deferred/rejected safely.
 
 P0
 
-In-App Console + State Machine
+Deferred
+
+Console + State Machine
 
 Draft
 
 QA-CONSOLE-006
 
-Device/System Settings
+Device Settings
 
-USB/Wi-Fi/GPS control yêu cầu Admin/Maintenance authorization và không expose unrestricted Android Settings.
+USB/Wi-Fi/GPS control requires approved authorization.
 
 P0
 
-In-App Console + Kiosk Policy Design
+Deferred
+
+Console + Kiosk
 
 Draft
 
 QA-CONSOLE-007
 
-File/Media Manager
+File/Media
 
-File Manager và Media Viewer là read-only: không delete, edit, mark important, export hoặc share.
+File Manager and Media Viewer are read-only.
 
 P0
 
-In-App Console + Security + Storage
+Deferred
+
+Console + Security + Storage
 
 Draft
 
@@ -951,11 +1095,13 @@ QA-PROV-001
 
 Provisioning
 
-New device chưa có local identity và không restore được bằng `serial_lookup/{serial_number}` sẽ vào `PROVISIONING_REQUIRED`.
+Device without restorable identity enters `PROVISIONING_REQUIRED`.
 
 P0
 
-Device Provisioning Web Portal Design + API Contract
+Deferred
+
+Web Portal + API Contract
 
 Draft
 
@@ -963,11 +1109,13 @@ QA-PROV-002
 
 API Contract
 
-Android/Web Portal dùng `serial_number` để restore qua `serial_lookup/{serial_number}`; không dùng `ANDROID_ID`, `android_id_hash` hoặc `device_lookup/{android_id_hash}`.
+Restore uses `serial_lookup/{serial_number}` and not Android system ID.
 
 P0
 
-DCAM Web Portal & Device API Contract
+Deferred
+
+API Contract
 
 Draft
 
@@ -975,11 +1123,13 @@ QA-PROV-003
 
 Web Portal
 
-Factory Worker login, scan QR displayed by DCAM, serial read-only và all post-login operations in Workspace.
+Factory Worker QR-only read-only serial Workspace flow works.
 
 P0
 
-Web Portal Business/App/Implementation Design
+Deferred
+
+Web Portal Designs
 
 Draft
 
@@ -987,11 +1137,13 @@ QA-AUTH-001
 
 User/Auth
 
-Normal recording không có active operator session bị reject với `OPERATOR_AUTH_REQUIRED`.
+Recording follows operator policy of active build; Build 0.1 may use approved no-login/basic placeholder.
 
 P0
 
-User & Device Operation Requirements
+Required with Build 0.1 policy
+
+User Requirements + Delivery Profile
 
 Draft
 
@@ -999,11 +1151,13 @@ QA-AUTH-002
 
 User/Auth
 
-Background/foreground không logout active operator session.
+Background/foreground does not unexpectedly logout active session.
 
 P0
 
-Android Operation Design
+Deferred
+
+Android Operation
 
 Draft
 
@@ -1011,11 +1165,13 @@ QA-AUTH-003
 
 User/Auth
 
-Device reboot làm expire previous session và yêu cầu login lại.
+Reboot expires prior full-auth session when full auth is active.
 
 P0
 
-Android Operation Design
+Deferred
+
+Android Operation
 
 Draft
 
@@ -1023,23 +1179,27 @@ QA-REC-001
 
 Recording
 
-Authenticated operator có thể start và stop normal recording.
+Start/stop normal recording and preserve active-build operator attribution policy.
 
 P0
 
-Recording & Capture Design
+Required
+
+Recording Design
 
 Draft
 
 QA-REC-002
 
-Recording
+Emergency Recording
 
-Emergency recording không login dùng `EMERGENCY_OVERRIDE_ADMIN`.
+Emergency override records safely without granting admin/maintenance capability.
 
 P0
 
-Recording & Capture Design
+Deferred / Conditional
+
+Recording Design
 
 Draft
 
@@ -1047,9 +1207,11 @@ QA-STO-001
 
 Storage
 
-In-progress file không được expose như final media.
+In-progress file is not exposed as final media.
 
 P0
+
+Required
 
 Storage Design
 
@@ -1059,9 +1221,11 @@ QA-STO-002
 
 Storage
 
-Finalized media chỉ trở thành `BDMA_READY` sau khi file và DB state hợp lệ.
+Final media becomes `BDMA_READY` only after valid file and DB state.
 
 P0
+
+Required
 
 Storage Design
 
@@ -1071,9 +1235,11 @@ QA-BDMA-001
 
 BDMA
 
-BDMA import finalized `.mp4` và verify `.md5` nếu có.
+BDMA imports finalized media and verifies `.mp4` checksum when present.
 
 P0
+
+Required
 
 Data Contract
 
@@ -1083,11 +1249,69 @@ QA-BDMA-002
 
 BDMA
 
-Thiếu `.md5` cho `.mp4` được import dạng Unverified/warning, không hard fail.
+Missing `.mp4` checksum imports as Unverified/warning, not hard fail.
 
 P0
 
+Conditional when checksum contract active
+
 Data Contract
+
+Draft
+
+QA-BDMA-003
+
+BDMA Integrity
+
+`.mp4` MD5 mismatch blocks import and cleanup; source evidence remains unchanged.
+
+P0
+
+Required when MP4 checksum sidecar is present
+
+Data Contract + BDMA Design
+
+Draft
+
+QA-BDMA-004
+
+BDMA Image Contract
+
+Final image without `.md5` is imported according to image contract and is not treated as missing-checksum failure.
+
+P0
+
+Required
+
+Data Contract + BDMA Design
+
+Draft
+
+QA-BDMA-005
+
+BDMA Scan/Cleanup
+
+Scan ignores Temp and protected artifacts; cleanup never deletes CSON, DB, logs, identity or recovery artifacts.
+
+P0
+
+Required
+
+Data Contract + BDMA Design
+
+Draft
+
+QA-BDMA-006
+
+ADB Failure
+
+ADB disconnect or permission failure returns controlled/retryable failure and does not modify/delete source artifacts.
+
+P0
+
+Required
+
+BDMA Design
 
 Draft
 
@@ -1095,11 +1319,69 @@ QA-DB-001
 
 SQLite
 
-BDMA write-back bị reject nếu schema version không supported.
+Unsupported schema write-back is rejected.
 
 P0
 
-SQLite Database Design
+Deferred
+
+SQLite Design
+
+Draft
+
+QA-DB-002
+
+SQLite Minimal Artifact
+
+Create/open minimal `dcam.db`; validate `schema_version` and Build 0.1 media/session/finalization/`BDMA_READY`/recovery semantics against the reviewed schema.
+
+P0
+
+Required; exact physical assertions Technical Review required
+
+SQLite Design + Delivery Profile
+
+Draft
+
+QA-DB-003
+
+SQLite Failure/Recovery
+
+Missing, corrupt, unreadable or write-failed DB enters controlled recovery, preserves media/evidence and does not mark invalid media `BDMA_READY`.
+
+P0
+
+Required
+
+SQLite Design + Storage Design
+
+Draft
+
+QA-CSON-001
+
+CSON Minimal Artifact
+
+Create/read minimal `dcam_config.cson`; validate approved required/allowed fields and reject forbidden fields.
+
+P0
+
+Required; exact minimum field set Technical Review required
+
+Device Configuration Requirements + Data Contract
+
+Draft
+
+QA-CSON-002
+
+CSON Failure/Recovery
+
+Missing, invalid or unreadable CSON follows controlled recovery/fallback without secret leakage or source corruption.
+
+P0
+
+Required
+
+Device Configuration Requirements + Data Contract
 
 Draft
 
@@ -1107,11 +1389,13 @@ QA-RCFG-001
 
 Remote Config
 
-Invalid config bị reject và last valid applied config vẫn active.
+Invalid config rejected and last valid applied config remains active.
 
 P0
 
-System Settings Requirements
+Deferred
+
+System Settings
 
 Draft
 
@@ -1119,9 +1403,11 @@ QA-UPD-001
 
 Self Update
 
-Self Update là primary update path trên no-external-EMM baseline.
+Self Update is primary update path for active no-external-EMM profile.
 
 P0
+
+Deferred
 
 Self Update Design
 
@@ -1131,9 +1417,11 @@ QA-UPD-002
 
 Self Update
 
-Update bị defer trong lúc recording.
+Update is deferred during recording/finalization.
 
 P0
+
+Deferred
 
 Self Update Design
 
@@ -1143,9 +1431,11 @@ QA-FACTORY-001
 
 Factory SOP
 
-Raw/factory-reset device có thể được xử lý theo Factory SOP và đạt expected production state.
+Factory-reset device reaches expected production decision.
 
 P0
+
+Not Applicable
 
 Factory SOP
 
@@ -1155,11 +1445,13 @@ QA-FACTORY-002
 
 Factory SOP
 
-Approved APK version/checksum/signing metadata được verify trước khi install.
+APK version/checksum/signing metadata verified before install.
 
 P0
 
-Factory SOP + Self Update + Security
+Not Applicable
+
+Factory + Update + Security
 
 Draft
 
@@ -1167,11 +1459,13 @@ QA-FACTORY-003
 
 Factory SOP
 
-Device Owner/Lock Task/User Restrictions được verify trước khi device ready to ship.
+Device Owner/Lock Task/restrictions verified before shipment.
 
 P0
 
-Factory SOP + Kiosk Policy
+Not Applicable
+
+Factory + Kiosk
 
 Draft
 
@@ -1179,9 +1473,11 @@ QA-SEC-001
 
 Security
 
-Raw Android system identifier, `ANDROID_ID` và `android_id_hash` không bị log hoặc dùng làm production lookup.
+Raw Android system identifiers are not logged or used as production lookup.
 
 P0
+
+Required for sanitization
 
 Security Design
 
@@ -1191,9 +1487,11 @@ QA-SEC-002
 
 Security
 
-Maintenance secret values/kiosk exit credential không bị log hoặc hardcode.
+Maintenance secrets are not logged or hardcoded.
 
 P0
+
+Deferred / Conditional
 
 Security Design
 
@@ -1203,167 +1501,189 @@ QA-SEC-003
 
 Security
 
-Factory Wi-Fi password hardcoded exception không bị expose qua logs, Crashlytics, API, QR, production record hoặc support evidence.
+Factory Wi-Fi exception is not exposed through logs/API/QR/records/evidence.
 
 P0
 
-Security Design + Factory SOP
+Conditional if present in build
+
+Security + Factory
 
 Draft
 
 QA-CAP-001
 
-Device Capability
+Capability
 
-Unsupported GPS feature bị pruned và không làm app crash.
+Unsupported GPS feature is pruned and does not crash app.
 
 P1
 
-Device Capability Design
+Conditional if GPS path present
+
+Capability Design
 
 Draft
 
-## 8. Performance Test Group
+### 7.1 Build 0.1 Artifact and BDMA Assertions
 
-Performance Test Group chạy theo **DCAM Performance Budget & Resource Constraints**.
+Test ID
+
+Guardrail / Closure Condition
+
+QA-DB-002
+
+`schema_version` và semantic subset phải được Technical Review trước khi chốt table/column/enum assertions; Room/raw SQLite không làm thay đổi test intent.
+
+QA-DB-003
+
+Recovery phải preserve media/evidence; exact recovery representation giữ `TBD` đến Technical Review.
+
+QA-CSON-001
+
+Allowed/forbidden boundary lấy từ Data Contract; exact minimal required-field list phải được Technical Review.
+
+QA-CSON-002
+
+Fallback/recovery không được tự tạo identity/config value không có source of truth.
+
+QA-BDMA-003…006
+
+Result phải ghi scan root, source artifact, MD5 state, ADB failure category và cleanup decision; không đánh dấu `Passed` nếu thiếu evidence.
+
+## 8. Performance Test Group
 
 Test Group
 
-MVP Required
+Build 0.1
 
 Evidence
 
 Recording latency
 
-Yes
+Required
 
-`[PERF] recording_start_latency_ms`, `recording_stop_latency_ms`, capture/finalization logs.
+`[PERF] recording_start_latency_ms`, `recording_stop_latency_ms`.
+
+Image latency
+
+Required
+
+Image command-to-final timestamp.
 
 Critical finalization
 
-Yes
+Required
 
-`critical_finalization_latency_ms`, `BDMA_READY` timestamp, checksum async status.
+`critical_finalization_latency_ms`, `BDMA_READY` timestamp.
 
 MainThread / ANR
 
-Yes
+Required
 
-StrictMode debug evidence, `[PERF] main_thread_block_ms` nếu instrumented.
+StrictMode and timing evidence.
 
-State Coordinator / Camera callback
+State Coordinator / camera callback
 
-Yes
+Required
 
-`[PERF] state_coordinator_queue_latency_ms`, camera callback timing.
+Queue/callback timing.
 
 DB transaction / busy retry
 
-Yes
+Required
 
-`[PERF] db_transaction_ms`, DB busy retry logs.
+DB timing/retry logs.
 
-Storage I/O
+Storage I/O / free-space
 
-Yes
+Required
 
-Sustained write benchmark, move/rename latency.
-
-Storage free-space
-
-Yes
-
-Free-space precheck logs and near-full test result.
+Benchmark and near-full/full test.
 
 Memory leak / stability
 
-Yes
+Required
 
-Long-running test result, memory growth, FD leak check.
+Long-running report, memory growth, FD checks.
 
 App-owned thread count
 
-Recommended in MVP; required by Device POC
+Recommended / POC
 
-Thread ownership list and total process thread count measurement.
+Thread ownership list and process measurement.
 
 Battery / Thermal
 
 Deferred
 
-Không enforce; chỉ đo nếu Device POC có dữ liệu.
+Device POC measurement only.
+
+Performance targets are `Approved Pending Device POC`; target-device evidence may adjust values only through approved change control.
 
 ## 9. Logging & Diagnostics Test Group
 
 Test Group
 
-MVP Required
+Build 0.1
 
 Evidence
 
 Local-first persistence
 
-Yes
+Required
 
-Local event/file/queue evidence trước hoặc độc lập với cloud delivery.
+Local file/queue evidence.
 
-Rotation and bounded queue
+Rotation and bounded storage
 
-Yes
+Required
 
-File/queue size, rotation result, retention behavior và storage pressure evidence.
-
-Backend Relay / Loggly delivery
-
-Yes trước production logging
-
-Relay request/result, safe request ID và corresponding Loggly event.
-
-Provider outage and retry
-
-Yes
-
-Offline/unavailable simulation, queued event, retry/recovery evidence.
-
-Crashlytics fatal
-
-Conditional by target provider support; required when enabled
-
-Crash report với safe bounded keys/log context.
-
-Crashlytics non-fatal classification
-
-Conditional by target provider support; required when enabled
-
-Approved unexpected exception report và evidence expected failures không tạo spam.
+Size/rotation/retention result.
 
 Sensitive-data sanitization
 
-Yes
+Required
 
-Automated/manual scan của local logs, queue, relay payload, Loggly và Crashlytics.
-
-Non-GMS fallback
-
-Required nếu target includes non-GMS
-
-Local logs và BDMA artifact hoạt động khi provider unavailable.
+Scan of every active logging channel.
 
 BDMA logs artifact
 
-Yes
+Required
 
-BDMA read-only access tới `logs.txt`; rotated files theo Data Contract policy.
+Read-only `logs.txt` access.
 
-Test rule:
+Provider outage
+
+Conditional when provider integration exists
+
+Offline/unavailable simulation.
+
+Backend Relay / Loggly delivery
+
+Deferred unless explicitly enabled
+
+Relay + Loggly event.
+
+Crashlytics fatal/non-fatal
+
+Conditional when enabled
+
+Safe report and classification evidence.
+
+Non-GMS fallback
+
+Conditional if target includes non-GMS
+
+Local logs and BDMA artifact without provider.
 
 Logging provider failure is a diagnostics degradation,
 not a recording/storage/emergency failure.
 ## 10. Factory Acceptance Test Direction
 
-Factory SOP acceptance là bắt buộc trước pilot/production shipment.
+Factory SOP acceptance is not applicable to Build 0.1 and becomes mandatory only for a shipment build.
 
-Release-approved APK
+Release-approved shipment APK
     ↓
 Factory SOP execution
     ↓
@@ -1371,337 +1691,326 @@ Factory acceptance checklist
     ↓
 QA review
     ↓
-READY_TO_SHIP hoặc QUARANTINED
-Rules:
+READY_TO_SHIP or QUARANTINED
+Factory P0 tests do not block an internal non-shipment build.
 
-Rule
-
-Description
-
-QA-FACTORY-RULE-001
-
-Factory acceptance không được pass nếu APK identity/checksum/signing/version chưa được approved.
-
-QA-FACTORY-RULE-002
-
-Factory acceptance không được pass nếu required kiosk policy không thể verify.
-
-QA-FACTORY-RULE-003
-
-Factory acceptance không được pass nếu tồn tại unrestricted Android escape.
-
-QA-FACTORY-RULE-004
-
-Factory acceptance không được pass nếu business provisioning fail hoặc thiếu `dcam_cloud_device_id`.
-
-QA-FACTORY-RULE-005
-
-Factory acceptance không được pass nếu recording/finalization fail.
-
-QA-FACTORY-RULE-006
-
-Factory acceptance không được pass nếu required BDMA readiness test fail.
-
-QA-FACTORY-RULE-007
-
-Factory acceptance không ��ược pass nếu Maintenance Password Gate fails open.
-
-QA-FACTORY-RULE-008
-
-Factory acceptance phải mark failed devices là `QUARANTINED`.
-
-QA-FACTORY-RULE-009
-
-Factory acceptance phải record Device POC/performance evidence nếu build dùng cho pilot hardware baseline.
-
-QA-FACTORY-RULE-010
-
-Logging provider temporarily unavailable không tự động làm device fail acceptance nếu local diagnostics vẫn hoạt động và release policy không yêu cầu cloud delivery tại factory; deviation phải được ghi nhận.
-
-## 11. Regression Test Set
+## 11. Regression Test Set by Build Profile
 
 Regression Group
 
-Must Run Before Release
+Build 0.1
 
-Startup / Login
+Build 0.2
 
-Có
+Build 0.3
 
-Operational Logging local-first
+Pilot / Shipment
 
-Có
-
-Logging queue rotation / bounded storage
-
-Có
-
-Sensitive Logging sanitization
-
-Có
-
-Backend Relay / Loggly
-
-Có khi production logging enabled
-
-Crashlytics fatal/non-fatal classification
-
-Conditional theo target/provider support
-
-Logging provider outage / recovery
-
-Có
-
-BDMA logs artifact read-only
-
-Có
-
-Performance Budget MVP subset
-
-Có
-
-DCAM-as-DPC / Kiosk Policy
-
-Có
-
-Lock Task Recovery
-
-Có
-
-Maintenance Password Gate
-
-Có
-
-Controlled Maintenance / No unrestricted Android
-
-Có
-
-In-app Console Navigation
-
-Có
-
-In-app Console Access
-
-Có
-
-App Operation Settings Guard
-
-Có
-
-File/Storage Manager / Media Viewer Read-only
-
-Có
-
-Normal Recording
-
-Có
-
-Emergency Recording
-
-Có
-
-Storage Finalization
-
-Có
-
-BDMA Import
-
-Có
-
-SQLite Migration
-
-Có
-
-Web Portal / Device API Contract
-
-Có
-
-Factory Worker QR-only Workspace flow
-
-Có
-
-Serial lookup / identity restore
-
-Có
-
-Reboot Recovery
-
-Có
-
-Remote Config Apply/Reject
-
-Có
-
-Self Update / APK Validation
-
-Có
-
-Self Update Defer / Policy-safe Update
-
-Có
-
-No Managed Google Play Assumption
-
-Có
-
-Factory SOP Acceptance
-
-Có trước pilot/production shipment
-
-Optional Play Store Fallback
-
-Conditional
-
-Device Capability Pruning
-
-Có
-
-## 12. Exit Criteria
-
-Criteria
+Working Recording Slice
 
 Required
 
-All P0 test cases passed
+Required
 
-Có
+Required
 
-Operational Logging local-first, bounded queue và provider outage tests passed
+Required
 
-Có
+Normal Recording / Image Capture
 
-Sensitive values absent from local logs, relay, Loggly and Crashlytics
+Required
 
-Có
+Required
 
-Crashlytics fatal/non-fatal classification passed when provider enabled
+Required
+
+Required
+
+Storage / Finalization / Recovery
+
+Required
+
+Required
+
+Required
+
+Required
+
+Minimal DB/CSON/logs
+
+Required
+
+Required
+
+Required
+
+Required
+
+BDMA sample import
+
+Required
+
+Required E2E
+
+Required
+
+Required
+
+MVP Performance / Concurrency
+
+Required
+
+Required + active platform metrics
+
+Required
+
+Full applicable budget
+
+Sensitive Logging sanitization
+
+Required
+
+Required
+
+Required
+
+Required
+
+Local-first logging / bounded storage
+
+Required
+
+Required
+
+Required
+
+Required
+
+Loggly / Crashlytics
+
+Conditional when enabled
+
+Required when enabled
+
+Required
+
+Required or approved fallback
+
+Full User/Auth
+
+Deferred
+
+Required
+
+Required
+
+Required
+
+Web Portal / Cloud Identity
+
+Deferred
+
+Required
+
+Required
+
+Required
+
+Remote Config
+
+Deferred
+
+Required foundation
+
+Required
+
+Required if active
+
+Self Update
+
+Deferred
+
+Required foundation
+
+Required
+
+Required or exception
+
+Device Owner / Kiosk / Maintenance
+
+Deferred / POC exception
+
+Conditional / POC Blocked
+
+Required if active
+
+Required for production kiosk profile
+
+Factory SOP / READY_TO_SHIP
+
+Not Applicable
 
 Conditional
 
-BDMA logs artifact contract passed
-
-Có
-
-MVP-required Performance Budget metrics passed or documented with approved Device POC adjustment
-
-Có
-
-No open P0 bug
-
-Có
-
-P1 bugs reviewed and accepted
-
-Có
-
-Recording/capture regression passed on target BodyCamera
-
-Có
-
-Kiosk policy regression passed on target BodyCamera
-
-Có
-
-In-app console P0 tests passed under kiosk mode
-
-Có
-
-Controlled Maintenance / Maintenance Password Gate passed
-
-Có
-
-No unrestricted Android escape passed
-
-Có
-
-Web Portal / Device API Contract P0 tests passed
-
-Có
-
-Factory Worker QR-only Login/Workspace flow passed
-
-Có
-
-`serial_lookup/{serial_number}` identity restore and provisioning baseline passed
-
-Có
-
-Self Update primary path passed
-
-Có
-
-Managed Google Play / policy-driven update marked not applicable for current baseline
-
-Có
-
-Factory SOP acceptance passed for shipment build
-
-Có trước pilot/production shipment
-
-Production record format reviewed for safe metadata only
-
-Có trước pilot/production shipment
-
-Optional Play Store fallback either passed if enabled or documented as unavailable
-
 Conditional
 
-BDMA import smoke test passed under approved restriction profile
+Required for shipment
 
-Có
+Live Streaming / PTT / Full GPS Route
 
-Reboot/session/policy recovery test passed
+Not Applicable
 
-Có
+Deferred
 
-Release checklist completed
+Required according to scope
 
-Có
+Required only if included in pilot scope
 
-## 13. Practical Conclusion
+AI
 
-Tài liệu này là **QA source of truth** cho DCAM release readiness.
+Not Applicable
 
-Requirements định nghĩa DCAM phải làm gì.
-Architecture định nghĩa provider ownership và boundaries.
-Technical Design định nghĩa DCAM nên hoạt động như thế nào.
-Performance Budget định nghĩa metric đo nhanh/chậm/ổn định.
-QA Test Strategy & Test Matrix định nghĩa cách verify DCAM behavior.
-Factory SOP định nghĩa cách một thiết bị vật lý trở thành ready to ship.
-Release Management quyết định build/device đã sẵn sàng release hay chưa.
-P0 logging/diagnostics baseline:
+Deferred
 
-Operational Logging is local-first.
-Loggly is centralized Operational Logging provider.
-Crashlytics is Crash & Stability Monitoring provider.
-Provider outage must not block core operation.
-Expected operational failures must not create Crashlytics noise.
-Sensitive values must not appear in any logging channel.
-BDMA can read the approved logs artifact in read-only mode.
-P0 MVP coverage tiếp tục bao gồm:
+Conditional/Future
 
-startup
-performance budget MVP subset
-DCAM-as-DPC / Device Owner feasibility
-Lock Task Mode
-User Restrictions
-in-app console navigation and access
-read-only File/Media manager
-Maintenance Password Gate
-Controlled Maintenance with no unrestricted Android
-Factory Worker QR-only Web Portal provisioning
-serial_lookup identity restore
-Web Portal & Device API Contract
-login and user settings
-normal recording
-emergency override
-storage finalization
-BDMA import
-SQLite recovery
-remote config reject/defer
-Self Update / APK update primary path
-no Managed Google Play assumption
-policy-safe update
-factory SOP acceptance
-safe production record
-logging and diagnostics
+Only if pilot scope activates it
+
+## 12. Exit Criteria
+
+### 12.1 Universal Rule
+
+All P0 tests with Applicability = Required must pass.
+All P0 tests with Applicability = Conditional must pass when the activation condition is true.
+Deferred and Not Applicable tests do not block the build.
+POC Blocked tests block only the build/profile that requires the unresolved capability.
+
+Criteria
+
+Requirement
+
+Applicable P0 tests passed
+
+Required
+
+No open applicable P0 bug
+
+Required
+
+Applicable P1 bugs reviewed and accepted
+
+Required
+
+Required evidence linked in Traceability Matrix or release report
+
+Required
+
+Release & Build Applicability Matrix matches tested scope
+
+Required
+
+Release checklist completed for the active Build Profile
+
+Required
+
+### 12.2 Build 0.1 Exit Criteria
+
+Criteria
+
+Build 0.1
+
+QA-WRS-001 passes
+
+Required
+
+Normal recording and image capture pass
+
+Required
+
+Storage/finalization/recovery subset passes
+
+Required
+
+Minimal DB/CSON/logs artifacts produced
+
+Required
+
+BDMA detects/imports sample media
+
+Required
+
+Applicable MVP Performance Budget passes or has approved Device POC adjustment
+
+Required
+
+MainThread/concurrency critical path passes
+
+Required
+
+Sensitive values absent from active logs/artifacts
+
+Required
+
+Local-first logging and bounded storage pass
+
+Required
+
+Web Portal / full auth / kiosk / Remote Config / Self Update / Factory tests
+
+Deferred or Not Applicable; must not block Build 0.1
+
+### 12.3 Pilot / Shipment Additional Exit Criteria
+
+Criteria
+
+Condition
+
+Kiosk policy and no unrestricted escape
+
+Required when production kiosk profile active
+
+Web Portal / provisioning / identity restore
+
+Required when activated
+
+Self Update primary path
+
+Required when activated
+
+Factory SOP acceptance
+
+Required for shipment
+
+Safe production record
+
+Required for shipment
+
+Security Review and active encryption profile tests
+
+Required when encryption active
+
+Device POC target model/firmware evidence
+
+Required for production hardware baseline
+
+## 13. Traceability and Evidence Rule
+
+QA coverage is complete only when the following chain is visible:
+
+Requirement ID
+    → Build Applicability
+    → Design / Contract section
+    → QA Test ID
+    → Jira item
+    → Test evidence
+The authoritative mapping is **DCAM Requirement–Design–Test Traceability Matrix**.
+
+A test row marked `Draft` may define intended coverage, but it does not count as executed evidence.
+
+## 14. Practical Conclusion
+
+Priority and Build Applicability are separate.
+Only applicable P0 tests block a build.
+Build 0.1 is gated by Working Recording Slice, recording/image capture, storage/finalization, minimal artifacts, BDMA sample import, performance/concurrency and sanitization.
+Web Portal, full auth, full kiosk, Remote Config, Self Update and Factory acceptance do not block Build 0.1 unless explicitly activated.
+Traceability Matrix owns Requirement → Build → Design → QA → Jira → Evidence coverage.

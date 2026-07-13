@@ -1,7 +1,7 @@
 # 06 - BDMA Integration Requirements
 
 **Page ID**: 47743376  
-**Version**: 4  
+**Version**: 6  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47743376
 
@@ -24,11 +24,15 @@ Functional Requirements
 
 Version
 
-Approved 1.2
+Approved 1.4
 
 Status
 
 Approved
+
+Approval Scope
+
+Stable requirements và Build 0.1 final-media/checksum import boundary
 
 Owner
 
@@ -52,11 +56,19 @@ PM/BA, Tech Lead, Android Developers, BDMA Developers, QA
 
 Last Updated
 
-2026-07-07
+2026-07-13
+
+Related Jira
+
+Not linked
+
+Dependencies / Blockers
+
+BDMA Technical Review; authoritative GitHub/repository mapping; ADB/Device POC evidence.
 
 Related Documents
 
-DCAM-BDMA Data Contract, 08 - DCAM-BDMA Integration Boundary, DCAM BDMA Integration Technical Design, DCAM Storage Design, DCAM SQLite Database Design
+DCAM-BDMA Data Contract, 08 - DCAM-BDMA Integration Boundary, DCAM BDMA Integration Technical Design, DCAM Storage Design, DCAM SQLite Database Design, Decision Brief – DCAM MVP Internal Build 0.1 – Working Recording Slice
 
 ## 1. Purpose
 
@@ -98,45 +110,73 @@ DB-level fields and schema compatibility are handled there.
 
 ## 3. Requirement Scope
 
+Requirement ID
+
 Requirement
 
 Direction
 
+Build 0.1
+
 Status
+
+BDMA-INT-001
 
 ADB-based Import
 
 BDMA import boundary remains ADB-based.
 
+Required.
+
 Approved
+
+BDMA-INT-002
 
 Data Contract Compliance
 
 BDMA must comply with DCAM-BDMA Data Contract.
 
+Required.
+
 Approved
+
+BDMA-INT-003
 
 Final Media Only
 
 BDMA imports finalized media candidates only.
 
+Required.
+
 Approved
+
+BDMA-INT-004
 
 Temp/Cache Handling
 
 Temp/cache handling follows Data Contract and Storage Design.
 
+Required.
+
 Approved
+
+BDMA-INT-005
 
 DB Write-back
 
 BDMA write-back must follow Data Contract and DB schema compatibility.
 
+Deferred; không block sample import.
+
 Approved Direction
+
+BDMA-INT-006
 
 Logs
 
 BDMA log access follows Data Contract.
+
+Required read-only artifact access.
 
 Approved
 
@@ -145,3 +185,42 @@ Approved
 BDMA Requirements defines requirement-level integration intent.
 DCAM-BDMA Data Contract owns concrete media/file/MD5/cleanup rules.
 BDMA Technical Design owns implementation flow.
+## 4. Build 0.1 Import Eligibility Requirements
+
+Requirement ID
+
+Requirement
+
+Status
+
+BDMA-B01-001
+
+BDMA chỉ scan logical Internal final-media root của approved Build 0.1 mapping; Temp/Cache phải bị ignore.
+
+Approved for Build DCAM MVP Internal Build 0.1
+
+BDMA-B01-002
+
+MP4 chỉ đủ điều kiện import khi finalized và có valid MD5 sidecar.
+
+Approved for Build DCAM MVP Internal Build 0.1
+
+BDMA-B01-003
+
+Missing hoặc mismatch MD5 phải block import và Build 0.1 release evidence.
+
+Approved for Build DCAM MVP Internal Build 0.1
+
+BDMA-B01-004
+
+ADB disconnect, permission failure hoặc checksum failure không được làm cleanup protected artifacts.
+
+Approved for Build DCAM MVP Internal Build 0.1
+
+BDMA-B01-005
+
+Image no-MD5 behavior giữ theo Data Contract; DEC-03 không mở rộng MD5 sang image.
+
+Approved for Build DCAM MVP Internal Build 0.1
+
+Physical scan root/path mapping vẫn Pending Device POC và Data Contract/Storage Design review.

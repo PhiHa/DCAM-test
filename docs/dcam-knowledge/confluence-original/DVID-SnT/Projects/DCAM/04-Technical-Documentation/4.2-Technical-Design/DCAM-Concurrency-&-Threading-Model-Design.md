@@ -1,7 +1,7 @@
 # DCAM Concurrency & Threading Model Design
 
 **Page ID**: 50725012  
-**Version**: 3  
+**Version**: 4  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/50725012
 
@@ -24,11 +24,15 @@ Technical Design
 
 Version
 
-Draft 0.2
+Draft 0.3
 
 Status
 
 Draft
+
+Approval Scope
+
+Candidate Build 0.1 required execution lanes; cần Technical Review trước khi chuyển `Approved Provisional Baseline`.
 
 Owner
 
@@ -52,11 +56,15 @@ Tech Lead, Android Developers, QA, Support, BDMA Team
 
 Last Updated
 
-2026-07-09
+2026-07-13
 
 Related Jira
 
-None
+Not linked
+
+Dependencies / Blockers
+
+Tech Lead/Android Lead/DB Reviewer/QA Lead Technical Review; Jira/PR/build/test evidence; camera provider Device POC.
 
 Related Documents
 
@@ -827,6 +835,58 @@ DB writes run on DbExecutor.
 MainThread never blocks on recording/file/DB work.
 BDMA_READY is marked only after final file and DB update succeed.
 Checksum does not block BDMA_READY.
+### 13.1 Build 0.1 Review Candidate
+
+Execution Boundary
+
+Build 0.1
+
+Review Guardrail
+
+`MainThread`
+
+Required
+
+UI/lifecycle work nhẹ; không camera/file/DB blocking.
+
+State Coordinator / `RecordingCommandExecutor`
+
+Required
+
+Single-writer runtime state; command/event serialization.
+
+`CameraExecutor` / `CameraHandlerThread`
+
+Required
+
+Camera calls/callback mapping; không mutate DB/UI/state trực tiếp.
+
+`FileIoExecutor`
+
+Required
+
+Temp/final/CSON/log/checksum I/O; không giữ DB transaction.
+
+`DbExecutor`
+
+Required
+
+Short DB reads/writes, finalization/`BDMA_READY` state; bounded retry theo `PERF-ANR-007`.
+
+`PolicyExecutor`
+
+Conditional
+
+Chỉ active nếu Build 0.1 có approved Lock Task POC exception.
+
+`NetworkExecutor` / `UpdateExecutor`
+
+Deferred
+
+Không thuộc Working Recording Slice.
+
+Technology choice, queue capacity và concrete class names không được tự suy ra từ subset này. `Approved Provisional Baseline` chỉ được đề xuất sau required Technical Review.
+
 ## 14. Performance Budget Alignment
 
 Detailed numeric targets are owned by **DCAM Performance Budget & Resource Constraints**. This page owns the execution model; the performance page owns measurable targets.

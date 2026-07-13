@@ -13,6 +13,7 @@ public final class DemoSettingsState {
     private String recordResolution = "1080p";
     private int segmentLengthMinutes = 5;
     private boolean loopRecordingEnabled = true;
+    private boolean videoMd5Enabled;
     private boolean videoEncryptionEnabled;
     private int defaultStorageIndex;
     private int lowStorageWarningGb = 2;
@@ -22,8 +23,9 @@ public final class DemoSettingsState {
     private boolean fullScreenDisplay;
     private boolean statusLightsEnabled = true;
 
-    public DemoSettingsState(boolean videoEncryptionEnabled, int defaultStorageIndex) {
+    public DemoSettingsState(boolean videoEncryptionEnabled, boolean videoMd5Enabled, int defaultStorageIndex) {
         this.videoEncryptionEnabled = videoEncryptionEnabled;
+        this.videoMd5Enabled = videoMd5Enabled;
         this.defaultStorageIndex = clamp(defaultStorageIndex, STORAGE_OPTIONS.size());
     }
 
@@ -61,6 +63,9 @@ public final class DemoSettingsState {
             case LOOP_RECORDING:
                 loopRecordingEnabled = checked;
                 break;
+            case CREATE_VIDEO_MD5:
+                videoMd5Enabled = checked;
+                break;
             case RECYCLE_OLD_RECORDINGS:
                 recycleOldRecordings = checked;
                 break;
@@ -91,7 +96,8 @@ public final class DemoSettingsState {
                         RECORD_RESOLUTIONS, RECORD_RESOLUTIONS.indexOf(recordResolution)),
                 SettingItem.slider(SettingId.VIDEO_SEGMENT_LENGTH_MINUTES, "Video segment length",
                         1, 30, segmentLengthMinutes, "min"),
-                SettingItem.checkbox(SettingId.LOOP_RECORDING, "Loop recording", loopRecordingEnabled)))));
+                SettingItem.checkbox(SettingId.LOOP_RECORDING, "Loop recording", loopRecordingEnabled),
+                SettingItem.checkbox(SettingId.CREATE_VIDEO_MD5, "Create MD5 for video", videoMd5Enabled)))));
     }
 
     public SettingsScreenModel storage() {

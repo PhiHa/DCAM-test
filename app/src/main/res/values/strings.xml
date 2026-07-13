@@ -27,6 +27,8 @@
     <string name="about">About</string>
     <string name="developer_mode">Developer mode</string>
     <string name="developer_mode_unlocked">Developer mode unlocked</string>
+    <string name="edit_key_bindings">Edit key bindings</string>
+    <string name="button_role_bindings">Button-role bindings</string>
     <string name="operator_login">Operator login</string>
     <string name="operator_login_hint">MVP default password: 000000</string>
     <string name="password">Password</string>

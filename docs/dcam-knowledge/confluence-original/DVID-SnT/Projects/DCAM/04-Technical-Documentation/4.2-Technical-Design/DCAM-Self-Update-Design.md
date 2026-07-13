@@ -1,7 +1,7 @@
 # DCAM Self Update Design
 
 **Page ID**: 48529439  
-**Version**: 9  
+**Version**: 11  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/48529439
 
@@ -24,7 +24,7 @@ Technical Design
 
 Version
 
-Draft 0.9
+Draft 1.0
 
 Status
 
@@ -66,15 +66,23 @@ Related Documents
 
 Tài liệu này mô tả technical design cho **Self Update / APK update** của DCAM.
 
-Current baseline:
+Project-wide EMM/Device Owner và update-direction baseline được reference từ:
 
-Current device baseline: No external EMM / No Android Management API / No Managed Google Play. (per ADR - Dedicated Device / Device Owner / Lock Task Decision)
-Primary update path = DCAM Self Update / APK update.
-Tài liệu này không định nghĩa lại AutoUpdate preconditions. Full condition list thuộc **09 - System Settings Requirements**.
+DCAM Project Home / DCAM Architecture Home.
 
-Tài liệu này cũng không own Device Owner / Lock Task / User Restrictions policy. Policy-safe update constraints thuộc **DCAM Android Device Owner & Kiosk Policy Design**.
+ADR - DCAM Android Dedicated Device / Device Owner / Lock Task Decision.
 
-Tài liệu này không own in-app manual Play Store fallback UX. Controlled Mode, Maintenance Password Gate và optional Google Play Store fallback UX thuộc **DCAM In-App Operation, Device Settings & Media Console Design**.
+DCAM Android Device Owner & Kiosk Policy Design.
+
+Local implementation impact: **DCAM Self Update Design** sở hữu artifact discovery, download, validation, install, result, recovery và rollback direction cho primary APK update flow.
+
+Tài liệu này không định nghĩa lại:
+
+AutoUpdate precondition — thuộc **09 - System Settings Requirements**.
+
+Device Owner / Lock Task / User Restrictions policy — thuộc **DCAM Android Device Owner & Kiosk Policy Design**.
+
+Controlled Mode, Maintenance Password Gate và optional Play Store fallback UX — thuộc **DCAM In-App Operation, Device Settings & Media Console Design**.
 
 ## 2. Authoritative References
 
@@ -736,15 +744,6 @@ Device POC + Product/Security decision.
 
 ## 15. Practical Conclusion
 
-Self Update owns the primary update path. Current device baseline per ADR: No external EMM / No Android Management API / No Managed Google Play.
-Manual Google Play Store update is optional controlled maintenance fallback only if GMS/Play Store exists and approved maintenance/factory account exists.
-APK file, version manifest, checksum, signature, package identity, device compatibility and source validation are approved directions.
-Only exact schema, algorithms, install mechanics and rollout/rollback details remain TBD.
-System Settings owns full AutoUpdate precondition list.
-Android Operation owns app operating modes and runtime orchestration.
-State Machine owns update priority and guard behavior.
-Cloud Architecture owns provider boundary.
-Kiosk Policy Design owns Device Owner / Lock Task / User Restrictions constraints.
-In-App Console Design owns Controlled Mode / Maintenance Password Gate UX.
-Security Design owns package/update/account credential security constraints.
-Self Update must preserve Device Owner/DPC policy, Lock Task recovery and User Restrictions baseline.
+Self Update Design sở hữu primary APK update flow: artifact, manifest, validation, install, result, recovery và rollout/rollback direction.
+
+Project-wide EMM/Device Owner/update baseline được reference từ ADR và Architecture Home. System Settings sở hữu AutoUpdate precondition; Kiosk Policy sở hữu policy constraint; In-App Console sở hữu controlled fallback UX; Security Design sở hữu package/update credential constraint. Các exact schema, algorithm, install mechanic và rollout value còn lại phải được quyết định tại đúng authoritative owner.

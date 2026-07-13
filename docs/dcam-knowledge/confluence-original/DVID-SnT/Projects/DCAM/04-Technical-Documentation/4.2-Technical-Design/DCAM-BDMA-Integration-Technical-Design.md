@@ -1,7 +1,7 @@
 # DCAM BDMA Integration Technical Design
 
 **Page ID**: 48595030  
-**Version**: 5  
+**Version**: 6  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/48595030
 
@@ -24,11 +24,15 @@ Technical Design
 
 Version
 
-Draft 0.5
+Draft 0.6
 
 Status
 
 Draft
+
+Approval Scope
+
+Candidate Build 0.1 ADB read/import subset; cần Technical Review trước khi chuyển `Approved Provisional Baseline`.
 
 Owner
 
@@ -52,7 +56,15 @@ Tech Lead, Android Developers, BDMA Developers, QA
 
 Last Updated
 
-2026-07-08
+2026-07-13
+
+Related Jira
+
+Not linked
+
+Dependencies / Blockers
+
+Technical Review; logical-to-physical ADB path mapping; Device POC; authoritative GitHub/repository linkage; QA/Jira evidence.
 
 Related Documents
 
@@ -241,7 +253,82 @@ Error Handling
 
 Map implementation errors sang Data Contract result categories.
 
-## 7. Practical Conclusion
+## 7. Build 0.1 Approval Scope Candidate
+
+Candidate scope này chỉ áp dụng cho **DCAM MVP Internal Build 0.1 – Working Recording Slice** và chưa thay đổi `Status = Draft` trước Technical Review.
+
+Area
+
+Build 0.1 Direction
+
+Source / Guardrail
+
+Scan roots / path mapping
+
+Scan logical final-media roots do Data Contract định nghĩa; BDMA Design sở hữu scan mapping, Storage Design sở hữu Android root resolution.
+
+Không chọn physical ADB path trước Device POC.
+
+Final-media-only
+
+Chỉ import finalized candidate; không import partial/in-progress artifact.
+
+Data Contract + `BDMA_READY` semantics.
+
+Temp ignore
+
+Bỏ qua Temp/staging/recovery candidate chưa được contract cho phép.
+
+Data Contract; QA-BDMA-005.
+
+MP4 MD5 pass
+
+Khi sidecar tồn tại và match, import/cleanup chỉ theo approved cleanup policy.
+
+QA-BDMA-001.
+
+MP4 MD5 missing
+
+Import ở trạng thái Unverified/warning, không hard fail theo current contract.
+
+QA-BDMA-002.
+
+MP4 MD5 mismatch
+
+Không import, không cleanup/delete source; trả controlled integrity failure.
+
+QA-BDMA-003.
+
+Image no-MD5
+
+Image final artifact không yêu cầu `.md5`; không áp dụng MP4 missing-checksum failure.
+
+QA-BDMA-004.
+
+Protected artifact cleanup
+
+Không xóa `dcam_config.cson`, `dcam.db`, `logs.txt`, identity hoặc recovery artifacts.
+
+Data Contract; QA-BDMA-005.
+
+ADB disconnect / permission failure
+
+Trả controlled/retryable failure; không ghi/xóa source artifact khi operation chưa xác nhận.
+
+QA-BDMA-006.
+
+### 7.1 Excluded from Build 0.1 Approval Candidate
+
+full DB write-back
+user/cloud synchronization
+encryption/decryption implementation
+physical storage/ADB path values without Device POC
+production cleanup policy beyond the approved Data Contract
+### 7.2 Approval Gate
+
+`Approved Provisional Baseline` chỉ được đề xuất sau khi Tech Lead/BDMA Lead/QA Lead xác nhận scope trên, path ownership và QA-BDMA-003…006. GitHub evidence chỉ được dùng khi Confluence/Jira có authoritative repository mapping.
+
+## 8. Practical Conclusion
 
 BDMA Technical Design owns implementation flow.
 DCAM-BDMA Data Contract owns the actual data/file/import rules.

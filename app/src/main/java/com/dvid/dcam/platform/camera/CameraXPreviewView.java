@@ -3,6 +3,8 @@ package com.dvid.dcam.platform.camera;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Color;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.Gravity;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -13,8 +15,11 @@ import androidx.camera.view.PreviewView;
 /** CameraX preview surface and camera-facing status text. */
 @SuppressLint("ViewConstructor")
 public final class CameraXPreviewView extends FrameLayout {
+    private static final long MESSAGE_DURATION_MS = 2_500L;
     private final PreviewView previewView;
     private final TextView message;
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private final Runnable clearMessage = this::clearMessage;
 
     public CameraXPreviewView(Context context) {
         super(context);
@@ -27,10 +32,16 @@ public final class CameraXPreviewView extends FrameLayout {
 
         message = new TextView(context);
         message.setTextColor(Color.WHITE);
+        message.setTextSize(11);
         message.setGravity(Gravity.CENTER);
-        message.setPadding(12, 12, 12, 12);
-        addView(message, new LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM));
+        message.setPadding(dp(10), dp(5), dp(10), dp(5));
+        message.setBackgroundResource(com.dvid.dcam.R.drawable.bg_preview_message);
+        LayoutParams messageLayout = new LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
+        messageLayout.setMargins(dp(8), dp(8), dp(8), dp(8));
+        addView(message, messageLayout);
+        clearMessage();
     }
 
     Preview.SurfaceProvider surfaceProvider() {
@@ -41,29 +52,45 @@ public final class CameraXPreviewView extends FrameLayout {
         showMessage(getContext().getString(com.dvid.dcam.R.string.camera_permission_required));
     }
 
+    void showStarting() { showMessage("Starting camera..."); }
+
     void clearMessage() {
+        handler.removeCallbacks(clearMessage);
         showMessage("");
     }
 
-    void showSaved(String fileName) {
-        showMessage(getContext().getString(com.dvid.dcam.R.string.media_saved, fileName));
+    public void showSaved(String fileName) {
+        showTransientMessage(getContext().getString(com.dvid.dcam.R.string.media_saved, fileName));
     }
 
     void showRecording(String fileName) {
-        showMessage(getContext().getString(com.dvid.dcam.R.string.recording_file, fileName));
+        clearMessage();
     }
 
     void showFinalized(String text) {
-        showMessage(text);
+        showTransientMessage(text);
     }
 
     void showError(String text) {
+        handler.removeCallbacks(clearMessage);
+        message.setVisibility(VISIBLE);
         message.setTextColor(Color.RED);
         message.setText(text == null ? "Camera failed" : text);
+    }
+
+    private void showTransientMessage(String text) {
+        showMessage(text);
+        handler.removeCallbacks(clearMessage);
+        handler.postDelayed(clearMessage, MESSAGE_DURATION_MS);
     }
 
     private void showMessage(String text) {
         message.setTextColor(Color.WHITE);
         message.setText(text);
+        message.setVisibility(text == null || text.isEmpty() ? GONE : VISIBLE);
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
     }
 }

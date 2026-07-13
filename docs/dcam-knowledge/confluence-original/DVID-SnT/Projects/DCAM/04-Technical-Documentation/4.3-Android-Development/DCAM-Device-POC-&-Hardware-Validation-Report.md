@@ -348,7 +348,7 @@ POC-KIOSK-009
 
 Enter Controlled Maintenance bằng password.
 
-Chỉ approved targets được mở và có audit event.
+Chỉ approved targets được mở và c�� audit event.
 
 TBD
 

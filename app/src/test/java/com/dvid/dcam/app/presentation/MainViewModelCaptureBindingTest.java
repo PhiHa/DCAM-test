@@ -48,17 +48,19 @@ final class MainViewModelCaptureBindingTest {
         viewModel.onCleared();
     }
 
-    @Test void releasingTheBoundRuntimeResetsRetainedRecordingState() {
+    @Test void activityRecreationPreservesOneRecordingAuthority() {
         MainViewModel viewModel = viewModel();
         CaptureEventUseCaseImpl events = new CaptureEventUseCaseImpl();
         viewModel.bindCaptureEvents(events);
         events.recordingStarted(RecordingMode.VIDEO, "video.mp4");
 
-        viewModel.onCapturePlatformReleased(events);
+        viewModel.unbindCaptureEvents(events);
+        viewModel.bindCaptureEvents(events);
 
         MainUiState state = viewModel.state().getValue();
-        assertEquals(RecordingMode.IDLE, state.getCapture().getMode());
-        assertEquals("Recording failed: camera lifecycle ended", state.getMessage());
+        assertEquals(RecordingMode.VIDEO, state.getCapture().getMode());
+        events.recordingCompleted("video.mp4");
+        assertEquals(RecordingMode.IDLE, viewModel.state().getValue().getCapture().getMode());
         viewModel.onCleared();
     }
 

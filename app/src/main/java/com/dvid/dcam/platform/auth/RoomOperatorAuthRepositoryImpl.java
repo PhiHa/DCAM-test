@@ -30,6 +30,9 @@ public final class RoomOperatorAuthRepositoryImpl implements OperatorAuthReposit
 
     @Override
     public void insertIfMissing(OperatorAccount account, String passwordText) {
+        String methodId = passwordMethodId(account.getUserId());
+        if (dao.userCreatedAt(account.getUserId()) != null
+                && dao.authMethodCreatedAt(methodId) != null) return;
         long now = System.currentTimeMillis();
         dao.insertIfMissing(toUser(account, now), toMethod(account, passwordText, now));
     }
@@ -116,6 +119,10 @@ public final class RoomOperatorAuthRepositoryImpl implements OperatorAuthReposit
                 now,
                 now,
                 1);
+    }
+
+    private static String passwordMethodId(String userId) {
+        return "password:" + userId;
     }
 
     private static List<OperatorAccount> toAccounts(List<UserProfileEntity> entities) {

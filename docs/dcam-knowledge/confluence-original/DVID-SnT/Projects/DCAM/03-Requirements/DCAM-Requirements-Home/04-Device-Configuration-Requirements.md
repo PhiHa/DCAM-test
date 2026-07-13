@@ -1,7 +1,7 @@
 # 04 - Device Configuration Requirements
 
 **Page ID**: 47710554  
-**Version**: 7  
+**Version**: 8  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47710554
 
@@ -24,11 +24,15 @@ Functional Requirements
 
 Version
 
-Approved 1.5
+Approved 1.6
 
 Status
 
 Approved
+
+Approval Scope
+
+Device configuration requirements với narrow Build 0.1 operator exception
 
 Owner
 
@@ -52,7 +56,7 @@ PM/BA, Tech Lead, Android Developers, BDMA Developers, QA, Cloud/WebServer Team
 
 Last Updated
 
-2026-07-10
+2026-07-13
 
 Related Jira
 
@@ -60,7 +64,7 @@ None
 
 Related Documents
 
-DCAM Release & Build Applicability Matrix, DCAM Factory Provisioning & Device Production SOP, DCAM Device Provisioning Web Portal Design, DCAM Device Provisioning Web Portal App Design, DCAM Web Portal & Device API Contract, DCAM Requirements Home, DCAM-BDMA Data Contract, 09 - System Settings Requirements, 06 - Cloud Services, Update & Configuration Architecture, DCAM SQLite Database Design, DCAM Android Operation Design, DCAM Security & Encryption Design, 08 - DCAM-BDMA Integration Boundary
+DCAM Release & Build Applicability Matrix, DCAM Factory Provisioning & Device Production SOP, DCAM Device Provisioning Web Portal Design, DCAM Device Provisioning Web Portal App Design, DCAM Web Portal & Device API Contract, DCAM Requirements Home, DCAM-BDMA Data Contract, 09 - System Settings Requirements, 06 - Cloud Services, Update & Configuration Architecture, DCAM SQLite Database Design, DCAM Android Operation Design, DCAM Security & Encryption Design, 08 - DCAM-BDMA Integration Boundary, Decision Brief – DCAM MVP Internal Build 0.1 – Working Recording Slice
 
 ## 1. Purpose
 
@@ -411,3 +415,38 @@ Web Portal provisioning = Factory Worker + Login/Workspace + QR displayed by DCA
 serial_number = read-only in Web Portal
 Do not use ANDROID_ID, android_id_hash or device_lookup/{android_id_hash} in the current baseline
 Build applicability is controlled by DCAM Release & Build Applicability Matrix
+## 10. Build 0.1 CSON Exception
+
+Build 0.1 cho phép đúng hai technical attribution fields trong dcam_config.cson tại nơi schema yêu cầu:
+
+Requirement ID
+
+Field
+
+Value
+
+Mutability
+
+Meaning
+
+CFG-B01-001
+
+operator_id
+
+BUILD01_OPERATOR
+
+Immutable trong Build 0.1
+
+Technical traceability only
+
+CFG-B01-002
+
+operator_name
+
+Build 0.1 Operator
+
+Immutable trong Build 0.1
+
+Technical traceability only
+
+Exception này không cho phép credential, authentication token, authorization role, user profile hoặc runtime operator management trong CSON. Exact field placement/serialization cần Data Contract Technical Review.

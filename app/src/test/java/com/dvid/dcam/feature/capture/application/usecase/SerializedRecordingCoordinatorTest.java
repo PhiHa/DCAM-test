@@ -75,6 +75,18 @@ final class SerializedRecordingCoordinatorTest {
         assertEquals(1, camera.sosStarts);
     }
 
+    @Test void secondSosToggleStopsWhileFirstStartIsPending() {
+        ManualExecutor executor = new ManualExecutor();
+        FakeCamera camera = new FakeCamera();
+        SerializedRecordingCoordinator coordinator = coordinator(executor, camera);
+
+        coordinator.toggleSos();
+        coordinator.toggleSos();
+        executor.runAll();
+
+        assertEquals(List.of("start-sos", "stop"), camera.calls);
+    }
+
     @Test void cameraCanOnlyBeBoundOnce() {
         SerializedRecordingCoordinator coordinator =
                 new SerializedRecordingCoordinator(Runnable::run);

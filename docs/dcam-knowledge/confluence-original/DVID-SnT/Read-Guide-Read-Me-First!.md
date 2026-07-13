@@ -1,7 +1,7 @@
 # Read Guide - Read Me First!
 
 **Page ID**: 42696756  
-**Version**: 9  
+**Version**: 11  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/42696756
 
@@ -24,11 +24,11 @@ Space Home / Onboarding Read Guide
 
 Version
 
-Draft 1.0
+Approved 1.0
 
 Status
 
-Draft
+Approved
 
 Owner
 

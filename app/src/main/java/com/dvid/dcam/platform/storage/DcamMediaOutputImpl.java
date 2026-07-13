@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.BooleanSupplier;
 
 public final class DcamMediaOutputImpl implements DcamMediaOutput {
     private static final ExecutorService FINALIZATION_EXECUTOR =
@@ -26,11 +27,17 @@ public final class DcamMediaOutputImpl implements DcamMediaOutput {
     private final DcamStorage storage;
     private final DcamMediaFinalizer finalizer;
     private final ExecutorService finalizationExecutor;
+    private final BooleanSupplier createVideoMd5;
 
     public DcamMediaOutputImpl(DcamStorage storage) {
+        this(storage, null);
+    }
+
+    public DcamMediaOutputImpl(DcamStorage storage, BooleanSupplier createVideoMd5) {
         this.storage = storage;
         this.finalizer = new DcamMediaFinalizer(storage);
         this.finalizationExecutor = FINALIZATION_EXECUTOR;
+        this.createVideoMd5 = createVideoMd5;
     }
 
     @Override public DcamMediaFile mediaFile(
@@ -101,7 +108,8 @@ public final class DcamMediaOutputImpl implements DcamMediaOutput {
             Context context, DcamMediaFile mediaFile, FinalizationCallback callback) {
         finalizationExecutor.execute(() -> {
             try {
-                File finalFile = finalizer.finalizeMedia(mediaFile);
+                boolean createMd5 = createVideoMd5 != null && createVideoMd5.getAsBoolean();
+                File finalFile = finalizer.finalizeMedia(mediaFile, createMd5);
                 if (storage.isPublicDcim()) {
                     MediaScannerConnection.scanFile(context,
                             new String[] { finalFile.getAbsolutePath() },
@@ -117,7 +125,7 @@ public final class DcamMediaOutputImpl implements DcamMediaOutput {
     @Override public void recoverStaged(RecoveryCallback callback) {
         finalizationExecutor.execute(() -> callback.onComplete(
                 new DcamStagedMediaRecovery(
-                        storage, finalizer, new AndroidDcamMediaValidator()).recover()));
+                        storage, finalizer, new AndroidDcamMediaValidator(), createVideoMd5).recover()));
     }
 
     private boolean usesPublicMediaStore(DcamFileType type) {

@@ -24,6 +24,7 @@ final class DeveloperFeatureTogglesTest {
                 EnumSet.of(
                         FeatureGate.IMAGE_CAPTURE,
                         FeatureGate.VIDEO_CAPTURE,
+                        FeatureGate.VIDEO_MD5,
                         FeatureGate.MEDIA_BROWSER,
                         FeatureGate.STORAGE_SETTINGS),
                 enabled);
@@ -52,6 +53,25 @@ final class DeveloperFeatureTogglesTest {
                 DeveloperFeatureToggles.createDefault(new FakeFeatureGateSettingsUseCaseImpl());
 
         assertFalse(toggles.setEnabled(SettingId.LOOP_RECORDING, true));
+    }
+
+    @Test void disabledMediaParentGreysAndDisablesChildBehavior() {
+        FakeFeatureGateSettingsUseCaseImpl gates = disabledGates();
+        gates.setEnabled(FeatureGate.VIDEO_MD5, true);
+        DeveloperFeatureToggles toggles = DeveloperFeatureToggles.createDefault(gates);
+
+        SettingItem md5 = toggles.developerSettings().getSections().stream()
+                .flatMap(section -> section.getItems().stream())
+                .filter(item -> item.getId() == SettingId.FEATURE_VIDEO_MD5)
+                .findFirst()
+                .orElseThrow();
+
+        assertTrue(md5.isChecked());
+        assertFalse(md5.isEnabled());
+        assertFalse(toggles.isEffectivelyEnabled(FeatureGate.VIDEO_MD5));
+
+        toggles.setEnabled(SettingId.FEATURE_VIDEO_CAPTURE, true);
+        assertTrue(toggles.isEffectivelyEnabled(FeatureGate.VIDEO_MD5));
     }
 
     @Test void everyOptInGateIsDeclaredOnceOnDeveloperScreen() {
@@ -84,3 +104,4 @@ final class DeveloperFeatureTogglesTest {
         }
     }
 }
+

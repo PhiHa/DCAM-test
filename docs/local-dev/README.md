@@ -1,17 +1,17 @@
-# DCAM local developer docs
+﻿# DCAM local developer docs
 
 This folder contains repository-local documentation that is not a Confluence mirror. Use it for implementation reality, source evidence, local plans, and developer-only reference material.
 
 Confluence-derived product, requirement, architecture, development, and feature summaries remain in [docs/dcam-knowledge](../dcam-knowledge/README.md). Confluence remains the source of truth for approved project documentation.
 
-## 🚀 START HERE (Sprint 0)
+## ðŸš€ START HERE (Sprint 0)
 
-**NEW:** Sprint 0 research and planning documents created 2026-07-10.
+**NEW:** Confluence refresh gap report added 2026-07-13.
 
 **Quick start:**
-1. Read [sprint-0-summary.md](sprint-0-summary.md) (3 min) — What is Sprint 0?
-2. Read [mvp-readiness-report.md](mvp-readiness-report.md) (10 min) — Full project status
-3. Follow [sprint-0-action-checklist.md](sprint-0-action-checklist.md) — Tasks to close Sprint 0
+1. Read [evidence/confluence-refresh-gap-report-2026-07-13.md](evidence/confluence-refresh-gap-report-2026-07-13.md) — latest Confluence-vs-code gaps
+2. Read [sprint-0-summary.md](sprint-0-summary.md) — Sprint 0 scope
+3. Follow [sprint-0-action-checklist.md](sprint-0-action-checklist.md) — tasks to close Sprint 0
 
 **Full navigation:** See [sprint-0-index.md](sprint-0-index.md)
 
@@ -19,25 +19,25 @@ Confluence-derived product, requirement, architecture, development, and feature 
 
 ```text
 local-dev/
-├── sprint-0-index.md                    Sprint 0 document navigation
-├── sprint-0-summary.md                  Quick reference (start here)
-├── sprint-0-action-checklist.md         Task list to close Sprint 0
-├── mvp-readiness-report.md              Full project state analysis
-├── sprint-0-poc-test-plan.md            Hardware testing procedures
-├── poc-capability-assessment.md         Current code vs POC tests
-├── current-repo/
-│   ├── README.md
-│   ├── current-state.md                 Implementation reality vs docs
-│   ├── settings-grid-map.md
-│   └── DCAM_Huong_dan_dev_MVP_codebase.pdf
-├── evidence/
-│   ├── README.md
-│   └── source-structure-requirements-evidence.md
-└── plans/
-    ├── README.md
-    ├── mvp-delivery-plan.md             Master delivery playbook
-    ├── database-ddl-v1-design.md
-    └── database-ddl-v1.sql
+â”œâ”€â”€ sprint-0-index.md                    Sprint 0 document navigation
+â”œâ”€â”€ sprint-0-summary.md                  Quick reference (start here)
+â”œâ”€â”€ sprint-0-action-checklist.md         Task list to close Sprint 0
+â”œâ”€â”€ mvp-readiness-report.md              Full project state analysis
+â”œâ”€â”€ sprint-0-poc-test-plan.md            Hardware testing procedures
+â”œâ”€â”€ poc-capability-assessment.md         Current code vs POC tests
+â”œâ”€â”€ current-repo/
+â”‚   â”œâ”€â”€ README.md
+â”‚   â”œâ”€â”€ current-state.md                 Implementation reality vs docs
+â”‚   â”œâ”€â”€ settings-grid-map.md
+â”‚   â””â”€â”€ DCAM_Huong_dan_dev_MVP_codebase.pdf
+â”œâ”€â”€ evidence/
+â”‚   â”œâ”€â”€ README.md
+â”‚   â””â”€â”€ source-structure-requirements-evidence.md
+â””â”€â”€ plans/
+    â”œâ”€â”€ README.md
+    â”œâ”€â”€ mvp-delivery-plan.md             Master delivery playbook
+    â”œâ”€â”€ database-ddl-v1-design.md
+    â””â”€â”€ database-ddl-v1.sql
 ```
 
 ## Boundaries
@@ -50,7 +50,7 @@ local-dev/
 ## Sprint 0 Status
 
 **Created:** 2026-07-10  
-**Status:** ⚠️ **BLOCKING** — Sprint 0 incomplete
+**Status:** âš ï¸ **BLOCKING** â€” Sprint 0 incomplete
 
 **Critical gaps:**
 - No real-device Camera/FGS/storage POC
@@ -61,3 +61,5 @@ local-dev/
 **Timeline:** 5-6 days to close Sprint 0 before Sprint 1 continues.
 
 See [sprint-0-action-checklist.md](sprint-0-action-checklist.md) for details.
+
+

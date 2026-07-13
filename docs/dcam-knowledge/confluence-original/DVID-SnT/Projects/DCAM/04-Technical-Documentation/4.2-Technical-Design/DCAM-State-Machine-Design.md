@@ -1,7 +1,7 @@
 # DCAM State Machine Design
 
 **Page ID**: 48496753  
-**Version**: 10  
+**Version**: 12  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/48496753
 
@@ -24,7 +24,7 @@ Technical Design
 
 Version
 
-Approved 1.8
+Approved 1.9
 
 Status
 
@@ -64,18 +64,25 @@ Related Documents
 
 ## 1. Purpose
 
-**DCAM State Machine Design** định nghĩa cross-runtime state-machine principles, global guard rules và state ownership boundaries cho DCAM.
+**DCAM State Machine Design** định nghĩa cross-runtime state-machine principle, global guard rule và state ownership boundary cho DCAM.
 
-Current baseline:
+Project-wide Device Owner/EMM, maintenance và update baseline được reference từ:
 
-No external EMM.
-No Android Management API.
-No Managed Google Play policy-driven update.
-DCAM-as-DPC / local Device Owner is preferred if target firmware supports it.
-Primary update path = DCAM Self Update / APK update.
-Controlled Maintenance Mode requires Maintenance Password Gate.
-Full Android unrestricted mode is not supported.
-Tài liệu này không duplicate mọi detailed state từ từng domain design. Trang này reference các authoritative runtime-state documents và định nghĩa cách các state machines đó phối hợp an toàn.
+DCAM Project Home / DCAM Architecture Home.
+
+ADR - DCAM Android Dedicated Device / Device Owner / Lock Task Decision.
+
+DCAM Android Device Owner & Kiosk Policy Design.
+
+DCAM Self Update Design.
+
+Trang này không restate full baseline. Local implementation impact là:
+
+Điều phối priority và guard giữa recording, emergency, storage, DB, policy, maintenance, update và recovery.
+
+Xác định domain nào sở hữu từng state set.
+
+Ngăn transition không an toàn giữa các domain state machine.
 
 ## 2. State Ownership Boundary
 
@@ -738,14 +745,6 @@ Detailed recording, storage, DB, Android operation, kiosk policy, auth/security,
 
 ## 14. Practical Conclusion
 
-State Machine Design owns cross-runtime coordination and guard rules.
-Current baseline has no external EMM, Android Management API or Managed Google Play policy-driven update.
-Android Operation owns app operating modes, policy verification, login screen, update runtime and session lifecycle.
-Kiosk Policy Design owns Device Owner/DPC, Lock Task, User Restrictions, Maintenance Mode and policy recovery behavior.
-In-App Console owns Setting hub, read-only File/Media, Maintenance Password Gate and controlled targets.
-Self Update owns primary APK update flow and update validation.
-Recording Design owns recording session states and operator attribution.
-SQLite Database Design owns operator_session/user/auth persistence.
-Storage Design owns file/storage readiness states.
-Device Capability Design owns feature eligibility states.
-Trang này reference runtime states và enforce coordination rules. Trang này không duplicate mọi domain-specific state machine.
+State Machine Design sở hữu cross-runtime coordination và guard rule.
+
+Domain-specific state/behavior vẫn thuộc Android Operation, Kiosk Policy, In-App Console, Self Update, Recording, SQLite, Storage và Device Capability Design. Project baseline được reference từ Project Home, Architecture Home và ADR; trang này không restate baseline đó.

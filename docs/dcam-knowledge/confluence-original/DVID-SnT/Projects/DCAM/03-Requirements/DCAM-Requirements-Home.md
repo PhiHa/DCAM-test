@@ -1,7 +1,7 @@
 # DCAM Requirements Home
 
 **Page ID**: 47710513  
-**Version**: 5  
+**Version**: 6  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47710513
 
@@ -24,7 +24,7 @@ Requirements Home / Documentation Hub
 
 Version
 
-Approved 1.2
+Approved 1.3
 
 Status
 
@@ -60,7 +60,7 @@ None
 
 Related Documents
 
-DCAM Release & Build Applicability Matrix, DCAM-BDMA Data Contract, DCAM Non-functional Requirements, DCAM MVP Scope, DCAM Roadmap, DCAM Architecture Home, DCAM Documentation Governance
+[DCAM Requirement–Design–Test Traceability Matrix](/wiki/spaces/DVID/pages/51085669/DCAM+Requirement+Design+Test+Traceability+Matrix), [DCAM Document Status Registry](/wiki/spaces/DVID/pages/51085647/DCAM+Document+Status+Registry), DCAM Release & Build Applicability Matrix, DCAM-BDMA Data Contract, DCAM Non-functional Requirements, DCAM MVP Scope, DCAM Roadmap, DCAM Architecture Home, DCAM Documentation Governance
 
 ## 1. Purpose
 
@@ -75,6 +75,16 @@ Build applicability rule:
 Requirements pages define product behavior and target direction.
 DCAM Release & Build Applicability Matrix defines which requirements are mandatory for each build profile.
 A requirement marked P0/Approved is not automatically a release blocker for every build.
+Traceability rule:
+
+Requirement ID
+    → Build Applicability
+    → Design / Contract section
+    → QA Test ID
+    → Jira item
+    → Verification evidence
+Source of truth: **DCAM Requirement–Design–Test Traceability Matrix**.
+
 ## 2. Requirements Structure
 
 Cấu trúc thực tế hiện tại trong folder **03 - Requirements**:
@@ -91,99 +101,76 @@ Cấu trúc thực tế hiện tại trong folder **03 - Requirements**:
 │   ├── 07 - Logging & Diagnostics Requirements
 │   ├── 08 - Security & Encryption Requirements
 │   ├── 09 - System Settings Requirements
-│   └── 10 - Android Device Operation Requirements
+│   ├── 10 - Android Device Operation Requirements
+│   └── DCAM Requirement–Design–Test Traceability Matrix
 └── DCAM Non-functional Requirements
 ## 3. Functional Requirements Pages
 
 Document
 
-Status
-
 Purpose
 
 01 - Recording & Capture Requirements
-
-Approved
 
 Yêu cầu về video recording, image capture và audio capture.
 
 02 - Media Storage Requirements
 
-Approved
-
 Yêu cầu về Internal / External / Auto storage, storage behavior và Temp handling.
 
 03 - Media Management Requirements
-
-Approved
 
 Yêu cầu về media naming, important media, encrypted-media naming, `.md5` cho `.mp4` và cleanup.
 
 04 - Device Configuration Requirements
 
-Approved
-
 Yêu cầu về `dcam_config.cson`, device information và device identity baseline.
 
 05 - User & Device Operation Requirements
-
-Approved
 
 Yêu cầu về user/operator, device tracking và operational data.
 
 06 - BDMA Integration Requirements
 
-Approved
-
 Yêu cầu tích hợp BDMA, ADB, import result, CSON/DB/log access và `.mp4` verification.
 
 07 - Logging & Diagnostics Requirements
-
-Approved
 
 Yêu cầu về local-first Operational Logging, diagnostics, Loggly/Crashlytics boundary và troubleshooting.
 
 08 - Security & Encryption Requirements
 
-Approved
-
 Yêu cầu về authentication, credential safety, media protection, permissions và sensitive data; exact algorithm/key implementation thuộc Security Design.
 
 09 - System Settings Requirements
-
-Approved
 
 Yêu cầu về local settings, remote config, requested/applied values, kiosk/update preconditions và runtime configuration trong `dcam.db`; exact provider/payload thuộc design/contract.
 
 10 - Android Device Operation Requirements
 
-Approved
-
 Yêu cầu về full screen, Home App / Launcher App, auto start on boot, lifecycle, service, permission, power và recovery behavior.
 
-## 4. Requirements Documents at 03 - Requirements Level
+Current version/status của từng trang không được copy tại đây. Xem **DCAM Document Status Registry**.
+
+## 4. Requirements-level Documents
 
 Document
-
-Status
 
 Purpose
 
 DCAM-BDMA Data Contract
 
-Approved
-
-Chuẩn trao đổi dữ liệu giữa DCAM Android và BDMA Desktop; là baseline cho storage, naming, MD5, CSON, DB, logs và BDMA import behavior.
+Chuẩn trao đổi dữ liệu giữa DCAM Android và BDMA Desktop; baseline cho storage, naming, MD5, CSON, DB, logs và BDMA import behavior.
 
 DCAM Requirements Home
 
-Approved
-
 Trang điều hướng cho bộ Functional Requirements.
 
-DCAM Non-functional Requirements
+DCAM Requirement–Design–Test Traceability Matrix
 
-Approved
+Mapping Requirement → Build → Design → QA → Jira → Evidence và coverage gap.
+
+DCAM Non-functional Requirements
 
 Baseline NFR cho performance, recording stability, storage reliability, offline operation, Android compatibility, security, logging, BDMA import reliability, update reliability, maintainability và testability.
 
@@ -279,6 +266,18 @@ DCAM Non-functional Requirements
 
 Hiểu các ràng buộc chất lượng áp dụng toàn hệ thống.
 
+15
+
+DCAM Requirement–Design–Test Traceability Matrix
+
+Kiểm tra coverage và gap của requirement active theo build.
+
+16
+
+DCAM Document Status Registry
+
+Kiểm tra current version/status/approval scope của tài liệu.
+
 ## 6. Build Applicability
 
 Current active build baseline được định nghĩa trong **DCAM Release & Build Applicability Matrix**.
@@ -323,10 +322,26 @@ DCAM Logging & Diagnostics Design
 
 Implementation scope and release blocking are determined by **DCAM Release & Build Applicability Matrix**, not by the existence of a target Technical Design alone.
 
-## 8. Notes
+Requirement-ID-level mapping belongs to **DCAM Requirement–Design–Test Traceability Matrix**.
 
-Trang này phản ánh cấu trúc Requirements thực tế tại thời điểm cập nhật.
+## 8. Navigation and Status Rules
 
-Khi tạo thêm functional requirement page, non-functional requirement page hoặc thay đổi vị trí tài liệu trong folder **03 - Requirements**, cần cập nhật lại trang này và **DCAM Project Home**.
+Requirement structure/reading order changes
+    → update DCAM Requirements Home
 
-Khi thay đổi phase/build applicability mà không thay đổi requirement behavior, cập nhật **DCAM Release & Build Applicability Matrix** thay vì copy phase rules vào từng Requirements page.
+Requirement behavior changes
+    → update Requirements, Design, QA and Traceability Matrix
+
+Build applicability-only changes
+    → update Release & Build Applicability Matrix and Traceability Matrix
+
+Version/status-only changes
+    → update page metadata and DCAM Document Status Registry
+Không copy mutable version/status table vào Requirements Home.
+
+## 9. Practical Conclusion
+
+Requirements Home owns requirements navigation.
+Applicability Matrix owns what is mandatory per build.
+Traceability Matrix owns Requirement → Build → Design → QA → Jira → Evidence mapping.
+Document Status Registry owns the cross-document version/status summary.

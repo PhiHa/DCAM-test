@@ -451,7 +451,7 @@ DCAM chỉ định hướng cho thiết bị BodyCamera do DVID cung cấp, khô
 
 BDMA Dependency
 
-DCAM không thay thế BDMA; DCAM tạo dữ liệu, BDMA quản lý và khai thác dữ liệu.
+DCAM không thay thế BDMA; DCAM tạo dữ li���u, BDMA quản lý và khai thác dữ liệu.
 
 Platform Foundation
 

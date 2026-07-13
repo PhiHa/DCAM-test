@@ -24,6 +24,8 @@ public final class SettingItem {
     private final int max;
     private final int numberValue;
     private final String unit;
+    private final boolean enabled;
+    private final int indentLevel;
 
     private SettingItem(
             SettingId id,
@@ -37,6 +39,14 @@ public final class SettingItem {
             int max,
             int numberValue,
             String unit) {
+        this(id, type, label, value, options, selectedIndex, checked, min, max, numberValue,
+                unit, true, 0);
+    }
+
+    private SettingItem(
+            SettingId id, Type type, String label, String value, List<String> options,
+            int selectedIndex, boolean checked, int min, int max, int numberValue,
+            String unit, boolean enabled, int indentLevel) {
         this.id = id;
         this.type = type;
         this.label = label;
@@ -48,6 +58,8 @@ public final class SettingItem {
         this.max = max;
         this.numberValue = numberValue;
         this.unit = unit;
+        this.enabled = enabled;
+        this.indentLevel = indentLevel;
     }
 
     public static SettingItem text(String label, String value) {
@@ -77,6 +89,16 @@ public final class SettingItem {
         return new SettingItem(id, Type.ACTION, label, null, null, 0, false, 0, 0, 0, null);
     }
 
+    public SettingItem withEnabled(boolean enabled) {
+        return new SettingItem(id, type, label, value, options, selectedIndex, checked,
+                min, max, numberValue, unit, enabled, indentLevel);
+    }
+
+    public SettingItem withIndentLevel(int indentLevel) {
+        return new SettingItem(id, type, label, value, options, selectedIndex, checked,
+                min, max, numberValue, unit, enabled, Math.max(0, indentLevel));
+    }
+
     public SettingId getId() { return id; }
     public Type getType() { return type; }
     public String getLabel() { return label; }
@@ -88,4 +110,6 @@ public final class SettingItem {
     public int getMax() { return max; }
     public int getNumberValue() { return numberValue; }
     public String getUnit() { return unit; }
+    public boolean isEnabled() { return enabled; }
+    public int getIndentLevel() { return indentLevel; }
 }

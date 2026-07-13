@@ -1,7 +1,7 @@
 # DCAM Factory Provisioning & Device Production SOP
 
 **Page ID**: 49545629  
-**Version**: 13  
+**Version**: 14  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/49545629
 
@@ -24,11 +24,11 @@ Factory SOP / Device Production Procedure
 
 Version
 
-Draft 1.2
+Approved 1.2
 
 Status
 
-Draft
+Approved 
 
 Owner
 

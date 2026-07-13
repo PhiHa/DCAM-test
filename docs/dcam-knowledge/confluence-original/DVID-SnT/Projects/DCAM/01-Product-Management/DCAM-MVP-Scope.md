@@ -1,7 +1,7 @@
 # DCAM MVP Scope
 
 **Page ID**: 42532866  
-**Version**: 9  
+**Version**: 11  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/42532866
 
@@ -24,11 +24,15 @@ MVP Scope
 
 Version
 
-Approved 2.5
+Approved 2.6
 
 Status
 
 Approved
+
+Approval Scope
+
+DEC-01–DEC-06 và Working Recording Slice cho DCAM MVP Internal Build 0.1
 
 Owner
 
@@ -52,7 +56,7 @@ PM/BA, Product Owner, Tech Lead, Developers, QA, Stakeholders
 
 Last Updated
 
-2026-07-10
+2026-07-13
 
 Related Jira
 
@@ -60,7 +64,7 @@ None
 
 Related Documents
 
-DCAM Product Vision, DCAM Project Charter, DCAM Roadmap, DCAM 9-Month Development Plan, DCAM Release & Build Applicability Matrix, DCAM-BDMA Data Contract, DCAM Requirements Home, DCAM Architecture Home, DCAM Documentation Governance, DCAM Architecture Delivery Profile
+DCAM Product Vision, DCAM Project Charter, DCAM Roadmap, DCAM 9-Month Development Plan, DCAM Release & Build Applicability Matrix, DCAM-BDMA Data Contract, DCAM Requirements Home, DCAM Architecture Home, DCAM Documentation Governance, DCAM Architecture Delivery Profile, Decision Brief – DCAM MVP Internal Build 0.1 – Working Recording Slice
 
 ## 1. Executive Summary
 
@@ -414,3 +418,68 @@ MVP product direction remains Record/Capture → Storage → Contract Data → B
 Current active implementation profile is Build 0.1.
 Working Recording Slice is the current gate.
 Build applicability is owned by DCAM Release & Build Applicability Matrix.
+## 10. Build 0.1 Controlled Baseline
+
+Tài liệu [Decision Brief – DCAM MVP Internal Build 0.1 – Working Recording Slice](/wiki/spaces/DVID/pages/51642452/Decision+Brief+DCAM+MVP+Internal+Build+0.1+Working+Recording+Slice) sở hữu DEC-01–DEC-06. Baseline dưới đây chỉ áp dụng cho Build 0.1 và không phải Production approval.
+
+Decision
+
+Build 0.1 Baseline
+
+Reference Device
+
+NCC-036V / Android 12 / API 31 / 877AOOAKN1_RK2_V009; qualification Pending Device POC.
+
+Camera Integration
+
+Android platform Camera API; vendor SDK Not Applicable; Camera1/Camera2 chưa được suy diễn.
+
+Active Storage
+
+Internal storage only; không External fallback hoặc Auto mode.
+
+MP4 Checksum
+
+Mọi MP4 phải có MD5; chỉ BDMA_READY sau MD5 success; missing/mismatch/failure chặn evidence và release gate.
+
+Operator Policy
+
+Không login UI; operator_id = BUILD01_OPERATOR; operator_name = Build 0.1 Operator; không phải authenticated identity.
+
+Basic Device Status
+
+Battery level, Internal free storage và GPS Available/Unavailable/Unsupported.
+
+Device Coverage
+
+WRS pass trên ít nhất một physical reference device có định danh rõ ràng; không đại diện fleet/multi-model/Production readiness.
+
+### Build 0.1 Acceptance Criteria
+
+ID
+
+Criteria
+
+WRS-AC-001
+
+APK chạy trên exact reference configuration; evidence ghi physical device identifier, OS/API và firmware.
+
+WRS-AC-002
+
+Failed Internal storage pre-check không bắt đầu recording; runtime failure safe-stop và finalize MP4 nếu còn khả năng.
+
+WRS-AC-003
+
+MP4 được finalize trước, tạo MD5 bất đồng bộ và chỉ trở thành BDMA_READY sau MD5 success.
+
+WRS-AC-004
+
+Static operator values xuất hiện nhất quán tại nơi SQLite/CSON/log schema yêu cầu và không thể sửa từ UI/runtime configuration.
+
+WRS-AC-005
+
+Battery level, Internal free storage và GPS state được báo đúng; GPS Unavailable/Unsupported không làm fail WRS.
+
+WRS-AC-006
+
+Kết quả chỉ áp dụng cho NCC-036V / Android 12 / API 31 / 877AOOAKN1_RK2_V009; thay configuration cần impact review và regression.

@@ -101,7 +101,7 @@ Rule quan trọng:
 
 UI và ViewModel không được gọi trực tiếp Android hardware SDK,
 vendor SDK, DevicePolicyManager, file system, SQLite runtime tables,
-identity provider, credential/auth storage hoặc cloud/webserver SDK.
+identity provider, credential/auth storage ho���c cloud/webserver SDK.
 MVP interpretation:
 
 Keep the same dependency direction.

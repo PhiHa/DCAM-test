@@ -1,6 +1,6 @@
 # Confluence Original Documentation
-Downloaded: 2026-07-10T09:06:28.932Z
-Total pages: 131
+Downloaded: 2026-07-13T04:42:31.165Z
+Total pages: 133
 
 ## Page Structure
 
@@ -34,10 +34,7 @@ Total pages: 131
   - [OSd Introduction & Team Alignment](DVID-SnT/OSd-Introduction-&-Team-Alignment.md)
     - [Jira Workflow Standard](DVID-SnT/SOP/Jira-Workflow-Standard.md)
         - [Decision Log Template](DVID-SnT/Projects/BDMA/07-Decision-Log/Decision-Log-Template.md)
-          - [Developer Mode](DVID-SnT/Projects/BDMA/04-Technical-Documentation/Technical-Knowledge-Base/Developer-Mode.md)
-          - [Notes | FAQ](DVID-SnT/Projects/BDMA/04-Technical-Documentation/Technical-Knowledge-Base/Notes-FAQ.md)
           - [Device Connection and Disconnection Process](DVID-SnT/Projects/BDMA/04-Technical-Documentation/Technical-Knowledge-Base/Device-Connection-and-Disconnection-Process.md)
-          - [Building a JavaFX Application and NSIS Installer Steps](DVID-SnT/Projects/BDMA/04-Technical-Documentation/Technical-Knowledge-Base/Building-a-JavaFX-Application-and-NSIS-Installer-Steps.md)
         - [Release Notes Template](DVID-SnT/Projects/BDMA/05-Release-Management/Release-Notes-Template.md)
           - [UI Design](DVID-SnT/Projects/BDMA/04-Technical-Documentation/Technical-Knowledge-Base/UI-Design.md)
           - [Process CI/CD](DVID-SnT/Projects/BDMA/04-Technical-Documentation/Technical-Knowledge-Base/Process-CI-CD.md)
@@ -135,3 +132,8 @@ Total pages: 131
             - [DCAM Device Provisioning Web Portal Implementation Design](DVID-SnT/Projects/DCAM/04-Technical-Documentation/4.2-Technical-Design/DCAM-Device-Provisioning-Web-Portal-Design/DCAM-Device-Provisioning-Web-Portal-Implementation-Design.md)
           - [DCAM Logging & Diagnostics Design](DVID-SnT/Projects/DCAM/04-Technical-Documentation/4.2-Technical-Design/DCAM-Logging-&-Diagnostics-Design.md)
         - [DCAM Release & Build Applicability Matrix](DVID-SnT/Projects/DCAM/02-Sprint-Operations/DCAM-Release-&-Build-Applicability-Matrix.md)
+          - [Default Settings and Delete Empty Date Folders](DVID-SnT/Projects/BDMA/04-Technical-Documentation/Technical-Knowledge-Base/Default-Settings-and-Delete-Empty-Date-Folders.md)
+        - [DCAM Document Status Registry](DVID-SnT/Projects/DCAM/02-Sprint-Operations/DCAM-Document-Status-Registry.md)
+          - [DCAM Requirement–Design–Test Traceability Matrix](DVID-SnT/Projects/DCAM/03-Requirements/DCAM-Requirements-Home/DCAM-Requirement–Design–Test-Traceability-Matrix.md)
+        - [Decision Brief – DCAM MVP Internal Build 0.1 – Working Recording Slice](DVID-SnT/Projects/DCAM/02-Sprint-Operations/Decision-Brief-–-DCAM-MVP-Internal-Build-0.1-–-Working-Recording-Slice.md)
+        - [BDMA v1.0.141](DVID-SnT/Projects/BDMA/05-Release-Management/BDMA-v1.0.141.md)

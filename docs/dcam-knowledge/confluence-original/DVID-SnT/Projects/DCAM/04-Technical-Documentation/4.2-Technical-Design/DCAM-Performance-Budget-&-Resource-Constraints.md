@@ -1,7 +1,7 @@
 # DCAM Performance Budget & Resource Constraints
 
 **Page ID**: 50659486  
-**Version**: 2  
+**Version**: 5  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/50659486
 
@@ -24,11 +24,15 @@ Technical Design / Performance Budget
 
 Version
 
-Draft 0.2
+0.4
 
 Status
 
-Draft
+Approved Pending Device POC
+
+Approval Scope
+
+Build 0.1 performance guardrails; numeric device evidence Pending Device POC
 
 Owner
 
@@ -52,7 +56,7 @@ Tech Lead, Android Lead, Android Developers, QA Lead, Support
 
 Last Updated
 
-2026-07-09
+2026-07-13
 
 Related Jira
 
@@ -60,7 +64,7 @@ None
 
 Related Documents
 
-DCAM Architecture Home, DCAM Architecture Delivery Profile, DCAM Concurrency & Threading Model Design, DCAM Recording & Capture Design, DCAM Storage Design, DCAM SQLite Database Design, DCAM-BDMA Data Contract, DCAM Non-functional Requirements, DCAM QA Test Strategy & Test Matrix, DCAM Device POC & Hardware Validation Report
+[DCAM Document Status Registry](/wiki/spaces/DVID/pages/51085647/DCAM+Document+Status+Registry), [DCAM Requirement–Design–Test Traceability Matrix](/wiki/spaces/DVID/pages/51085669/DCAM+Requirement+Design+Test+Traceability+Matrix), DCAM Architecture Home, DCAM Architecture Delivery Profile, DCAM Concurrency & Threading Model Design, DCAM Recording & Capture Design, DCAM Storage Design, DCAM SQLite Database Design, DCAM-BDMA Data Contract, DCAM Non-functional Requirements, DCAM QA Test Strategy & Test Matrix, DCAM Device POC & Hardware Validation Report, Decision Brief – DCAM MVP Internal Build 0.1 – Working Recording Slice
 
 ## 1. Purpose
 
@@ -72,8 +76,13 @@ Phân biệt với **Non-functional Requirements**:
 
 NFR = what quality is required.
 Performance Budget = how much / how fast / measured where.
-Tài liệu này không thay thế NFR. Tài liệu này là design-level budget để developer và QA biết metric nào pass/fail.
+Tài liệu này không thay thế NFR. Đây là design-level budget để developer và QA biết metric nào pass/fail.
 
+Status interpretation:
+
+Approved Pending Device POC
+    = approved provisional baseline for implementation and Build 0.1 QA
+    ≠ production-validated hardware limit
 ## 2. Scope and Baseline Decision
 
 Performance budget hiện tại tập trung vào các rủi ro trực tiếp của MVP và production-readiness:
@@ -98,13 +107,13 @@ Battery target
 
 Deferred
 
-Không đặt target battery trong Draft 0.2 vì chưa có Device POC đủ tin cậy.
+Chưa đặt target vì chưa có Device POC đủ tin cậy.
 
 Thermal target
 
 Deferred
 
-Không đặt target thermal trong Draft 0.2 vì phụ thuộc phần cứng, firmware, ambient temperature và bodycam enclosure.
+Phụ thuộc phần cứng, firmware, ambient temperature và BodyCamera enclosure.
 
 CPU budget
 
@@ -126,10 +135,12 @@ Chỉ thêm khi provisioning/remote config/update network flow vào implementati
 
 Important baseline:
 
-```
 All numeric targets are provisional until Device POC validates actual BodyCamera hardware.
-```
+Target adjustment requires measurement evidence and approved change control.
+Build applicability:
 
+Only metrics activated for the current Build Profile are release blockers.
+Metric existence in this page does not automatically activate it for every build.
 ## 3. Assumptions and Hardware Baseline
 
 Parameter
@@ -551,7 +562,6 @@ Nếu external SD chậm/không ổn định thì recording dùng internal only.
 Formula:
 
 estimated_file_size_mb = bitrate_mbps * duration_seconds / 8
-
 minimum_start_free_space_mb = estimated_30min_recording_size_mb + 500MB safety_margin
 Example:
 
@@ -863,8 +873,9 @@ All
 
 MVP enforcement rule:
 
-MVP PR/release must pass MVP Required metrics.
-Full metric enforcement begins when corresponding feature enters Phase 2+ or Production Candidate scope.
+MVP PR/release must pass metrics activated for Build 0.1 by the Applicability Matrix and QA Matrix.
+Full metric enforcement begins when the corresponding feature enters Phase 2+ or Production Candidate scope.
+Device POC may adjust provisional values through approved evidence-based change control.
 ## 6. Measurement and Validation Approach
 
 ### 6.1 Logging Format
@@ -924,7 +935,7 @@ Every sprint.
 
 QA Release
 
-Performance test suite for MVP subset.
+Performance test suite for applicable MVP subset.
 
 QA Lead
 
@@ -978,6 +989,8 @@ Internal vs external sustained write/read measurement.
 
 ## 7. Failure Response Matrix
 
+A violation blocks a release only when the metric is applicable to the active Build Profile. Device POC adjustment must be approved before it changes a pass/fail target.
+
 Metric Violation
 
 Severity
@@ -988,25 +1001,25 @@ PERF-REC-001 > 2.0s
 
 Critical
 
-Block release; investigate camera init, precheck or command queue bottleneck.
+Block applicable release; investigate camera init, precheck or command queue bottleneck.
 
 PERF-REC-003 > 5.0s
 
 Critical
 
-Block release if critical finalization path exceeds target; checksum is excluded.
+Block applicable release if critical finalization path exceeds target; checksum is excluded.
 
 PERF-MEM-004 > 5 MB/hour
 
 Critical
 
-Block release; run leak analysis and long-running test.
+Block applicable release; run leak analysis and long-running test.
 
 PERF-ANR-001 > 500ms
 
 High
 
-Block release candidate; identify MainThread violation.
+Block applicable release candidate; identify MainThread violation.
 
 PERF-ANR-007 exceeds retry/timeout
 
@@ -1024,19 +1037,19 @@ PERF-STOR-005 fails
 
 Critical
 
-Block release; storage full must not corrupt evidence.
+Block recording release; storage full must not corrupt evidence.
 
 PERF-STAB-001 < 4 hours
 
 Critical
 
-Block release candidate; analyze crash, file corruption, memory leak or storage issue.
+Block applicable release candidate unless an approved Device POC adjustment exists.
 
 PERF-STAB-004 > 0 FD leak
 
 High
 
-Fix before next release; add regression test.
+Fix before next applicable release; add regression test.
 
 PERF-STAB-005 > 15 app-owned threads
 
@@ -1048,7 +1061,7 @@ PERF-BOOT-001 > 8s
 
 Medium
 
-Investigate startup sequence; defer non-critical init.
+Investigate startup sequence; defer non-critical init or submit evidence-based adjustment.
 
 PERF-IO-001 < 15 MB/s
 
@@ -1088,6 +1101,10 @@ POC-ADJ-006
 
 Target adjustment cần Technical Note hoặc ADR nếu thay đổi ảnh hưởng release acceptance.
 
+POC-ADJ-007
+
+Sau khi POC chốt target model/firmware, đổi status sang `Approved for Build <profile>` hoặc `Production Approved` chỉ khi approval gate tương ứng hoàn tất.
+
 ## 9. Cross-reference Integration
 
 Document
@@ -1096,15 +1113,15 @@ Integration Action
 
 DCAM Architecture Home
 
-Add to reading order and Authoritative Rule Ownership: `Performance Budget → this document`.
+Include in reading order and reference registry-qualified status.
 
 DCAM Non-functional Requirements
 
-Add link: detailed measurable metrics are defined in this document.
+Detailed measurable metrics are defined in this document.
 
 DCAM Concurrency & Threading Model Design
 
-Add to Related Documents and align PERF-ANR metrics with executor/queue/threading rules.
+Align PERF-ANR metrics with executor/queue/threading rules.
 
 DCAM Recording & Capture Design
 
@@ -1120,15 +1137,19 @@ Reference DB transaction duration, DB busy retry and no file/checksum inside tra
 
 DCAM QA Test Strategy & Test Matrix
 
-Add Performance Test Group referencing MVP Required metrics.
+Test only the metric subset applicable to the active Build Profile.
 
 DCAM Device POC & Hardware Validation Report
 
-Add baseline measurement section validating or adjusting these targets.
+Validate or adjust these targets using target hardware evidence.
 
-DCAM Documentation Governance
+DCAM Requirement–Design–Test Traceability Matrix
 
-Register as Technical Design / Performance Budget document.
+Map metric IDs to QA IDs, Jira items and evidence.
+
+DCAM Document Status Registry
+
+Maintain qualified approval status and approval scope.
 
 ## 10. Revision History
 
@@ -1136,25 +1157,33 @@ Version
 
 Date
 
-Author
+Status
 
 Changes
 
-Draft 0.1
+0.1
 
 2026-07-09
 
-Hoàng Ngọc Quyền
+Draft
 
-Initial draft: proposed performance and resource budget.
+Initial proposed performance and resource budget.
 
-Draft 0.2
+0.2
 
 2026-07-09
 
-Hoàng Ngọc Quyền
+Draft / Review Baseline
 
-Chọn async checksum outside critical finalization path, defer battery/thermal targets, enforce app-owned thread count, add storage capacity/free-space budget and keep CPU budget out of scope.
+Async checksum outside critical finalization; defer battery/thermal; add thread and free-space budgets.
+
+0.3
+
+2026-07-10
+
+Approved Pending Device POC
+
+Align metadata, approval scope, build-scoped enforcement and evidence-based adjustment rules.
 
 ## 11. Practical Conclusion
 
@@ -1162,12 +1191,14 @@ DCAM cần performance budget để tránh tranh luận cảm tính về “nhan
 
 Current baseline:
 
+Status = Approved Pending Device POC.
 Checksum is async and outside critical finalization path.
 Battery and thermal targets are deferred until Device POC.
 App-owned steady-state threads ≤ 15.
 Total process thread count must be measured during Device POC.
 CPU budget is not required for now.
 Storage capacity / free-space budget is required.
+Only build-applicable metrics are release blockers.
 MVP phải đo và enforce các metric liên quan trực tiếp tới:
 
 Recording start/stop
@@ -1176,3 +1207,20 @@ MainThread / State Coordinator / Camera callback latency
 DB transaction and DB busy retry
 Storage sustained write and free-space safety
 Memory leak and long-running recording stability
+Production interpretation requires target-model/firmware Device POC evidence and the appropriate qualified approval status.
+
+## 17. Build 0.1 Checksum and Storage Performance Override
+
+PERF-REC-003 đo stop-to-finalized/checksum-pending; không dùng BDMA_READY làm endpoint trước checksum.
+
+PERF-REC-007 đo async MD5 completion đến BDMA_READY.
+
+MP4 MD5 success là release requirement; không được bỏ qua để đạt readiness latency.
+
+Build 0.1 chỉ dùng MD5, không đổi sang SHA-256.
+
+Build 0.1 sử dụng Internal storage only.
+
+Không tự đặt MD5 latency/resource threshold; số liệu phải lấy từ NCC-036V Device POC.
+
+Mọi statement cũ cho phép checksum không chặn BDMA_READY không áp dụng cho Build 0.1.

@@ -443,7 +443,7 @@ Không thay đổi database, không phát event gây refresh UI không cần thi
 
 Cần xác nhận bằng test
 
-Batch chứa file đã ở trạng th��i đích
+Batch chứa file đã ở trạng thái đích
 
 Không đảo trạng thái; kết quả cuối cùng đồng nhất với trạng thái được yêu cầu.
 
