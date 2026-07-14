@@ -114,6 +114,22 @@ final class DcamStagedMediaRecoveryTest {
                 published.getName().replaceFirst("\\.mp4$", ".md5"));
         assertFalse(sidecar.toFile().exists());
     }
+
+    @Test
+    void publishesPlayableAudioCandidateFoundAfterRestart() throws Exception {
+        DcamStorage storage = new DcamStorage(root.toFile());
+        DcamMediaFile media = storage.mediaFile(
+                DcamFileType.AUDIO, "CAM001", "000001",
+                LocalDateTime.of(2026, 7, 11, 10, 30), false);
+        Files.createDirectories(media.getFile().toPath().getParent());
+        Files.write(media.getFile().toPath(), new byte[] {1, 2, 3});
+
+        StagedMediaRecoveryReport report = recovery(storage, (type, file) -> true).recover();
+
+        assertTrue(storage.finalFile(media).isFile());
+        assertFalse(media.getFile().exists());
+        assertTrue(report.getRecovered() == 1);
+    }
     private DcamStagedMediaRecovery recovery(DcamStorage storage, DcamMediaValidator validator) {
         return recovery(storage, validator, null);
     }

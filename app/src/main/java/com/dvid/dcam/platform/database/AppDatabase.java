@@ -65,6 +65,7 @@ public abstract class AppDatabase extends RoomDatabase {
                 Context appContext = context.getApplicationContext();
                 instance = Room.databaseBuilder(appContext, AppDatabase.class, DATABASE_NAME)
                         .addMigrations(AppDatabaseMigrations.all())
+                        .enableMultiInstanceInvalidation()
                         .build();
             }
             return instance;

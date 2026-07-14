@@ -1,9 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">DCAM</string>
+    <string name="media_saving">&#272;ang l&#432;u...</string>
     <string name="camera_permission_required">Cần cấp quyền camera</string>
     <string name="media_saved">Đã lưu %1$s</string>
     <string name="recording_file">Đang ghi %1$s</string>
+    <string name="recording_notification_channel">Ghi âm/hình DCAM</string>
+    <string name="recording_notification_channel_description">Hiển thị khi đang ghi âm hoặc ghi hình</string>
+    <string name="recording_notification_title">Đang ghi hình</string>
+    <string name="recording_notification_text">DCAM đang ghi hình</string>
+    <string name="audio_recording_status">Đang ghi âm</string>
+    <string name="audio_recording_notification_text">DCAM đang ghi âm</string>
     <string name="capture">Chụp</string>
     <string name="settings_detail_hint">Các điều khiển chỉ cập nhật giao diện; lưu cấu hình sẽ bổ sung sau</string>
     <string name="files">Tệp</string>

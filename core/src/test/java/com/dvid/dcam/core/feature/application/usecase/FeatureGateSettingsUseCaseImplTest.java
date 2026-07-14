@@ -14,11 +14,11 @@ final class FeatureGateSettingsUseCaseImplTest {
         InMemoryFeatureGateStore store = new InMemoryFeatureGateStore();
         FeatureGateSettingsUseCase useCase = new FeatureGateSettingsUseCaseImpl(store);
 
-        assertFalse(useCase.isEnabled(FeatureGate.AUDIO_CAPTURE));
-
-        useCase.setEnabled(FeatureGate.AUDIO_CAPTURE, true);
-
         assertTrue(useCase.isEnabled(FeatureGate.AUDIO_CAPTURE));
+
+        useCase.setEnabled(FeatureGate.AUDIO_CAPTURE, false);
+
+        assertFalse(useCase.isEnabled(FeatureGate.AUDIO_CAPTURE));
     }
 
     private static final class InMemoryFeatureGateStore implements FeatureGateStore {

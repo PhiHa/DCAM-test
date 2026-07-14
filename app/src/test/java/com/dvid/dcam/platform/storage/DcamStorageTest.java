@@ -1,10 +1,15 @@
 package com.dvid.dcam.platform.storage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.dvid.dcam.feature.settings.domain.StorageMode;
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 public class DcamStorageTest {
     @Test public void stagesVideoImageAndSosOutsideFinalMediaFolders() {
@@ -19,12 +24,12 @@ public class DcamStorageTest {
                 path(storage.outputFile(DcamFileType.SOS, "CAM001", "000000", at, true)));
     }
 
-    @Test public void leavesAudioOnItsExistingFinalPath() {
+    @Test public void stagesAudioBeforeDurablePublication() {
         File file = new DcamStorage(StorageMode.INTERNAL, new File("AppData")).outputFile(
                 DcamFileType.AUDIO, "CAM001", "000000",
                 LocalDateTime.of(2026, 6, 19, 10, 3, 24), false);
 
-        assertEquals("AppData/Media/Audio/DCAM_CAM001_000000_20260619_100324.aac", path(file));
+        assertEquals("AppData/Temp/DCAM_CAM001_000000_20260619_100324.aac", path(file));
     }
 
     @Test public void buildsDeviceOnlyConfigPath() {
@@ -52,9 +57,29 @@ public class DcamStorageTest {
                 path(storage.outputFile(DcamFileType.VIDEO, "CAM001", "000000", at, false)));
         assertEquals("ExternalAppData/Temp/DCAM_CAM001_000000_20260619_100324.jpg",
                 path(storage.outputFile(DcamFileType.IMAGE, "CAM001", "000000", at, false)));
-        assertEquals("ExternalAppData/Media/Audio/DCAM_CAM001_000000_20260619_100324.aac",
+        assertEquals("ExternalAppData/Temp/DCAM_CAM001_000000_20260619_100324.aac",
                 path(storage.outputFile(DcamFileType.AUDIO, "CAM001", "000000", at, false)));
         assertEquals("InternalAppData/Config/dcam_config.cson", path(storage.configsFile()));
+    }
+
+    @Test public void durableAudioStagesInternalThenPublishesToSelectedExternal(
+            @TempDir Path root) throws Exception {
+        File internal = root.resolve("internal").toFile();
+        File external = root.resolve("external").toFile();
+        DcamStorage storage = new DcamStorage(
+                StorageMode.AUTO, StorageMode.EXTERNAL, internal, external,
+                new DcamStorageCapacityPolicy());
+        DcamMediaFile media = storage.durableAudioMediaFile(
+                "CAM001", "000000", LocalDateTime.of(2026, 7, 14, 16, 22, 7), false);
+        Files.write(media.getFile().toPath(), new byte[] {1, 2, 3});
+
+        File published = new DcamMediaFinalizer(storage).finalizeMedia(media);
+
+        assertTrue(path(media.getFile()).contains("internal/DurableAudioTemp/"));
+        assertTrue(path(published).contains("external/Media/Audio/"));
+        assertEquals(3L, published.length());
+        assertFalse(new File(media.getFile().getParentFile(),
+                media.getFileName() + ".target").exists());
     }
 
     private static String path(File file) { return file.getPath().replace('\\', '/'); }

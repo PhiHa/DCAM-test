@@ -108,16 +108,16 @@ public final class DcamLogger {
             }
         }
         String payload = json(message, error, Thread.currentThread().getName(), callerClass());
-        boolean enqueued = false;
-        if (remoteUploadsEnabled && logOutbox != null)
-            enqueued = logOutbox.enqueue(level, payload);
-        if (isCrashEvent(level, message) && remoteUploadsEnabled && !enqueued) {
+        boolean enqueued = remoteUploadsEnabled && logOutbox != null
+                && logOutbox.enqueue(level, payload);
+        if (shouldSendCrashFallback(level, message, remoteUploadsEnabled, enqueued))
             sendCrashFallback(payload);
-        }
     }
 
-    private static boolean isCrashEvent(String level, String message) {
-        return "ERROR".equals(level) && message != null && message.startsWith("Crash on ");
+    static boolean shouldSendCrashFallback(
+            String level, String message, boolean uploadsEnabled, boolean enqueued) {
+        return uploadsEnabled && !enqueued && "ERROR".equals(level)
+                && message != null && message.startsWith("Crash on ");
     }
 
     private static void sendCrashFallback(String payload) {

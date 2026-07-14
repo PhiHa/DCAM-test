@@ -17,34 +17,31 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1" />
-
-        <TextView
-            android:id="@+id/up_action"
-            style="@style/DcamStatusText.Bold"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="?android:attr/selectableItemBackground"
-            android:padding="12dp"
-            android:text="@string/folder_up"
-            android:textColor="#75B9FF" />
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/status"
-        style="@style/DcamSettingsHint"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
-
-    <ScrollView
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginTop="8dp"
         android:layout_weight="1">
 
-        <LinearLayout
-            android:id="@+id/entries"
+        <ScrollView
             android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <LinearLayout
+                android:id="@+id/entries"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+        </ScrollView>
+
+        <TextView
+            android:id="@+id/status"
+            style="@style/DcamSettingsHint"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical" />
-    </ScrollView>
+            android:layout_gravity="center"
+            android:gravity="center" />
+    </FrameLayout>
 </LinearLayout>

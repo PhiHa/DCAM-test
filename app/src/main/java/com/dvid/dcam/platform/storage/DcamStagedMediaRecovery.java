@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 /** Conservative startup recovery. Invalid, encrypted or ambiguous artifacts remain in Temp. */
 final class DcamStagedMediaRecovery {
     private static final Pattern CONTRACT_NAME = Pattern.compile(
-            "^DCAM_[^_]+_[^_]+_[0-9]{8}_[0-9]{6}(_IMP)?(_enc)?\\.(mp4|jpg)$",
+            "^DCAM_[^_]+_[^_]+_[0-9]{8}_[0-9]{6}(_IMP)?(_enc)?\\.(mp4|jpg|aac)$",
             Pattern.CASE_INSENSITIVE);
 
     private final DcamStorage storage;
@@ -92,6 +92,7 @@ final class DcamStagedMediaRecovery {
     private static DcamFileType type(Matcher matcher, String name) {
         String extension = matcher.group(3).toLowerCase(Locale.ROOT);
         if ("jpg".equals(extension)) return DcamFileType.IMAGE;
+        if ("aac".equals(extension)) return DcamFileType.AUDIO;
         return matcher.group(1) == null ? DcamFileType.VIDEO : DcamFileType.SOS;
     }
 

@@ -49,6 +49,12 @@ public final class DcamMediaOutputImpl implements DcamMediaOutput {
         return storage.mediaFile(type, cameraId, fileUserId, at, encrypted);
     }
 
+    @Override public DcamMediaFile durableAudioMediaFile(
+            String cameraId, String fileUserId, LocalDateTime at, boolean encrypted)
+            throws IOException {
+        return storage.durableAudioMediaFile(cameraId, fileUserId, at, encrypted);
+    }
+
     @Override public CaptureStorageCheck checkCaptureReady() {
         return storage.checkCaptureReady();
     }
@@ -108,18 +114,23 @@ public final class DcamMediaOutputImpl implements DcamMediaOutput {
             Context context, DcamMediaFile mediaFile, FinalizationCallback callback) {
         finalizationExecutor.execute(() -> {
             try {
-                boolean createMd5 = createVideoMd5 != null && createVideoMd5.getAsBoolean();
-                File finalFile = finalizer.finalizeMedia(mediaFile, createMd5);
-                if (storage.isPublicDcim()) {
-                    MediaScannerConnection.scanFile(context,
-                            new String[] { finalFile.getAbsolutePath() },
-                            new String[] { mediaFile.getType().getMimeType() }, null);
-                }
-                callback.onSuccess(finalFile);
+                callback.onSuccess(finalizeSavedNow(context, mediaFile));
             } catch (Exception failure) {
                 callback.onFailure(failure);
             }
         });
+    }
+
+    @Override public File finalizeSavedNow(Context context, DcamMediaFile mediaFile)
+            throws IOException {
+        boolean createMd5 = createVideoMd5 != null && createVideoMd5.getAsBoolean();
+        File finalFile = finalizer.finalizeMedia(mediaFile, createMd5);
+        if (storage.isPublicDcim()) {
+            MediaScannerConnection.scanFile(context,
+                    new String[] { finalFile.getAbsolutePath() },
+                    new String[] { mediaFile.getType().getMimeType() }, null);
+        }
+        return finalFile;
     }
 
     @Override public void recoverStaged(RecoveryCallback callback) {

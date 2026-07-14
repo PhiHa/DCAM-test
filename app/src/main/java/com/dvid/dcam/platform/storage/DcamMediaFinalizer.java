@@ -26,10 +26,12 @@ public final class DcamMediaFinalizer {
         DcamMediaPublisher.validate(staging, "staging");
         File target = storage.finalFile(mediaFile);
         try {
-            File published = publisher.publish(staging, target);
-            if (createMd5 && "mp4".equals(mediaFile.getType().getExtension())) {
+            boolean writeMd5 = createMd5 && "mp4".equals(mediaFile.getType().getExtension());
+            DcamMediaPublisher.Publication publication = publisher.publish(staging, target, writeMd5);
+            File published = publication.file;
+            if (writeMd5) {
                 try {
-                    DcamMd5Sidecar.write(published);
+                    DcamMd5Sidecar.write(published, publication.md5);
                 } catch (IOException | RuntimeException failure) {
                     try { java.nio.file.Files.deleteIfExists(published.toPath()); } catch (IOException cleanup) {
                         failure.addSuppressed(cleanup);
@@ -39,6 +41,7 @@ public final class DcamMediaFinalizer {
             }
             // A leftover staging duplicate is safe; never roll back a valid final file for cleanup failure.
             try { java.nio.file.Files.deleteIfExists(staging.toPath()); } catch (IOException ignored) { }
+            storage.deleteTargetMarker(mediaFile);
             return published;
         } catch (IOException | RuntimeException failure) {
             throw asIOException("Media publication failed", failure);

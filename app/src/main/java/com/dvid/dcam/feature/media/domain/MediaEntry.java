@@ -8,15 +8,18 @@ public final class MediaEntry {
     private final long sizeBytes;
     private final long modifiedAtMillis;
     private final String mimeType;
+    private final int childFileCount;
 
     public MediaEntry(String name, String relativePath, boolean directory,
-                      long sizeBytes, long modifiedAtMillis, String mimeType) {
+                      long sizeBytes, long modifiedAtMillis, String mimeType,
+                      int childFileCount) {
         this.name = name;
         this.relativePath = relativePath;
         this.directory = directory;
         this.sizeBytes = sizeBytes;
         this.modifiedAtMillis = modifiedAtMillis;
         this.mimeType = mimeType;
+        this.childFileCount = childFileCount;
     }
 
     public String getName() { return name; }
@@ -25,4 +28,5 @@ public final class MediaEntry {
     public long getSizeBytes() { return sizeBytes; }
     public long getModifiedAtMillis() { return modifiedAtMillis; }
     public String getMimeType() { return mimeType; }
+    public int getChildFileCount() { return childFileCount; }
 }

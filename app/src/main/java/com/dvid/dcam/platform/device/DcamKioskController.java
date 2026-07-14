@@ -63,8 +63,9 @@ public final class DcamKioskController {
             devicePolicyManager.setLockTaskPackages(admin, new String[] { packageName });
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 devicePolicyManager.setLockTaskFeatures(
-                        admin, DevicePolicyManager.LOCK_TASK_FEATURE_SYSTEM_INFO);
+                        admin, DevicePolicyManager.LOCK_TASK_FEATURE_NONE);
             }
+            devicePolicyManager.setStatusBarDisabled(admin, true);
             devicePolicyManager.setUninstallBlocked(admin, packageName, true);
             DcamLogger.i("Managed kiosk policy applied");
         } catch (SecurityException error) {
@@ -76,6 +77,7 @@ public final class DcamKioskController {
         if (!isDeviceOwner()) return;
         try {
             devicePolicyManager.setUninstallBlocked(admin, packageName, false);
+            devicePolicyManager.setStatusBarDisabled(admin, false);
             devicePolicyManager.setLockTaskPackages(admin, new String[0]);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 devicePolicyManager.setLockTaskFeatures(

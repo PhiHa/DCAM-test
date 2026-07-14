@@ -54,10 +54,31 @@ final class SerializedRecordingCoordinatorTest {
         executor.runAll();
 
         assertEquals(2, camera.videoStarts);
-        assertEquals(RecordingMode.IDLE, coordinator.currentMode());
+        assertEquals(RecordingMode.VIDEO, coordinator.currentMode());
         assertEquals(List.of(
+                CaptureEvent.Type.RECORDING_STARTING,
                 CaptureEvent.Type.RECORDING_STARTED,
-                CaptureEvent.Type.RECORDING_COMPLETED), events);
+                CaptureEvent.Type.RECORDING_COMPLETED,
+                CaptureEvent.Type.RECORDING_STARTING), events);
+    }
+
+    @Test void acceptedStopEmitsUiTransitionBeforeCameraStop() {
+        ManualExecutor executor = new ManualExecutor();
+        FakeCamera camera = new FakeCamera();
+        SerializedRecordingCoordinator coordinator = coordinator(executor, camera);
+        List<CaptureEvent.Type> events = new ArrayList<>();
+        coordinator.setListener(event -> events.add(event.getType()));
+
+        coordinator.startVideo();
+        coordinator.recordingStarted(RecordingMode.VIDEO, "video.mp4");
+        coordinator.stopRecording();
+        executor.runAll();
+
+        assertEquals(List.of(
+                CaptureEvent.Type.RECORDING_STARTING,
+                CaptureEvent.Type.RECORDING_STARTED,
+                CaptureEvent.Type.RECORDING_STOPPING), events);
+        assertEquals(List.of("start-video", "stop"), camera.calls);
     }
 
     @Test void sosHandoffDoesNotAllowAnUnrelatedVideoStart() {

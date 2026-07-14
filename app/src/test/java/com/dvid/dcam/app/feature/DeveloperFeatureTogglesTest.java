@@ -24,6 +24,7 @@ final class DeveloperFeatureTogglesTest {
                 EnumSet.of(
                         FeatureGate.IMAGE_CAPTURE,
                         FeatureGate.VIDEO_CAPTURE,
+                        FeatureGate.AUDIO_CAPTURE,
                         FeatureGate.VIDEO_MD5,
                         FeatureGate.MEDIA_BROWSER,
                         FeatureGate.STORAGE_SETTINGS),

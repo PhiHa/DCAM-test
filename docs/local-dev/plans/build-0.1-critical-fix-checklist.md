@@ -43,6 +43,8 @@ Scope:
 - The same coordinator is the `CaptureEventUseCase` supplied to CameraX.
 - One FIFO queue owns application recording decisions for start, stop, SOS handoff and camera
   completion/failure events.
+- Coordinator emits accepted start and stop transitions consumed by UI; Activity owns no parallel
+  video start/stop flags or hardware stop callback.
 - Duplicate start and stop requests are rejected before reaching the camera adapter.
 - The camera boundary is bound exactly once by the composition root.
 

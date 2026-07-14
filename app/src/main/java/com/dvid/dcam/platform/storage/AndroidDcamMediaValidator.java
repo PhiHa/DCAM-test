@@ -10,6 +10,7 @@ final class AndroidDcamMediaValidator implements DcamMediaValidator {
         if (!file.isFile() || file.length() <= 0L) return false;
         if (type == DcamFileType.IMAGE) return isDecodableImage(file);
         if (type == DcamFileType.VIDEO || type == DcamFileType.SOS) return isPlayableVideo(file);
+        if (type == DcamFileType.AUDIO) return isPlayableAudio(file);
         return false;
     }
 
@@ -27,6 +28,21 @@ final class AndroidDcamMediaValidator implements DcamMediaValidator {
             String hasVideo = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_HAS_VIDEO);
             String duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
             return "yes".equalsIgnoreCase(hasVideo)
+                    && duration != null && Long.parseLong(duration) > 0L;
+        } catch (RuntimeException invalid) {
+            return false;
+        } finally {
+            try { retriever.release(); } catch (Exception ignored) { }
+        }
+    }
+
+    private static boolean isPlayableAudio(File file) {
+        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+        try {
+            retriever.setDataSource(file.getAbsolutePath());
+            String hasAudio = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_HAS_AUDIO);
+            String duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+            return "yes".equalsIgnoreCase(hasAudio)
                     && duration != null && Long.parseLong(duration) > 0L;
         } catch (RuntimeException invalid) {
             return false;

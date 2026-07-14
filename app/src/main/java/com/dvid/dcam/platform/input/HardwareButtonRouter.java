@@ -13,14 +13,13 @@ import java.util.function.BiConsumer;
 
 /** Applies Java button behavior policy to model-specific physical bindings. */
 public final class HardwareButtonRouter {
-    private static final long SOS_HOLD_MS = 3000L;
+    public static final long SOS_HOLD_MS = 3000L;
     private final PhotoCaptureUseCase photos;
     private final VideoRecordingUseCase videos;
     private final AudioRecordingUseCase audio;
     private final FeatureGateSettingsUseCase featureGates;
     private final OperatorSessionUseCase operatorSession;
     private final BiConsumer<Boolean, String> audioRecordingChanged;
-    private final Runnable videoStopRequested;
     private volatile HardwareButtonLayout layout;
     private int heldButtonKeyCode = -1;
     private long holdStartedAtMs;
@@ -33,8 +32,7 @@ public final class HardwareButtonRouter {
             FeatureGateSettingsUseCase featureGates,
             OperatorSessionUseCase operatorSession,
             HardwareButtonLayout layout,
-            BiConsumer<Boolean, String> audioRecordingChanged,
-            Runnable videoStopRequested) {
+            BiConsumer<Boolean, String> audioRecordingChanged) {
         this.photos = photos;
         this.videos = videos;
         this.audio = audio;
@@ -42,7 +40,6 @@ public final class HardwareButtonRouter {
         this.operatorSession = operatorSession;
         this.audioRecordingChanged = audioRecordingChanged == null
                 ? (recording, fileName) -> {} : audioRecordingChanged;
-        this.videoStopRequested = videoStopRequested == null ? () -> {} : videoStopRequested;
         if (layout == null) throw new IllegalArgumentException("layout is required");
         this.layout = layout;
     }
@@ -61,8 +58,7 @@ public final class HardwareButtonRouter {
                 return handleRecordDown(binding.type(), repeatCount);
             case IMPORTANT_RECORDING:
                 if (repeatCount == 0) {
-                    notifyIfStoppingSos();
-                    runIfEnabled(FeatureGate.VIDEO_CAPTURE, videos::toggleSos);
+                    handleImportantRecording();
                 }
                 return true;
             case PHOTO_CAPTURE:
@@ -97,11 +93,23 @@ public final class HardwareButtonRouter {
         }
         if (binding.role() == ButtonRole.RECORD
                 && binding.type() == PhysicalButtonType.SWITCH) {
-            if (videos.currentMode() != RecordingMode.IDLE) videoStopRequested.run();
-            videos.stopRecording();
+            stopVideoRecording();
             return true;
         }
         return binding.role() != ButtonRole.PTT && binding.role() != ButtonRole.POWER;
+    }
+
+    public boolean isSosButton(int buttonKeyCode) {
+        HardwareButtonBinding binding = layout.findByButtonKeyCode(buttonKeyCode);
+        return binding != null && binding.role() == ButtonRole.SOS;
+    }
+
+    public boolean onSosHoldThreshold(int buttonKeyCode) {
+        if (!holdHandled && heldButtonKeyCode == buttonKeyCode) {
+            holdHandled = runIfEnabled(FeatureGate.VIDEO_CAPTURE, this::toggleSosRecording);
+            return holdHandled;
+        }
+        return false;
     }
 
     private boolean handleRecordDown(PhysicalButtonType type, int repeatCount) {
@@ -109,10 +117,15 @@ public final class HardwareButtonRouter {
         if (type == PhysicalButtonType.SWITCH) {
             runIfEnabled(FeatureGate.VIDEO_CAPTURE, videos::startVideo);
         } else {
-            if (videos.currentMode() != RecordingMode.IDLE) videoStopRequested.run();
-            runIfEnabled(FeatureGate.VIDEO_CAPTURE, videos::toggleVideo);
+            runIfEnabled(FeatureGate.VIDEO_CAPTURE, videos.currentMode() == RecordingMode.IDLE
+                    ? videos::startVideo : this::stopVideoRecording);
         }
         return true;
+    }
+
+    private void handleImportantRecording() {
+        runIfEnabled(FeatureGate.VIDEO_CAPTURE, videos.currentMode() == RecordingMode.IDLE
+                ? videos::startSos : this::stopVideoRecording);
     }
 
     private boolean handleSosDown(int buttonKeyCode, int repeatCount, long eventTimeMs) {
@@ -123,8 +136,7 @@ public final class HardwareButtonRouter {
         }
         if (!holdHandled && heldButtonKeyCode == buttonKeyCode
                 && eventTimeMs - holdStartedAtMs >= SOS_HOLD_MS) {
-            notifyIfStoppingSos();
-            holdHandled = runIfEnabled(FeatureGate.VIDEO_CAPTURE, videos::toggleSos);
+            holdHandled = runIfEnabled(FeatureGate.VIDEO_CAPTURE, this::toggleSosRecording);
         }
         return true;
     }
@@ -135,8 +147,13 @@ public final class HardwareButtonRouter {
         holdHandled = false;
     }
 
-    private void notifyIfStoppingSos() {
-        if (videos.currentMode() == RecordingMode.SOS) videoStopRequested.run();
+    private void toggleSosRecording() {
+        if (videos.currentMode() == RecordingMode.IDLE) videos.startSos();
+        else stopVideoRecording();
+    }
+
+    private void stopVideoRecording() {
+        videos.stopRecording();
     }
 
     private boolean runIfEnabled(FeatureGate feature, Runnable action) {

@@ -16,8 +16,14 @@ import com.dvid.dcam.platform.storage.DcamFileType;
 import com.dvid.dcam.platform.storage.CaptureStorageCheck;
 import com.dvid.dcam.platform.storage.DcamMediaFile;
 import com.dvid.dcam.platform.storage.DcamMediaOutput;
+import com.dvid.dcam.platform.recording.RecordingForegroundService;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /** Android MediaRecorder platform adapter. */
 public final class AndroidAudioRecorderImpl implements AudioRecorder {
@@ -29,6 +35,8 @@ public final class AndroidAudioRecorderImpl implements AudioRecorder {
     private MediaRecorder recorder;
     private DcamMediaFile outputMediaFile;
     private File outputFile;
+    private FileOutputStream outputStream;
+    private ScheduledExecutorService durabilitySync;
     private boolean outputEncrypted;
 
     public AndroidAudioRecorderImpl(Context context, DcamMediaOutput mediaOutput, LogSink log,
@@ -45,13 +53,17 @@ public final class AndroidAudioRecorderImpl implements AudioRecorder {
             boolean encrypted = outputEncrypted;
             String output = completed == null ? null : completed.getFileName();
             try {
+                stopDurabilitySync();
                 recorder.stop();
             } catch (RuntimeException error) {
                 log.error("Audio stop failed", error);
                 output = null;
             } finally {
+                syncOutput();
                 recorder.release();
                 recorder = null;
+                closeOutput();
+                RecordingForegroundService.stopAudio(context);
                 outputMediaFile = null;
                 outputFile = null;
                 outputEncrypted = false;
@@ -61,7 +73,7 @@ public final class AndroidAudioRecorderImpl implements AudioRecorder {
                 if (encrypted) {
                     mediaOutput.encryptSaved(context, completed, null, config.getMediaEncryptionPassword());
                 }
-                mediaOutput.publishSaved(context, completed);
+                mediaOutput.finalizeSavedNow(context, completed);
                 log.info((encrypted ? "Encrypted audio saved: " : "Audio saved: ") + output);
                 return output;
             } catch (Exception error) {
@@ -87,8 +99,7 @@ public final class AndroidAudioRecorderImpl implements AudioRecorder {
             }
             LocalDateTime at = LocalDateTime.now();
             outputEncrypted = mediaEncryptionSettings.isMediaEncryptionEnabled();
-            outputMediaFile = mediaOutput.mediaFile(
-                    DcamFileType.AUDIO,
+            outputMediaFile = mediaOutput.durableAudioMediaFile(
                     config.getAccountUserId(),
                     session.getFileUserId(),
                     at,
@@ -101,14 +112,21 @@ public final class AndroidAudioRecorderImpl implements AudioRecorder {
             next.setAudioSamplingRate(8000);
             next.setAudioEncodingBitRate(64000);
             outputFile = mediaOutput.audioFile(outputMediaFile);
-            next.setOutputFile(outputFile.getAbsolutePath());
+            outputStream = new FileOutputStream(outputFile);
+            next.setOutputFile(outputStream.getFD());
+            recorder = next;
             next.prepare();
             next.start();
-            recorder = next;
+            startDurabilitySync();
+            if (!RecordingForegroundService.startAudio(context, outputMediaFile.getFileName())) {
+                log.warn("Could not start audio foreground service", null);
+            }
             log.info("Audio started: " + outputFile.getAbsolutePath());
             return outputMediaFile.getFileName();
         } catch (Exception error) {
+            stopDurabilitySync();
             if (recorder != null) recorder.release();
+            closeOutput();
             recorder = null; outputMediaFile = null; outputFile = null; outputEncrypted = false;
             log.error("Audio failed", error);
             return null;
@@ -117,10 +135,48 @@ public final class AndroidAudioRecorderImpl implements AudioRecorder {
 
     @Override public void release() {
         if (recorder != null) {
+            stopDurabilitySync();
             try { recorder.stop(); } catch (RuntimeException ignored) {}
+            syncOutput();
             recorder.release(); recorder = null;
+            closeOutput();
         }
+        RecordingForegroundService.stopAudio(context);
     }
 
     @Override public boolean isRecording() { return recorder != null; }
+
+    private void startDurabilitySync() {
+        durabilitySync = Executors.newSingleThreadScheduledExecutor(runnable -> {
+            Thread thread = new Thread(runnable, "dcam-audio-sync");
+            thread.setDaemon(true);
+            return thread;
+        });
+        durabilitySync.scheduleWithFixedDelay(this::syncOutput, 1, 1, TimeUnit.SECONDS);
+    }
+
+    private void stopDurabilitySync() {
+        if (durabilitySync == null) return;
+        durabilitySync.shutdownNow();
+        durabilitySync = null;
+    }
+
+    private synchronized void syncOutput() {
+        if (outputStream == null) return;
+        try {
+            outputStream.getFD().sync();
+        } catch (IOException error) {
+            log.warn("Audio durability sync failed", error);
+        }
+    }
+
+    private synchronized void closeOutput() {
+        if (outputStream == null) return;
+        try {
+            outputStream.close();
+        } catch (IOException error) {
+            log.warn("Audio output close failed", error);
+        }
+        outputStream = null;
+    }
 }

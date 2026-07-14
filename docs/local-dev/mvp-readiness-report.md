@@ -22,7 +22,7 @@
 | Camera | CameraX 1.6.1 (prototype; no real-device POC yet) |
 | DB | Room 2.8.4, 6 entity tables (auth/session/config/device/logs/runtime settings) |
 | Recording | CameraX gateway → `VideoRecordingUseCaseImpl` — Activity-owned, not service-owned |
-| Auth | Password-first login, PBKDF2-HMAC-SHA256, boot-scoped sessions, Room-based |
+| Auth | Password-first login, bcrypt cost 10, boot-scoped sessions, Room-based |
 | Storage | Media/* folders, Temp exists but unused; files write directly to final paths |
 | Logging | Local logcat + `Logs/logs.txt` with rotation, Loggly outbox |
 | Encryption | AES-256-CTR exists in code; MVP must force OFF via ADR-006 |
@@ -92,7 +92,7 @@ docs/
 - 2-module Gradle shape (`:app` → `:core`)
 - Feature-first packages with Clean Architecture layering
 - CameraX photo/video capture prototype (unverified on target hardware)
-- Password-first login with PBKDF2-HMAC-SHA256 (600k iterations)
+- Password-first login with bcrypt cost 10; bcrypt salts are embedded in stored hashes
 - Boot-scoped operator session + session invalidation on reboot
 - Room v1 with 6 entity tables: UserProfile, UserAuthMethod, OperatorSession, DeviceIdentity, OperationalSetting, PendingLog, RemoteConfig
 - Local logging with rotation + Loggly outbox

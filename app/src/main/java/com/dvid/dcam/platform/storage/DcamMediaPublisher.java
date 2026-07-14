@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
 
 /** Copies, flushes and verifies staging before exposing a final media path. */
@@ -14,6 +16,10 @@ final class DcamMediaPublisher {
     private static final int COPY_BUFFER_BYTES = 64 * 1024;
 
     File publish(File staging, File target) throws IOException {
+        return publish(staging, target, false).file;
+    }
+
+    Publication publish(File staging, File target, boolean calculateMd5) throws IOException {
         validate(staging, "staging");
         File parent = target.getParentFile();
         if (parent == null || (!parent.isDirectory() && !parent.mkdirs())) {
@@ -24,7 +30,7 @@ final class DcamMediaPublisher {
         File partial = new File(parent, "." + target.getName() + ".publishing-" + UUID.randomUUID());
         boolean targetCreated = false;
         try {
-            copyAndSync(staging, partial);
+            String md5 = copyAndSync(staging, partial, calculateMd5);
             validate(partial, "publication copy");
             if (partial.length() != staging.length()) {
                 throw new IOException("Publication copy size mismatch");
@@ -36,7 +42,7 @@ final class DcamMediaPublisher {
             }
             targetCreated = true;
             validate(target, "final media");
-            return target;
+            return new Publication(target, md5);
         } catch (IOException | RuntimeException failure) {
             try { Files.deleteIfExists(partial.toPath()); } catch (IOException cleanup) {
                 failure.addSuppressed(cleanup);
@@ -56,16 +62,44 @@ final class DcamMediaPublisher {
         }
     }
 
-    private static void copyAndSync(File source, File target) throws IOException {
+    private static String copyAndSync(File source, File target, boolean calculateMd5)
+            throws IOException {
+        MessageDigest md5 = calculateMd5 ? md5() : null;
         try (FileInputStream input = new FileInputStream(source);
              FileOutputStream output = new FileOutputStream(target)) {
             byte[] buffer = new byte[COPY_BUFFER_BYTES];
             int read;
             while ((read = input.read(buffer)) >= 0) {
                 output.write(buffer, 0, read);
+                if (md5 != null) md5.update(buffer, 0, read);
             }
             output.flush();
             output.getFD().sync();
+        }
+        return md5 == null ? null : hex(md5.digest());
+    }
+
+    private static MessageDigest md5() throws IOException {
+        try {
+            return MessageDigest.getInstance("MD5");
+        } catch (NoSuchAlgorithmException impossible) {
+            throw new IOException("MD5 unavailable", impossible);
+        }
+    }
+
+    private static String hex(byte[] digest) {
+        StringBuilder hex = new StringBuilder(32);
+        for (byte value : digest) hex.append(String.format("%02x", value & 0xff));
+        return hex.toString();
+    }
+
+    static final class Publication {
+        final File file;
+        final String md5;
+
+        private Publication(File file, String md5) {
+            this.file = file;
+            this.md5 = md5;
         }
     }
 }

@@ -1,6 +1,6 @@
 # DCAM MVP Internal Build 0.1 - Consolidated Delivery Report and Plan
 
-**Status date:** 2026-07-13  
+**Status date:** 2026-07-14
 **Active build:** DCAM MVP Internal Build 0.1  
 **Delivery gate:** Working Recording Slice  
 **Purpose:** Merge overlapping local state, gaps, plans and checklists into one current execution view. Confluence remains source of truth.
@@ -40,7 +40,7 @@ Source snapshot refreshed from Confluence on 2026-07-13 with `node download-conf
 - Foreground recording notification/service.
 - Room `dcam.db`, CSON store and `Logs/logs.txt` infrastructure.
 - Media naming, selected storage-root handling, staged recovery and MD5-sidecar code/tests.
-- BWC Android 12 evidence for force-stop and reboot recovery of two staged recordings.
+- BodyCamera Android 12 evidence for video and audio normal finalization, foreground continuation, force-stop/reboot recovery, and physical power-cut behavior.
 
 ### Present but not Build 0.1 acceptance evidence
 
@@ -58,7 +58,7 @@ Keep these only when disabled or isolated from startup and recording critical pa
 - Complete fixture: finalized media, `dcam.db`, `dcam_config.cson`, `Logs/logs.txt`.
 - Successful BDMA detection/import through ADB.
 - Long-duration thermal/storage behavior.
-- Screen-off, Activity recreation and long-recording budgets.
+- Long-duration thermal/storage and repetition budgets.
 - Frozen device/environment matrix and formal Device POC report.
 - Complete Requirement -> Design -> Jira -> PR -> QA Test ID -> evidence mapping.
 
@@ -69,7 +69,11 @@ Keep these only when disabled or isolated from startup and recording critical pa
 | Local JVM tests | Broad capture/storage/config/auth/logging coverage | Not device or BDMA acceptance |
 | Prior `test` and `assembleDebug` | Recorded pass history | Must rerun for final candidate |
 | BWC force-stop recovery | Staged MP4 recovered into Media | One device/run; no BDMA import |
-| BWC reboot recovery | MP4 recovered; Temp emptied | One device/run; not power cut |
+| BWC reboot recovery | MP4 recovered; Temp emptied | One device/run |
+| BodyCamera audio finalization/lifecycle | Internal and AUTO SD finalization, screen-off and rotation passed | One device/run; no long-duration repetition |
+| BodyCamera audio force-stop/reboot recovery | Staged AAC recovered into Media/Audio | Reboot requires vendor USB remount handling |
+| BodyCamera audio physical power cut | External SD `Temp` FAIL reproduced 2/2; app-private retest retained `558,775` bytes but tested APK entered startup crash loop. Compatibility fix later recovered exact artifact | Fresh cut on fixed APK and staging-root approval still required |
+| Loggly process isolation | Persisted `JobScheduler` job and Room drain both run in `com.dvid.dcam:loggly`; emulator spawned both processes without crash | `BODYCAMERA4HHITK` marks job RUNNABLE/active but still never binds or forks `:loggly`; vendor ROM blocker confirmed |
 
 No task reaches Done unless its Definition of Done evidence is complete.
 
@@ -85,7 +89,8 @@ No task reaches Done unless its Definition of Done evidence is complete.
 | Closed | Startup cloud init removed from `AppComposition` | Offline-first startup path restored | Covered by compile/test evidence |
 | P1 | Encryption can remain configurable | Risk unreadable BDMA sample | Build 0.1 OFF policy and filename/output evidence |
 | P1 | Camera ownership Activity/lifecycle sensitive | Screen/activity-loss risk | Device POC result and approved decision |
-| P1 | Storage removal/power-cut incomplete | Evidence-preservation risk | Repeated physical tests and recovery artifacts |
+| P0 | Audio power-cut design/evidence not accepted | External SD `Temp` loses active AAC bytes; app-private staging retains bytes but changes staging visibility/root and tested APK crashed on recovery | Approve staging root, then pass a fresh physical battery-cut end to end on fixed APK without crash |
+| P1 | BodyCamera ROM does not spawn `:loggly` process | Separate-process uploader works on emulator but cannot run independently on target device | Vendor ActivityManager/process policy fix or approved same-process fallback, followed by target-device crash/outbox drain evidence |
 | P1 | Traceability mapping incomplete | DoD/review failure | Requirement, Design, Jira, PR, QA Test ID and evidence links |
 | P2 | Deferred surfaces visible or initialized | Scope creep/regression risk | Build-profile gate evidence; no critical-path execution |
 
@@ -121,7 +126,7 @@ Device contains one effective developer override: `AUDIO_CAPTURE=true`. Legacy `
 
 ### Gate B - Complete Device POC
 
-**Status:** partial pass. Evidence: `evidence/build-0.1-gate-b-device-poc-2026-07-13.md`.
+**Status:** partial pass with audio power-cut blocker. Evidence: `evidence/build-0.1-gate-b-device-poc-2026-07-13.md` and `evidence/build-0.1-audio-device-tests-2026-07-14.md`.
 
 - [x] Build/test and APK install on selected BWC.
 - [x] Login/session precondition and camera preview.
@@ -136,11 +141,18 @@ Device contains one effective developer override: `AUDIO_CAPTURE=true`. Legacy `
 - [x] AUTO storage selection writes to mounted dynamic SD UUID `6162-6433`.
 - [x] Repeated 40-second-class SD recording finalizes with matching MD5.
 - [x] Physical power-cut recovery with matching MD5 after MediaProvider settled.
+- [x] Audio normal finalization from `Temp` into `Media/Audio` on internal and AUTO SD storage.
+- [x] Audio foreground-service continuation through screen-off and configuration rotation.
+- [ ] Audio recovery from staged AAC: force-stop and reboot PASS. External SD `Temp` physical cuts FAIL reproducibly (2/2). App-private `DurableAudioTemp` retained `558,775` bytes after a later cut, but tested APK entered a `Files.readString` `NoSuchMethodError` startup loop. One-line compatibility fix passed tests/build and recovered exact artifact to AUTO SD `Media/Audio` (`recovered=1, preserved=2`). Fresh physical cut on fixed APK plus staging-root approval remain required.
 - [ ] Physical removable-storage insert/remove test: not executable without device disassembly.
 - [ ] Long-duration recording and thermal/storage measurements.
 - [ ] Cold-boot repetition for intermittent CameraHAL/focus ANR characterization.
 
 Recovered-MP4 MD5 gap is closed: startup and mounted-storage recovery use the active MD5 setting; enabled/disabled unit tests pass; force-stop, reboot and physical power-cut recovery on `BODYCAMERA4HHITK` produced matching MP4/MD5 pairs and emptied `Temp`. Firmware vendor app `com.bodycamera.nettysocket` can export SD as USB mass storage (`MEDIA_SHARED`); stable SD evidence requires USB function `adb`/`none`. Android MediaProvider may lag SD mount after boot; DCAM preserves staged media until a later recovery pass can publish it. Physical SD removal is not executable without camera disassembly.
+
+Audio normal finalization and lifecycle checks pass on `BODYCAMERA4HHITK`: Internal and AUTO SD publication, foreground continuation through screen-off/rotation, force-stop recovery and reboot recovery all produced non-zero AAC under `Media/Audio` with `Temp` emptied. Physical battery-cut testing on 2026-07-14 first exposed a reproducible external-SD staging blocker in two consecutive runs: active staged AAC files measured `104,625` and `141,050` bytes before power removal but both mounted as `0` bytes after boot. A later candidate moved active AAC into app-private `files/DurableAudioTemp`; its physical cut retained the exact file at `558,775` bytes, proving the byte-loss mechanism was avoided. That tested APK then entered a startup crash loop because `Files.readString` was unavailable on the Android 12 runtime. Replacing it with `Files.readAllBytes` plus UTF-8 decoding passed `test assembleDebug`; the rebuilt APK recovered the same artifact into AUTO SD `Media/Audio` at `558,775` bytes and logged `recovered=1, preserved=2`. This is not full acceptance: app-private staging changes the observable `Temp` design, and no fresh physical cut has yet passed end to end on the fixed APK.
+
+Loggly isolation implemented on 2026-07-14: normal and fatal logs first enqueue into Room; fatal direct HTTP fallback runs only when durable enqueue fails. Logging no longer uses WorkManager. A persisted native `JobScheduler` job targets `LogglyUploadJobService` in `:loggly`; that process reads Room, sends HTTP, applies retry/backoff and schedules its next Room retry deadline itself. Room multi-instance invalidation remains enabled. Emulator forced-job evidence spawned both `com.dvid.dcam` and `com.dvid.dcam:loggly` without crash. On `BODYCAMERA4HHITK`, job `u0a108/56324` is registered with the correct component, persisted/network constraints satisfied, and shown RUNNABLE/active after `cmd jobscheduler run -f`; ActivityManager still never binds or forks `com.dvid.dcam:loggly`. Vendor ROM secondary-process execution remains the acceptance blocker.
 
 **Exit:** not reached. Finish remaining physical/repetition tests and review raw evidence.
 
@@ -181,14 +193,16 @@ Recovered-MP4 MD5 gap is closed: startup and mounted-storage recovery use the ac
 
 ## 8. Immediate ordered backlog
 
-1. Reconcile current MD5 implementation with Data Contract readiness and negative cases.
-2. Force encryption OFF and prevent `_enc` Build 0.1 output.
-3. Remove or hard-disable startup cloud/remote-config execution.
-4. Produce complete Device POC report from BWC evidence; add missing physical scenarios.
-5. Freeze minimum DB/CSON/log fixture with BDMA team.
-6. Run fresh 30-second video plus image fixture.
-7. Execute BDMA ADB import and preserve evidence.
-8. Rerun tests/build; record APK hash and traceability links.
+1. Decide whether app-private `DurableAudioTemp` is acceptable; then run a fresh physical battery-cut end to end on the fixed APK without startup crash.
+2. Resolve `BODYCAMERA4HHITK` secondary-process policy or approve same-process Loggly fallback; then verify crash/outbox drain on device.
+3. Reconcile current MD5 implementation with Data Contract readiness and negative cases.
+4. Force encryption OFF and prevent `_enc` Build 0.1 output.
+5. Remove or hard-disable startup cloud/remote-config execution.
+6. Produce complete Device POC report from BWC evidence; add missing physical scenarios.
+7. Freeze minimum DB/CSON/log fixture with BDMA team.
+8. Run fresh 30-second video plus image fixture.
+9. Execute BDMA ADB import and preserve evidence.
+10. Rerun tests/build; record APK hash and traceability links.
 
 ## 9. Definition of Done
 
@@ -233,5 +247,3 @@ Decision owner must update Confluence/Jira before implementation changes contrac
 | `evidence/build-0.1-item-9-adb-recovery-2026-07-13.md` | Accepted raw device evidence appendix |
 
 Use this report for daily Build 0.1 coordination. Update it when source status, POC evidence, BDMA contract decision or gate result changes.
-
-

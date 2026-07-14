@@ -3,7 +3,9 @@ package com.dvid.dcam.feature.capture.domain;
 /** Immutable application event emitted after platform capture callbacks are translated. */
 public final class CaptureEvent {
     public enum Type {
+        RECORDING_STARTING,
         RECORDING_STARTED,
+        RECORDING_STOPPING,
         RECORDING_COMPLETED,
         PHOTO_SAVED,
         ERROR
@@ -26,6 +28,14 @@ public final class CaptureEvent {
 
     public static CaptureEvent recordingStarted(RecordingMode mode, String fileName) {
         return new CaptureEvent(Type.RECORDING_STARTED, mode, fileName, null, null);
+    }
+
+    public static CaptureEvent recordingStarting(RecordingMode mode) {
+        return new CaptureEvent(Type.RECORDING_STARTING, mode, null, null, null);
+    }
+
+    public static CaptureEvent recordingStopping(RecordingMode mode) {
+        return new CaptureEvent(Type.RECORDING_STOPPING, mode, null, null, null);
     }
 
     public static CaptureEvent recordingCompleted(String fileName) {

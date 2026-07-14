@@ -195,11 +195,10 @@ public final class AppComposition {
             PhotoCaptureUseCase photos,
             VideoRecordingUseCase videos,
             AudioRecordingUseCase audio,
-            BiConsumer<Boolean, String> audioRecordingChanged,
-            Runnable videoStopRequested) {
+            BiConsumer<Boolean, String> audioRecordingChanged) {
         return new HardwareButtonRouter(
                 photos, videos, audio, featureGateSettings, operatorSession, hardwareButtonLayout,
-                audioRecordingChanged, videoStopRequested);
+                audioRecordingChanged);
     }
 
     public CaptureRuntime createCaptureRuntime(ComponentActivity owner) {
@@ -242,7 +241,6 @@ public final class AppComposition {
         }
 
         public View cameraPreview() { return cameraPreview; }
-        public void showSaved(String fileName) { cameraPreview.showSaved(fileName); }
         public PhotoCaptureUseCase photoCapture() { return photos; }
         public VideoRecordingUseCase videoRecording() { return videos; }
         public AudioRecordingUseCase audioRecording() { return audio; }

@@ -2,7 +2,14 @@
     <string name="app_name">DCAM</string>
     <string name="camera_permission_required">Camera permission required</string>
     <string name="media_saved">Saved %1$s</string>
+    <string name="media_saving">Saving...</string>
     <string name="recording_file">Recording %1$s</string>
+    <string name="recording_notification_channel">DCAM audio/video recording</string>
+    <string name="recording_notification_channel_description">Shows when audio or video recording is active</string>
+    <string name="recording_notification_title">Recording</string>
+    <string name="recording_notification_text">DCAM recording in progress</string>
+    <string name="audio_recording_status">Audio recording</string>
+    <string name="audio_recording_notification_text">DCAM audio recording in progress</string>
     <string name="capture">Capture</string>
     <string name="settings_detail_hint">Controls update local UI state; operational persistence comes later</string>
     <string name="files">Files</string>
