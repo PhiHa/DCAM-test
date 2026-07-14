@@ -50,7 +50,32 @@ public class HardwareButtonHandlerTest {
         assertTrue(router.onKeyDown(KeyEvent.KEYCODE_F7, 2, 4000L));
         assertTrue(router.onKeyDown(KeyEvent.KEYCODE_F7, 3, 4500L));
         assertTrue(router.onKeyUp(KeyEvent.KEYCODE_F7));
-        assertEquals(1, videos.sosToggles);
+        assertEquals(1, videos.sosStarts);
+    }
+
+    @Test public void f7HoldTimerTogglesSosWithoutKeyRepeat() {
+        FakeVideoRecordingUseCaseImpl videos = new FakeVideoRecordingUseCaseImpl();
+        HardwareButtonRouter router = router(new FakePhotoCaptureUseCaseImpl(), videos);
+
+        assertTrue(router.onKeyDown(KeyEvent.KEYCODE_F7, 0, 1000L));
+        assertTrue(router.onSosHoldThreshold(KeyEvent.KEYCODE_F7));
+        assertFalse(router.onSosHoldThreshold(KeyEvent.KEYCODE_F7));
+
+        assertEquals(1, videos.sosStarts);
+    }
+
+    @Test public void f7HoldStopsSosThroughCommonStopPath() {
+        FakeVideoRecordingUseCaseImpl videos = new FakeVideoRecordingUseCaseImpl();
+        videos.mode = RecordingMode.SOS;
+        HardwareButtonRouter router = new HardwareButtonRouter(
+                new FakePhotoCaptureUseCaseImpl(), videos,
+                new FakeAudioRecordingUseCaseImpl(), null, null, bwcLayout(),
+                (recording, fileName) -> {});
+
+        assertTrue(router.onKeyDown(KeyEvent.KEYCODE_F7, 0, 1000L));
+        assertTrue(router.onSosHoldThreshold(KeyEvent.KEYCODE_F7));
+
+        assertEquals(1, videos.stops);
     }
 
     @Test public void unknownKeyIgnored() {
@@ -66,7 +91,7 @@ public class HardwareButtonHandlerTest {
         HardwareButtonRouter router = new HardwareButtonRouter(
                 photos, videos, audio, null, null, HardwareButtonProfiles.resolve(
                         new HardwareDeviceIdentity("BodyCamera", "k69v1_64_k419", "mt6768")),
-                (recording, fileName) -> audioRecording[0] = recording, () -> {});
+                (recording, fileName) -> audioRecording[0] = recording);
 
         assertTrue(router.onKeyDown(KeyEvent.KEYCODE_F5, 0, 0L));
         assertTrue(router.onKeyUp(KeyEvent.KEYCODE_F5));
@@ -78,12 +103,34 @@ public class HardwareButtonHandlerTest {
         assertTrue(router.onKeyDown(KeyEvent.KEYCODE_F3, 0, 1L));
         assertFalse(router.onKeyDown(KeyEvent.KEYCODE_POWER, 0, 0L));
         assertFalse(router.onKeyDown(KeyEvent.KEYCODE_F4, 0, 0L));
-        assertEquals(1, videos.videoToggles);
+        assertEquals(1, videos.starts);
         assertEquals(0, videos.stops);
-        assertEquals(1, videos.sosToggles);
+        assertEquals(1, videos.sosStarts);
         assertEquals(1, photos.photos);
         assertEquals(2, audio.toggles);
         assertFalse(audioRecording[0]);
+    }
+
+    @Test public void recordButtonStopsImportantRecordingWithoutStartingVideo() {
+        FakeVideoRecordingUseCaseImpl videos = new FakeVideoRecordingUseCaseImpl();
+        videos.mode = RecordingMode.SOS;
+        HardwareButtonRouter router = bodyCameraRouter(videos);
+
+        assertTrue(router.onKeyDown(KeyEvent.KEYCODE_F5, 0, 0L));
+
+        assertEquals(1, videos.stops);
+        assertEquals(0, videos.starts);
+    }
+
+    @Test public void importantButtonStopsVideoWithoutStartingImportantRecording() {
+        FakeVideoRecordingUseCaseImpl videos = new FakeVideoRecordingUseCaseImpl();
+        videos.mode = RecordingMode.VIDEO;
+        HardwareButtonRouter router = bodyCameraRouter(videos);
+
+        assertTrue(router.onKeyDown(KeyEvent.KEYCODE_F1, 0, 0L));
+
+        assertEquals(0, videos.sosStarts);
+        assertEquals(1, videos.stops);
     }
 
     @Test public void allThreePropertiesMustMatchDeviceProfile() {
@@ -112,7 +159,7 @@ public class HardwareButtonHandlerTest {
         gates.setEnabled(FeatureGate.IMAGE_CAPTURE, false);
         HardwareButtonRouter router = new HardwareButtonRouter(
                 photos, new FakeVideoRecordingUseCaseImpl(), new FakeAudioRecordingUseCaseImpl(),
-                gates, null, bwcLayout(), (recording, fileName) -> {}, () -> {});
+                gates, null, bwcLayout(), (recording, fileName) -> {});
 
         assertTrue(router.onKeyDown(KeyEvent.KEYCODE_CAMERA, 0, 0L));
         assertEquals(0, photos.photos);
@@ -122,7 +169,15 @@ public class HardwareButtonHandlerTest {
             FakePhotoCaptureUseCaseImpl photos, FakeVideoRecordingUseCaseImpl videos) {
         return new HardwareButtonRouter(
                 photos, videos, new FakeAudioRecordingUseCaseImpl(), null, null, bwcLayout(),
-                (recording, fileName) -> {}, () -> {});
+                (recording, fileName) -> {});
+    }
+
+    private static HardwareButtonRouter bodyCameraRouter(FakeVideoRecordingUseCaseImpl videos) {
+        return new HardwareButtonRouter(
+                new FakePhotoCaptureUseCaseImpl(), videos, new FakeAudioRecordingUseCaseImpl(),
+                null, null, HardwareButtonProfiles.resolve(new HardwareDeviceIdentity(
+                        "BodyCamera", "k69v1_64_k419", "mt6768")),
+                (recording, fileName) -> {});
     }
 
     private static HardwareButtonLayout bwcLayout() {
@@ -139,13 +194,14 @@ public class HardwareButtonHandlerTest {
     private static final class FakeVideoRecordingUseCaseImpl implements VideoRecordingUseCase {
         int starts;
         int stops;
+        int sosStarts;
         int sosToggles;
         int videoToggles;
         RecordingMode mode = RecordingMode.IDLE;
 
         @Override public void toggleVideo() { videoToggles++; }
         @Override public void startVideo() { starts++; }
-        @Override public void startSos() {}
+        @Override public void startSos() { sosStarts++; }
         @Override public void stopRecording() { stops++; }
         @Override public void toggleSos() { sosToggles++; }
         @Override public RecordingMode currentMode() { return mode; }

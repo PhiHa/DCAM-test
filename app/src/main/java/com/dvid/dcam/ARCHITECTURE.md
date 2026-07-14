@@ -9,6 +9,11 @@ ngữ kiến trúc, nhưng **tên file/class không dùng hậu tố `Port`**. T
 nói rõ capability nghiệp vụ, ví dụ `CameraGateway`, `AudioRecorder`,
 `LanguagePreferenceStore`.
 
+## UI notification convention
+
+Transient floating notices must use `FloatingNotice`; do not create `Toast` or another floating
+notice style directly at call sites. Camera preview text is reserved for camera status and errors.
+
 ## 1. Layer chuẩn
 
 ```text

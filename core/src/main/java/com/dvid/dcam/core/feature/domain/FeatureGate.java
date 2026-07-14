@@ -4,7 +4,7 @@ package com.dvid.dcam.core.feature.domain;
 public enum FeatureGate {
     IMAGE_CAPTURE(true),
     VIDEO_CAPTURE(true),
-    AUDIO_CAPTURE(false),
+    AUDIO_CAPTURE(true),
     MEDIA_ENCRYPTION(false),
     VIDEO_MD5(true),
     MEDIA_BROWSER(true),

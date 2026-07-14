@@ -16,13 +16,20 @@ final class LocalMediaRepositoryImplTest {
         Path root = Files.createTempDirectory("dcam-media");
         Path video = Files.createDirectories(root.resolve("Media/Video"));
         Files.write(video.resolve("clip.mp4"), new byte[] {1, 2, 3});
+        Files.write(video.resolve("clip.mp4.md5"), new byte[] {1, 2, 3});
         LocalMediaRepositoryImpl browser = new LocalMediaRepositoryImpl(new DcamStorage(root.toFile()));
 
         List<MediaEntry> roots = browser.list("");
-        List<MediaEntry> files = browser.list("Video");
+        List<MediaEntry> folders = browser.list("Internal");
+        List<MediaEntry> files = browser.list("Internal/Video");
 
-        assertEquals(List.of("Video", "IMP", "Image", "Audio"),
+        assertEquals(List.of("Internal"),
                 roots.stream().map(MediaEntry::getName).toList());
+        assertEquals(List.of("Audio", "Image", "IMP", "Video"),
+                folders.stream().map(MediaEntry::getName).toList());
+        assertEquals(0, roots.get(0).getChildFileCount());
+        assertEquals(1, folders.get(3).getChildFileCount());
+        assertEquals(List.of("clip.mp4"), files.stream().map(MediaEntry::getName).toList());
         assertEquals("clip.mp4", files.get(0).getName());
         assertEquals("video/mp4", files.get(0).getMimeType());
     }
@@ -31,7 +38,8 @@ final class LocalMediaRepositoryImplTest {
         Path root = Files.createTempDirectory("dcam-media");
         LocalMediaRepositoryImpl browser = new LocalMediaRepositoryImpl(new DcamStorage(root.toFile()));
         assertThrows(SecurityException.class, () -> browser.list("../private"));
-        assertThrows(SecurityException.class, () -> browser.list("Logs"));
+        assertThrows(SecurityException.class, () -> browser.list("Internal/Logs"));
+        assertThrows(SecurityException.class, () -> browser.list("External nope/Video"));
     }
 
     @Test void stagedCaptureIsAbsentFromFinalMediaAndMediaBrowsing() throws Exception {
@@ -43,7 +51,7 @@ final class LocalMediaRepositoryImplTest {
         LocalMediaRepositoryImpl browser = new LocalMediaRepositoryImpl(storage);
 
         assertFalse(Files.exists(root.resolve("Media/Video").resolve(staged.getFileName())));
-        assertEquals(List.of(), browser.list("Video"));
-        assertThrows(SecurityException.class, () -> browser.list("Temp"));
+        assertEquals(List.of(), browser.list("Internal/Video"));
+        assertThrows(SecurityException.class, () -> browser.list("Internal/Temp"));
     }
 }

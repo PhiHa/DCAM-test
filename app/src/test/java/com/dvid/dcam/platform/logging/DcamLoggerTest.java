@@ -20,4 +20,16 @@ class DcamLoggerTest {
         assertFalse(payload.contains(" thread=\\\"capture-thread\\\""));
         assertFalse(payload.contains(" source=CaptureController"));
     }
+
+    @Test
+    void fatalCrashUsesDirectFallbackOnlyWhenDurableQueueFails() {
+        assertFalse(DcamLogger.shouldSendCrashFallback(
+                "ERROR", "Crash on dcam-media-finalization", true, true));
+        assertTrue(DcamLogger.shouldSendCrashFallback(
+                "ERROR", "Crash on dcam-media-finalization", true, false));
+        assertFalse(DcamLogger.shouldSendCrashFallback(
+                "ERROR", "Crash on dcam-media-finalization", false, false));
+        assertFalse(DcamLogger.shouldSendCrashFallback(
+                "ERROR", "Audio stop failed", true, false));
+    }
 }

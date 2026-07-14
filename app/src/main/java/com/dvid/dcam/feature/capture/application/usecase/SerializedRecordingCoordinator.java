@@ -34,7 +34,7 @@ public final class SerializedRecordingCoordinator
     // Accessed only by queue tasks after construction-time binding.
     private CameraGateway camera;
     private Phase phase = Phase.IDLE;
-    private RecordingMode requestedMode = RecordingMode.IDLE;
+    private volatile RecordingMode requestedMode = RecordingMode.IDLE;
 
     public SerializedRecordingCoordinator(Executor executor) {
         queue = new SerialExecutor(Objects.requireNonNull(executor, "executor"));
@@ -95,7 +95,7 @@ public final class SerializedRecordingCoordinator
     }
 
     @Override public RecordingMode currentMode() {
-        return currentMode;
+        return currentMode == RecordingMode.IDLE ? requestedMode : currentMode;
     }
 
     @Override public void recordingStarted(RecordingMode mode, String fileName) {
@@ -136,14 +136,18 @@ public final class SerializedRecordingCoordinator
     private void start(RecordingMode mode) {
         requestedMode = mode;
         phase = Phase.STARTING;
+        listener.accept(CaptureEvent.recordingStarting(mode));
         if (mode == RecordingMode.SOS) camera().startSos();
         else camera().startVideo();
     }
 
     private void stop() {
         if (phase == Phase.IDLE || phase == Phase.STOPPING) return;
+        RecordingMode stoppingMode = currentMode == RecordingMode.IDLE
+                ? requestedMode : currentMode;
         requestedMode = RecordingMode.IDLE;
         phase = Phase.STOPPING;
+        listener.accept(CaptureEvent.recordingStopping(stoppingMode));
         camera().stopRecording();
     }
 

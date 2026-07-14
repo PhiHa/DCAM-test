@@ -3,9 +3,9 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#000000"
-    android:paddingStart="16dp"
+    android:paddingStart="0dp"
     android:paddingTop="18dp"
-    android:paddingEnd="16dp"
+    android:paddingEnd="0dp"
     android:paddingBottom="18dp">
 
     <LinearLayout
@@ -13,24 +13,30 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="top|center_horizontal"
-        android:gravity="center"
-        android:orientation="horizontal">
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
 
-        <View
-            android:id="@+id/recording_badge"
-            android:layout_width="12dp"
-            android:layout_height="12dp"
-            android:layout_marginEnd="8dp"
-            android:background="@drawable/bg_rec_dot" />
+        <LinearLayout
+            android:id="@+id/video_recording_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone">
 
-        <ImageView
-            android:id="@+id/audio_badge"
+        <FrameLayout
             android:layout_width="18dp"
             android:layout_height="18dp"
             android:layout_marginEnd="8dp"
-            android:contentDescription="Audio recording"
-            android:src="@drawable/ic_mic_status"
-            android:visibility="gone" />
+            android:contentDescription="@string/recording_notification_title">
+
+            <View
+                android:id="@+id/recording_badge"
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                android:layout_gravity="center"
+                android:background="@drawable/bg_rec_dot" />
+        </FrameLayout>
 
         <TextView
             android:id="@+id/recording_timer"
@@ -44,6 +50,37 @@
             android:paddingBottom="4dp"
             android:text="00:00:00"
             android:textSize="14sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/audio_recording_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/audio_badge"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_marginEnd="8dp"
+            android:contentDescription="@string/audio_recording_status"
+            android:src="@drawable/ic_mic_status" />
+
+        <TextView
+            android:id="@+id/audio_recording_timer"
+            style="@style/DcamStatusText.Bold"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:includeFontPadding="false"
+            android:paddingStart="0dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="4dp"
+            android:paddingBottom="4dp"
+            android:text="00:00:00"
+            android:textSize="14sp" />
+        </LinearLayout>
     </LinearLayout>
 
     <FrameLayout
@@ -57,6 +94,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
         android:gravity="bottom"
         android:orientation="horizontal">
 

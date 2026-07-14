@@ -1,18 +1,22 @@
 package com.dvid.dcam.app;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowInsets;
+import android.view.WindowInsetsController;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.GridLayout;
 import android.widget.LinearLayout;
-import android.widget.Toast;
 import androidx.activity.ComponentActivity;
 import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
@@ -81,6 +85,7 @@ public final class MainActivity extends ComponentActivity {
         }
     };
     private FrameLayout root;
+    private ActivityMainBinding activityBinding;
     private AppComposition composition;
     private AppComposition.CaptureRuntime captureRuntime;
     private MainViewModel viewModel;
@@ -109,7 +114,7 @@ public final class MainActivity extends ComponentActivity {
     private long devModeTapWindowStartedAtMs;
     private boolean audioRecording;
     private Long audioStartedAtMillis;
-    private Long videoStopRequestedAtMillis;
+    private Runnable sosHoldAction;
 
     @Override protected void attachBaseContext(Context newBase) {
         super.attachBaseContext(AndroidLanguagePreferenceStoreImpl.localizedContext(newBase));
@@ -132,11 +137,12 @@ public final class MainActivity extends ComponentActivity {
         kioskController = new DcamKioskController(this);
         kioskController.applyActiveKioskPolicy();
 
-        getWindow().setStatusBarColor(Color.BLACK);
         getWindow().setNavigationBarColor(Color.BLACK);
-        ActivityMainBinding binding = ActivityMainBinding.inflate(getLayoutInflater());
-        root = binding.contentRoot;
-        setContentView(binding.getRoot());
+        activityBinding = ActivityMainBinding.inflate(getLayoutInflater());
+        root = activityBinding.contentRoot;
+        setContentView(activityBinding.getRoot());
+        bindSystemNavigationInset();
+        hideSystemStatusBar();
 
         permissionLauncher = registerForActivityResult(
                 new ActivityResultContracts.RequestMultiplePermissions(),
@@ -167,6 +173,7 @@ public final class MainActivity extends ComponentActivity {
 
     @Override protected void onResume() {
         super.onResume();
+        hideSystemStatusBar();
         if (kioskController != null) {
             kioskController.applyActiveKioskPolicy();
             kioskController.enterLockTaskIfAllowed(this);
@@ -176,13 +183,58 @@ public final class MainActivity extends ComponentActivity {
         cameraClock.post(cameraClockTick);
     }
 
+    @Override public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) hideSystemStatusBar();
+    }
+
+    private void hideSystemStatusBar() {
+        if (kioskController == null || !kioskController.isDeviceOwner()) {
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+            return;
+        }
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            View decor = getWindow().peekDecorView();
+            if (decor == null) return;
+            WindowInsetsController controller = decor.getWindowInsetsController();
+            if (controller != null) {
+                controller.hide(WindowInsets.Type.statusBars());
+            }
+            return;
+        }
+        getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+    }
+
+    private void bindSystemNavigationInset() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            activityBinding.getRoot().setOnApplyWindowInsetsListener((view, insets) -> {
+                int bottom = insets.getInsets(WindowInsets.Type.navigationBars()).bottom;
+                FrameLayout.LayoutParams layout = (FrameLayout.LayoutParams)
+                        activityBinding.customStatusBar.getLayoutParams();
+                layout.bottomMargin = bottom + dp(8);
+                activityBinding.customStatusBar.setLayoutParams(layout);
+                return insets;
+            });
+            activityBinding.getRoot().requestApplyInsets();
+        }
+    }
+
     @Override protected void onPause() {
         cameraClock.removeCallbacks(cameraClockTick);
         super.onPause();
     }
 
     private void render(MainUiState state) {
+        MainUiState previousState = latestState;
         latestState = state;
+        if (renderedScreen == null
+                && state.getScreen() == MainScreen.LOGIN
+                && state.isAuthenticationBusy()) return;
         MainScreen screen = safeScreen(state.getScreen());
         if (screen != state.getScreen()) {
             viewModel.show(screen);
@@ -190,6 +242,7 @@ public final class MainActivity extends ComponentActivity {
         }
         if (renderedScreen != screen) {
             renderedScreen = screen;
+            updateFloatingRecordingStatus(state);
             if (screen == MainScreen.LOGIN) renderLogin();
             else if (screen == MainScreen.CAMERA) renderCamera();
             else if (screen == MainScreen.MENU) renderMenu();
@@ -198,6 +251,27 @@ public final class MainActivity extends ComponentActivity {
             else renderSettingsDetail(screen);
         }
         updateStatus(state);
+        updateSavingNotice(previousState, state);
+        showSavedNotice(previousState, state);
+    }
+
+    private void updateSavingNotice(MainUiState previousState, MainUiState state) {
+        if (previousState != null && previousState.getCapture().isSaving()
+                && !state.getCapture().isSaving()) {
+            FloatingNotice.hidePersistent();
+        }
+        if ((previousState == null || !previousState.getCapture().isSaving())
+                && state.getCapture().isSaving()) {
+            FloatingNotice.showPersistent(this, R.string.media_saving);
+        }
+    }
+
+    private void showSavedNotice(MainUiState previousState, MainUiState state) {
+        if (previousState == null) return;
+        String message = state.getMessage();
+        if (message == null || !message.startsWith("Saved ")
+                || message.equals(previousState.getMessage())) return;
+        FloatingNotice.show(this, getString(R.string.media_saved, message.substring(6)));
     }
 
     private void renderCamera() {
@@ -278,7 +352,6 @@ public final class MainActivity extends ComponentActivity {
         clearScreenBindings();
         root.removeAllViews();
         fileExplorerScreen = ScreenFileExplorerBinding.inflate(getLayoutInflater(), root, false);
-        fileExplorerScreen.upAction.setOnClickListener(view -> viewModel.navigateMediaUp());
         root.addView(fileExplorerScreen.getRoot());
     }
 
@@ -505,7 +578,7 @@ public final class MainActivity extends ComponentActivity {
             }
             renderedScreen = null;
             render(latestState);
-            Toast.makeText(this, "Button fallback applied", Toast.LENGTH_SHORT).show();
+            FloatingNotice.show(this, "Button fallback applied");
             return;
         }
         if (id == SettingId.LANGUAGE) {
@@ -523,6 +596,16 @@ public final class MainActivity extends ComponentActivity {
             return;
         }
         demoSettings.select(id, selectedIndex);
+    }
+
+    @Override protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        if (Intent.ACTION_MAIN.equals(intent.getAction())
+                && intent.hasCategory(Intent.CATEGORY_HOME)
+                && viewModel != null) {
+            viewModel.show(MainScreen.CAMERA);
+        }
     }
 
     private SettingsSection developerHardwareButtonSection() {
@@ -584,7 +667,7 @@ public final class MainActivity extends ComponentActivity {
             return;
         }
         if (id == SettingId.CHANGE_OPERATOR_ID || id == SettingId.CHANGE_OPERATOR_PASSWORD) {
-            Toast.makeText(this, R.string.account_change_pending, Toast.LENGTH_SHORT).show();
+            FloatingNotice.show(this, R.string.account_change_pending);
             return;
         }
         throw new IllegalArgumentException("Setting " + id + " is not an action");
@@ -593,7 +676,7 @@ public final class MainActivity extends ComponentActivity {
     private void changeLanguage(AppLanguage language) {
         if (languageSettings == null || language == languageSettings.currentLanguage()) return;
         languageSettings.changeLanguage(language);
-        Toast.makeText(this, R.string.language_changed, Toast.LENGTH_SHORT).show();
+        FloatingNotice.show(this, R.string.language_changed);
         recreate();
     }
 
@@ -617,7 +700,7 @@ public final class MainActivity extends ComponentActivity {
 
         devModeTapCount = 0;
         devModeTapWindowStartedAtMs = 0L;
-        Toast.makeText(this, R.string.developer_mode_unlocked, Toast.LENGTH_SHORT).show();
+        FloatingNotice.show(this, R.string.developer_mode_unlocked);
         viewModel.show(MainScreen.DEVELOPER_SETTINGS);
     }
 
@@ -674,15 +757,11 @@ public final class MainActivity extends ComponentActivity {
     }
 
     private void updateStatus(MainUiState state) {
+        updateFloatingRecordingStatus(state);
         if (cameraScreen != null) {
-            if (state.getCapture().getMode() == RecordingMode.IDLE) {
-                videoStopRequestedAtMillis = null;
-            }
-            boolean videoRecording = state.getCapture().getMode() != RecordingMode.IDLE
-                    && videoStopRequestedAtMillis == null;
-            cameraScreen.recordingBadge.setVisibility(videoRecording ? View.VISIBLE : View.GONE);
+            boolean videoRecording = (state.getCapture().getMode() != RecordingMode.IDLE
+                    && !state.getCapture().isSaving());
             cameraScreen.recordingBadge.setAlpha(RECORDING_BADGE_ACTIVE_ALPHA);
-            cameraScreen.audioBadge.setVisibility(audioRecording ? View.VISIBLE : View.GONE);
             updateGpsStatusLine();
             if (state.getOperatorSession() != null) {
                 cameraScreen.operatorId.setText("USER " + state.getOperatorSession().getFileUserId());
@@ -696,23 +775,29 @@ public final class MainActivity extends ComponentActivity {
             loginScreen.password.setEnabled(!state.isAuthenticationBusy());
             loginScreen.status.setText(state.isAuthenticationBusy()
                     ? "Loading..."
-                    : state.getMessage() == null ? "" : state.getMessage());
+                    : localizedMessage(state.getMessage()));
         }
         if (developerUsersScreen != null) {
             developerUsersScreen.saveAction.setEnabled(!state.isAuthenticationBusy());
             developerUsersScreen.status.setText(state.isAuthenticationBusy()
                     ? "Saving..."
-                    : state.getMessage() == null ? "" : state.getMessage());
+                    : localizedMessage(state.getMessage()));
         }
         if (fileExplorerScreen != null) updateFileExplorer(state);
+    }
+
+    private String localizedMessage(String message) {
+        if (message == null) return "";
+        return message.startsWith("Saved ")
+                ? getString(R.string.media_saved, message.substring(6))
+                : message;
     }
 
     private void updateFileExplorer(MainUiState state) {
         fileExplorerScreen.entries.removeAllViews();
         String path = state.getMediaBrowser().getRelativePath();
         fileExplorerScreen.path.setText(path.isEmpty()
-                ? getString(R.string.media_root) : getString(R.string.media_root) + " / " + path);
-        fileExplorerScreen.upAction.setVisibility(path.isEmpty() ? View.GONE : View.VISIBLE);
+                ? getString(R.string.media_root) : path.replace("/", " / "));
         if (state.getMediaBrowser().isLoading()) {
             fileExplorerScreen.status.setText(R.string.media_loading);
             return;
@@ -732,8 +817,13 @@ public final class MainActivity extends ComponentActivity {
             row.icon.setImageResource(entry.isDirectory()
                     ? R.drawable.ic_settings_files : R.drawable.ic_media_file);
             row.name.setText(entry.getName());
-            row.details.setText(entry.isDirectory()
-                    ? getString(R.string.media_folder) : formatFileSize(entry.getSizeBytes()));
+            boolean mediaTypeFolder = entry.isDirectory()
+                    && entry.getRelativePath().indexOf('/') > 0
+                    && entry.getRelativePath().indexOf('/') == entry.getRelativePath().lastIndexOf('/');
+            row.folderCounts.setVisibility(mediaTypeFolder ? View.VISIBLE : View.GONE);
+            row.fileDetails.setVisibility(entry.isDirectory() ? View.GONE : View.VISIBLE);
+            row.fileCount.setText(String.valueOf(entry.getChildFileCount()));
+            row.fileDetails.setText(formatFileSize(entry.getSizeBytes()));
             row.getRoot().setOnClickListener(view -> {
                 if (entry.isDirectory()) viewModel.openMediaFolder(entry.getRelativePath());
                 else openMediaFile(entry);
@@ -744,7 +834,7 @@ public final class MainActivity extends ComponentActivity {
 
     private void openMediaFile(MediaEntry entry) {
         if (openMedia == null || !openMedia.execute(entry)) {
-            Toast.makeText(this, R.string.media_open_failed, Toast.LENGTH_SHORT).show();
+            FloatingNotice.show(this, R.string.media_open_failed);
         }
     }
 
@@ -758,24 +848,46 @@ public final class MainActivity extends ComponentActivity {
     }
 
     private void updateCameraClock() {
-        if (cameraScreen == null) return;
-        cameraScreen.currentTime.setText(clock.format(LocalDateTime.now()));
+        LocalDateTime now = LocalDateTime.now();
         MainUiState state = latestState;
-        boolean recording = state != null
-                && (state.getCapture().getMode() != RecordingMode.IDLE || audioRecording);
-        cameraScreen.recordingTimer.setVisibility(recording ? View.VISIBLE : View.GONE);
-        cameraScreen.recordingTimer.setText(recording ? captureDurationText(state) : "");
+        updateFloatingRecordingStatus(state);
+        if (cameraScreen == null) return;
+        boolean videoRecording = state != null
+                && state.getCapture().getMode() != RecordingMode.IDLE
+                && !state.getCapture().isSaving();
+        cameraScreen.currentTime.setText(clock.format(now));
+        cameraScreen.videoRecordingStatus.setVisibility(videoRecording ? View.VISIBLE : View.GONE);
+        cameraScreen.audioRecordingStatus.setVisibility(audioRecording ? View.VISIBLE : View.GONE);
+        cameraScreen.recordingTimer.setText(videoRecording ? videoDurationText(state) : "");
+        cameraScreen.audioRecordingTimer.setText(audioRecording ? audioDurationText() : "");
     }
 
-    private String captureDurationText(MainUiState state) {
+    private void updateFloatingRecordingStatus(MainUiState state) {
+        boolean videoRecording = state != null
+                && state.getCapture().getMode() != RecordingMode.IDLE
+                && !state.getCapture().isSaving();
+        boolean recording = videoRecording || audioRecording;
+        boolean showFloatingRecording = recording && renderedScreen != MainScreen.CAMERA;
+        activityBinding.customStatusBar.setVisibility(
+                showFloatingRecording ? View.VISIBLE : View.GONE);
+        activityBinding.customStatusVideoRow.setVisibility(videoRecording ? View.VISIBLE : View.GONE);
+        activityBinding.customStatusAudioRow.setVisibility(audioRecording ? View.VISIBLE : View.GONE);
+        activityBinding.customStatusVideoDuration.setText(videoRecording ? videoDurationText(state) : "");
+        activityBinding.customStatusAudioDuration.setText(audioRecording ? audioDurationText() : "");
+    }
+
+    private String videoDurationText(MainUiState state) {
         if (state == null) return "";
-        Long startedAtMillis = audioRecording
-                ? audioStartedAtMillis : state.getCapture().getStartedAtMillis();
+        return formatDuration(state.getCapture().getStartedAtMillis());
+    }
+
+    private String audioDurationText() {
+        return formatDuration(audioStartedAtMillis);
+    }
+
+    private static String formatDuration(Long startedAtMillis) {
         if (startedAtMillis == null) return "";
         long elapsedMs = Math.max(0L, System.currentTimeMillis() - startedAtMillis);
-        if (!audioRecording && videoStopRequestedAtMillis != null) {
-            elapsedMs = Math.max(0L, videoStopRequestedAtMillis - startedAtMillis);
-        }
         long totalSeconds = elapsedMs / 1_000L;
         long hours = totalSeconds / 3_600L;
         long minutes = (totalSeconds % 3_600L) / 60L;
@@ -808,12 +920,23 @@ public final class MainActivity extends ComponentActivity {
     }
 
     @Override public boolean onKeyDown(int keyCode, KeyEvent event) {
-        return hardwareButtons != null
-                && hardwareButtons.onKeyDown(keyCode, event.getRepeatCount(), event.getEventTime())
-                || super.onKeyDown(keyCode, event);
+        boolean handled = hardwareButtons != null
+                && hardwareButtons.onKeyDown(keyCode, event.getRepeatCount(), event.getEventTime());
+        if (handled && event.getRepeatCount() == 0 && hardwareButtons.isSosButton(keyCode)) {
+            sosHoldAction = () -> {
+                hardwareButtons.onSosHoldThreshold(keyCode);
+            };
+            cameraClock.postDelayed(sosHoldAction, HardwareButtonRouter.SOS_HOLD_MS);
+        }
+        return handled || super.onKeyDown(keyCode, event);
     }
 
     @Override public boolean onKeyUp(int keyCode, KeyEvent event) {
+        if (hardwareButtons != null && hardwareButtons.isSosButton(keyCode)
+                && sosHoldAction != null) {
+            cameraClock.removeCallbacks(sosHoldAction);
+            sosHoldAction = null;
+        }
         return hardwareButtons != null && hardwareButtons.onKeyUp(keyCode)
                 || super.onKeyUp(keyCode, event);
     }
@@ -831,8 +954,7 @@ public final class MainActivity extends ComponentActivity {
         viewModel.bindCaptureEvents(captureRuntime.captureEvents());
         hardwareButtons = composition.createHardwareButtonRouter(
                 captureRuntime.photoCapture(), captureRuntime.videoRecording(),
-                captureRuntime.audioRecording(), this::setAudioRecording,
-                this::freezeVideoDuration);
+                captureRuntime.audioRecording(), this::setAudioRecording);
     }
 
     private void setAudioRecording(boolean recording, String fileName) {
@@ -842,14 +964,11 @@ public final class MainActivity extends ComponentActivity {
         audioRecording = recording;
         if (!recording) {
             audioStartedAtMillis = null;
-            if (fileName != null && captureRuntime != null) captureRuntime.showSaved(fileName);
         }
         if (latestState != null) updateStatus(latestState);
-    }
-
-    private void freezeVideoDuration() {
-        videoStopRequestedAtMillis = System.currentTimeMillis();
-        updateCameraClock();
+        if (!recording && fileName != null) {
+            FloatingNotice.show(this, getString(R.string.media_saved, fileName));
+        }
     }
 
     private void releaseCaptureRuntime() {
@@ -860,6 +979,8 @@ public final class MainActivity extends ComponentActivity {
         captureRuntime.release();
         captureRuntime = null;
         hardwareButtons = null;
+        if (sosHoldAction != null) cameraClock.removeCallbacks(sosHoldAction);
+        sosHoldAction = null;
     }
 
     private void clearScreenBindings() {

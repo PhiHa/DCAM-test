@@ -5,6 +5,10 @@ import android.os.Environment;
 import com.dvid.dcam.BuildConfig;
 import com.dvid.dcam.feature.settings.domain.StorageMode;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -89,6 +93,33 @@ public final class DcamStorage {
     public File rootDirectory() { return new File(root, "Media"); }
     public File tempDirectory() { return new File(root, "Temp"); }
 
+    public synchronized List<File> mediaRootDirectories() {
+        refreshExternalRoots();
+        List<File> directories = new ArrayList<>();
+        addDistinct(directories, new File(internalRoot, "Media"));
+        addDistinct(directories, rootDirectory());
+        for (File externalRoot : externalRoots) {
+            addDistinct(directories, new File(externalRoot, "Media"));
+        }
+        return List.copyOf(directories);
+    }
+
+    public File mediaRootDirectory(String location) {
+        List<File> roots = mediaRootDirectories();
+        int index;
+        try {
+            index = "Internal".equals(location) ? 0 : "External".equals(location) ? 1
+                    : location.startsWith("External ")
+                    ? Integer.parseInt(location.substring("External ".length())) : -1;
+        } catch (NumberFormatException error) {
+            throw new SecurityException("Unsupported media storage", error);
+        }
+        if (index < 0 || index >= roots.size()) {
+            throw new SecurityException("Unsupported media storage");
+        }
+        return roots.get(index);
+    }
+
     public void ensureFolders() {
         for (DcamFileType type : DcamFileType.values())
             new File(rootDirectory(), type.getFolder()).mkdirs();
@@ -109,6 +140,26 @@ public final class DcamStorage {
         return new DcamMediaFile(type, fileName, new File(dir, fileName), at);
     }
 
+    public DcamMediaFile durableAudioMediaFile(
+            String accountUserId, String policeUserId, LocalDateTime at, boolean encrypted)
+            throws IOException {
+        DcamMediaFile target = mediaFile(
+                DcamFileType.AUDIO, accountUserId, policeUserId, at, encrypted);
+        File privateRoot = context == null ? internalRoot : context.getFilesDir();
+        File staging = new File(new File(privateRoot, "DurableAudioTemp"), target.getFileName());
+        File parent = staging.getParentFile();
+        if (parent == null || (!parent.isDirectory() && !parent.mkdirs())) {
+            throw new IOException("Cannot create durable audio staging directory: " + parent);
+        }
+        byte[] targetPath = finalFile(target).getAbsolutePath().getBytes(StandardCharsets.UTF_8);
+        try (FileOutputStream marker = new FileOutputStream(targetMarker(staging))) {
+            marker.write(targetPath);
+            marker.flush();
+            marker.getFD().sync();
+        }
+        return new DcamMediaFile(DcamFileType.AUDIO, target.getFileName(), staging, at);
+    }
+
     public File prepareFile(DcamMediaFile mediaFile) {
         File parent = mediaFile.getFile().getParentFile();
         if (parent != null) parent.mkdirs();
@@ -116,6 +167,8 @@ public final class DcamStorage {
     }
 
     public File finalFile(DcamMediaFile mediaFile) {
+        File marker = targetMarker(mediaFile.getFile());
+        if (marker.isFile()) return validatedMarkedTarget(mediaFile, marker);
         File stagingParent = mediaFile.getFile().getParentFile();
         File mediaRoot = stagingParent != null && "Temp".equals(stagingParent.getName())
                 ? new File(stagingParent.getParentFile(), "Media")
@@ -128,10 +181,35 @@ public final class DcamStorage {
         refreshExternalRoots();
         List<File> directories = new ArrayList<>();
         addDistinct(directories, new File(internalRoot, "Temp"));
+        File privateRoot = context == null ? internalRoot : context.getFilesDir();
+        addDistinct(directories, new File(privateRoot, "DurableAudioTemp"));
         for (File externalRoot : externalRoots) {
             addDistinct(directories, new File(externalRoot, "Temp"));
         }
         return List.copyOf(directories);
+    }
+
+    void deleteTargetMarker(DcamMediaFile mediaFile) {
+        try { Files.deleteIfExists(targetMarker(mediaFile.getFile()).toPath()); } catch (IOException ignored) { }
+    }
+
+    private File validatedMarkedTarget(DcamMediaFile mediaFile, File marker) {
+        try {
+            File marked = new File(new String(Files.readAllBytes(marker.toPath()), StandardCharsets.UTF_8));
+            String markedPath = marked.getCanonicalPath();
+            for (File mediaRoot : mediaRootDirectories()) {
+                File allowed = new File(new File(mediaRoot, mediaFile.getType().getFolder()),
+                        mediaFile.getFileName());
+                if (markedPath.equals(allowed.getCanonicalPath())) return marked;
+            }
+            throw new SecurityException("Unsupported durable audio target");
+        } catch (IOException error) {
+            throw new SecurityException("Invalid durable audio target", error);
+        }
+    }
+
+    private static File targetMarker(File staging) {
+        return new File(staging.getParentFile(), staging.getName() + ".target");
     }
 
     public synchronized CaptureStorageCheck checkCaptureReady() {
@@ -152,7 +230,8 @@ public final class DcamStorage {
     public File legacyConfigsFile() { return new File(internalRoot, "configs.cson"); }
 
     private boolean stagesBeforePublication(DcamFileType type) {
-        return type == DcamFileType.VIDEO || type == DcamFileType.SOS || type == DcamFileType.IMAGE;
+        return type == DcamFileType.VIDEO || type == DcamFileType.SOS
+                || type == DcamFileType.IMAGE || type == DcamFileType.AUDIO;
     }
 
     private void resolveRootForNextCapture() {

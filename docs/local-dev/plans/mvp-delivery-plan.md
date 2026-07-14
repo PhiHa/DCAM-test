@@ -12,7 +12,7 @@
 
 Current checkpoint: the repository uses the approved smaller `:app`/`:core` Gradle shape;
 password-first login, boot-scoped operator sessions and initial Room auth tables exist; credentials
-are stored as salted PBKDF2-HMAC-SHA256 hashes; 55 local tests and `assembleDebug` pass. This is a
+are stored as bcrypt cost-10 hashes with embedded salts; 55 local tests and `assembleDebug` pass. This is a
 useful Build 0.2 foundation, but it is not Build 0.1 acceptance evidence and must not delay the
 Working Recording Slice.
 
@@ -102,7 +102,7 @@ platform concerns remain valid target work, but they are not Build 0.1 release b
   deferred for Build 0.1; this existing path must remain usable without pulling Build 0.2 auth work
   into the release gate.
 - Passwords are no longer persisted as plaintext. The remaining auth risks are the default six-digit
-  development credential, missing failed-attempt throttling/lockout policy, and unmeasured PBKDF2
+  development credential, missing failed-attempt throttling/lockout policy, and unmeasured bcrypt
   latency on target BodyCamera hardware.
 - Encryption can be configured, but key management, BDMA decryption and performance approval are
   unresolved. Hiding the Security screen alone is not sufficient; the Build 0.1 profile must enforce
@@ -119,7 +119,7 @@ platform concerns remain valid target work, but they are not Build 0.1 release b
 | Approved small Gradle shape | Complete | `:app` depends one-way on independently compiled/tested `:core` |
 | Password-first login UI and use cases | Implemented foundation | Login, ambiguous-password handling, provisioning and logout have JVM tests |
 | Boot-scoped operator session | Implemented foundation | Room session row plus boot-ID restore/invalidation; Android/Room integration still needs instrumentation |
-| Password protection at rest | Implemented | Unique salt and PBKDF2-HMAC-SHA256 with 600,000 iterations; no plaintext credential column |
+| Password protection at rest | Implemented | bcrypt cost 10 with embedded per-hash salts; no plaintext credential column; no PBKDF2 compatibility verifier |
 | Capture session enforcement | Conditional foundation | Navigation/hardware guards exist; do not expand auth until the Working Recording Slice passes |
 | Build 0.1 minimal DB/contract state | Not complete | Auth/platform tables exist; a minimal media/finalization/BDMA fixture remains |
 | Service-owned recording | Not started | Notification service still does not own CameraX or finalization |
@@ -248,10 +248,10 @@ The broader [Database DDL v1 design](database-ddl-v1-design.md) and
 [reference SQL](database-ddl-v1.sql) remain the Build 0.2 target proposal. Build 0.1 may select only
 the reviewed subset needed for media readiness, compatibility metadata and BDMA sample import.
 
-Development schema note: Room v1 has not shipped, so plaintext credential removal was folded into
-the exported v1 schema. Existing development installs created from the older v1 schema must clear
-application data or reinstall; there is intentionally no production migration for an unshipped
-plaintext schema.
+Development schema note: Room v1 has not shipped, so plaintext removal and bcrypt adoption were
+folded into the exported v1 schema. Existing development installs containing plaintext or PBKDF2
+credentials must clear application data, reinstall, or reprovision users; there is intentionally no
+production compatibility verifier or migration for those unshipped credential formats.
 
 ### 6.1 Required for Build 0.1
 

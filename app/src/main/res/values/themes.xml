@@ -3,6 +3,7 @@
     <style name="Theme.DCAMtest" parent="android:style/Theme.Material.NoActionBar">
         <item name="android:fontFamily">sans</item>
         <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowDisablePreview">true</item>
         <item name="android:colorAccent">#FFFFFF</item>
         <item name="android:windowBackground">#000000</item>
     </style>

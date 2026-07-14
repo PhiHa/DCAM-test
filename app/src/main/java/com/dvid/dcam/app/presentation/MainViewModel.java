@@ -7,6 +7,7 @@ import com.dvid.dcam.app.navigation.MainScreen;
 import com.dvid.dcam.core.config.domain.DcamConfig;
 import com.dvid.dcam.feature.auth.application.usecase.AuthenticateOperatorUseCase;
 import com.dvid.dcam.feature.auth.application.usecase.ManageOperatorUsersUseCase;
+import com.dvid.dcam.feature.auth.application.usecase.ManageOperatorUsersUseCaseImpl;
 import com.dvid.dcam.feature.auth.application.usecase.OperatorSessionUseCase;
 import com.dvid.dcam.feature.auth.domain.LoginCredentials;
 import com.dvid.dcam.feature.auth.domain.LoginResult;
@@ -81,7 +82,7 @@ public final class MainViewModel extends ViewModel {
                 MediaBrowserState.root(),
                 null,
                 null,
-                false));
+                true));
         initializeAuthentication();
     }
 
@@ -120,7 +121,8 @@ public final class MainViewModel extends ViewModel {
     }
 
     public void loginPassword(String passwordText) {
-        login(LoginCredentials.passwordOnly(passwordText));
+        login(LoginCredentials.usernameAndPassword(
+                ManageOperatorUsersUseCaseImpl.DEFAULT_USER_ID, passwordText));
     }
 
     public void login(LoginCredentials credentials) {
@@ -229,10 +231,24 @@ public final class MainViewModel extends ViewModel {
 
     private void onCaptureEvent(CaptureEvent event) {
         switch (event.getType()) {
-            case RECORDING_STARTED:
+            case RECORDING_STARTING:
                 state.setValue(current().withCapture(
-                        new CaptureState(event.getMode(), event.getFileName(), System.currentTimeMillis()),
+                        new CaptureState(event.getMode(), null, System.currentTimeMillis()),
                         "Recording"));
+                break;
+            case RECORDING_STARTED:
+                CaptureState starting = current().getCapture();
+                state.setValue(current().withCapture(
+                        new CaptureState(event.getMode(), event.getFileName(),
+                                starting.getStartedAtMillis() == null
+                                        ? System.currentTimeMillis() : starting.getStartedAtMillis()),
+                        "Recording"));
+                break;
+            case RECORDING_STOPPING:
+                CaptureState recording = current().getCapture();
+                state.setValue(current().withCapture(new CaptureState(
+                        event.getMode(), recording.getCurrentFileName(),
+                        recording.getStartedAtMillis(), true), "Saving"));
                 break;
             case RECORDING_COMPLETED:
                 state.setValue(current().withCapture(new CaptureState(), "Saved " + event.getFileName()));

@@ -3,8 +3,6 @@ package com.dvid.dcam.platform.camera;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Color;
-import android.os.Handler;
-import android.os.Looper;
 import android.view.Gravity;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -15,11 +13,8 @@ import androidx.camera.view.PreviewView;
 /** CameraX preview surface and camera-facing status text. */
 @SuppressLint("ViewConstructor")
 public final class CameraXPreviewView extends FrameLayout {
-    private static final long MESSAGE_DURATION_MS = 2_500L;
     private final PreviewView previewView;
     private final TextView message;
-    private final Handler handler = new Handler(Looper.getMainLooper());
-    private final Runnable clearMessage = this::clearMessage;
 
     public CameraXPreviewView(Context context) {
         super(context);
@@ -55,33 +50,17 @@ public final class CameraXPreviewView extends FrameLayout {
     void showStarting() { showMessage("Starting camera..."); }
 
     void clearMessage() {
-        handler.removeCallbacks(clearMessage);
         showMessage("");
-    }
-
-    public void showSaved(String fileName) {
-        showTransientMessage(getContext().getString(com.dvid.dcam.R.string.media_saved, fileName));
     }
 
     void showRecording(String fileName) {
         clearMessage();
     }
 
-    void showFinalized(String text) {
-        showTransientMessage(text);
-    }
-
     void showError(String text) {
-        handler.removeCallbacks(clearMessage);
         message.setVisibility(VISIBLE);
         message.setTextColor(Color.RED);
         message.setText(text == null ? "Camera failed" : text);
-    }
-
-    private void showTransientMessage(String text) {
-        showMessage(text);
-        handler.removeCallbacks(clearMessage);
-        handler.postDelayed(clearMessage, MESSAGE_DURATION_MS);
     }
 
     private void showMessage(String text) {

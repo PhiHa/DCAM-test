@@ -21,11 +21,23 @@ import com.dvid.dcam.R;
 public final class RecordingForegroundService extends Service {
     private static final String CHANNEL_ID = "dcam_recording";
     private static final int NOTIFICATION_ID = 1001;
-    private static final String EXTRA_FILE_NAME = "file_name";
+    private static final String ACTION_START_VIDEO = "dcam.recording.START_VIDEO";
+    private static final String ACTION_START_AUDIO = "dcam.recording.START_AUDIO";
+    private static final String ACTION_STOP_VIDEO = "dcam.recording.STOP_VIDEO";
+    private static final String ACTION_STOP_AUDIO = "dcam.recording.STOP_AUDIO";
+    private final RecordingForegroundOwners owners = new RecordingForegroundOwners();
 
-    public static boolean start(Context context, String fileName) {
+    public static boolean startVideo(Context context, String fileName) {
+        return start(context, ACTION_START_VIDEO);
+    }
+
+    public static boolean startAudio(Context context, String fileName) {
+        return start(context, ACTION_START_AUDIO);
+    }
+
+    private static boolean start(Context context, String action) {
         Intent intent = new Intent(context, RecordingForegroundService.class)
-                .putExtra(EXTRA_FILE_NAME, fileName);
+                .setAction(action);
         try {
             ContextCompat.startForegroundService(context, intent);
             return true;
@@ -34,29 +46,65 @@ public final class RecordingForegroundService extends Service {
         }
     }
 
-    public static void stop(Context context) {
-        context.stopService(new Intent(context, RecordingForegroundService.class));
+    public static void stopVideo(Context context) {
+        stop(context, ACTION_STOP_VIDEO);
+    }
+
+    public static void stopAudio(Context context) {
+        stop(context, ACTION_STOP_AUDIO);
+    }
+
+    private static void stop(Context context, String action) {
+        try {
+            context.startService(new Intent(context, RecordingForegroundService.class).setAction(action));
+        } catch (RuntimeException ignored) {}
     }
 
     @Override public void onCreate() {
         super.onCreate();
         NotificationChannel channel = new NotificationChannel(
-                CHANNEL_ID, "DCAM recording", NotificationManager.IMPORTANCE_LOW);
-        channel.setDescription("Shows when BodyCamera recording is active");
+                CHANNEL_ID, getString(R.string.recording_notification_channel),
+                NotificationManager.IMPORTANCE_LOW);
+        channel.setDescription(getString(R.string.recording_notification_channel_description));
         getSystemService(NotificationManager.class).createNotificationChannel(channel);
     }
 
     @Override public int onStartCommand(Intent intent, int flags, int startId) {
+        String action = intent == null ? null : intent.getAction();
+        if (ACTION_START_VIDEO.equals(action)) owners.startVideo();
+        else if (ACTION_START_AUDIO.equals(action)) owners.startAudio();
+        else if (ACTION_STOP_VIDEO.equals(action)) owners.stopVideo();
+        else if (ACTION_STOP_AUDIO.equals(action)) owners.stopAudio();
+        if (!owners.isActive()) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                stopForeground(STOP_FOREGROUND_REMOVE);
+            } else {
+                stopForeground(true);
+            }
+            stopSelfResult(startId);
+            return START_NOT_STICKY;
+        }
+        boolean audioOnly = owners.hasAudio() && !owners.hasVideo();
         Notification notification = new Notification.Builder(this, CHANNEL_ID)
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentTitle("DCAM recording")
-                .setContentText("Recording in progress")
+                .setSmallIcon(R.drawable.ic_recording_notification)
+                .setContentTitle(getString(audioOnly
+                        ? R.string.audio_recording_status
+                        : R.string.recording_notification_title))
+                .setContentText(getString(audioOnly
+                        ? R.string.audio_recording_notification_text
+                        : R.string.recording_notification_text))
+                .setWhen(System.currentTimeMillis())
+                .setUsesChronometer(true)
+                .setShowWhen(true)
                 .setOngoing(true)
                 .setCategory(Notification.CATEGORY_SERVICE)
                 .build();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            int serviceType = ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA;
-            if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+            int serviceType = owners.hasVideo()
+                    ? ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA : 0;
+            if ((owners.hasAudio() || owners.hasVideo())
+                    && checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)
+                    == PackageManager.PERMISSION_GRANTED) {
                 serviceType |= ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE;
             }
             startForeground(NOTIFICATION_ID, notification, serviceType);

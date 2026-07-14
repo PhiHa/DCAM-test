@@ -15,15 +15,15 @@ import java.util.UUID;
 public final class RoomOperatorAuthRepositoryImpl implements OperatorAuthRepository {
     private static final String PASSWORD_HASH = "PASSWORD_HASH";
     private final OperatorAuthDao dao;
-    private final Pbkdf2PasswordHasher passwordHasher;
+    private final BcryptPasswordHasher passwordHasher;
 
     public RoomOperatorAuthRepositoryImpl(OperatorAuthDao dao) {
-        this(dao, new Pbkdf2PasswordHasher());
+        this(dao, new BcryptPasswordHasher());
     }
 
     RoomOperatorAuthRepositoryImpl(
             OperatorAuthDao dao,
-            Pbkdf2PasswordHasher passwordHasher) {
+            BcryptPasswordHasher passwordHasher) {
         this.dao = dao;
         this.passwordHasher = passwordHasher;
     }
@@ -49,6 +49,16 @@ public final class RoomOperatorAuthRepositoryImpl implements OperatorAuthReposit
         List<OperatorAccount> matches = new ArrayList<>(2);
         for (UserAuthMethodEntity candidate : dao.credentialCandidates(normalizedIdentifier)) {
             if (!passwordHasher.matches(passwordText, candidate)) continue;
+            if (passwordHasher.needsRehash(candidate)) {
+                PasswordCredential replacement = passwordHasher.hash(passwordText);
+                candidate.credentialAlgorithm = replacement.algorithm();
+                candidate.credentialSalt = replacement.salt();
+                candidate.credentialHash = replacement.hash();
+                candidate.credentialIterations = replacement.iterations();
+                candidate.updatedAt = System.currentTimeMillis();
+                candidate.revision++;
+                dao.updateAuthMethod(candidate);
+            }
             UserProfileEntity user = dao.activeUser(candidate.userId);
             if (user != null) matches.add(toAccount(user));
             if (matches.size() == 2) break;

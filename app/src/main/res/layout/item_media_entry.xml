@@ -31,8 +31,31 @@
             android:layout_height="wrap_content"
             android:padding="0dp" />
 
+        <LinearLayout
+            android:id="@+id/folder_counts"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="16dp"
+                android:adjustViewBounds="true"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_media_file" />
+
+            <TextView
+                android:id="@+id/file_count"
+                style="@style/DcamStatusText.Secondary"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:padding="0dp"
+                android:textSize="12sp" />
+        </LinearLayout>
+
         <TextView
-            android:id="@+id/details"
+            android:id="@+id/file_details"
             style="@style/DcamStatusText.Secondary"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

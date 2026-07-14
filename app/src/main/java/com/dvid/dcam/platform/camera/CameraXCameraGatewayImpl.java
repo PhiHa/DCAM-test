@@ -124,7 +124,6 @@ public final class CameraXCameraGatewayImpl implements CameraGateway {
                     mediaOutput.finalizeSaved(context, mediaFile, new DcamMediaOutput.FinalizationCallback() {
                         @Override public void onSuccess(java.io.File finalFile) {
                             onMain(() -> {
-                                onPreview(view -> view.showSaved(mediaFile.getFileName()));
                                 log.info((encrypt ? "Encrypted photo finalized: " : "Photo finalized: ")
                                         + mediaFile.getFileName());
                                 captureEvents.photoSaved(mediaFile.getFileName());
@@ -195,7 +194,7 @@ public final class CameraXCameraGatewayImpl implements CameraGateway {
             if (event instanceof VideoRecordEvent.Start) {
                 onPreview(view -> view.showRecording(mediaFile.getFileName()));
                 log.info("Recording started: " + mediaFile.getFileName());
-                if (!RecordingForegroundService.start(context, mediaFile.getFileName())) {
+                if (!RecordingForegroundService.startVideo(context, mediaFile.getFileName())) {
                     log.warn("Could not start recording foreground service", null);
                 }
                 RecordingMode mode = type == DcamFileType.SOS ? RecordingMode.SOS : RecordingMode.VIDEO;
@@ -206,8 +205,6 @@ public final class CameraXCameraGatewayImpl implements CameraGateway {
                 // CameraX has closed this Recording. Keep the foreground indicator until
                 // publication completes, but never call stop() on the finalized handle again.
                 activeRecording = null;
-                onPreview(view -> view.showFinalized(done.hasError()
-                        ? "VIDEO ERROR " + done.getError() : "SAVED " + mediaFile.getFileName()));
                 if (done.hasError()) {
                     boolean storageFailure =
                             CaptureStorageFailureClassifier.isVideoStorageFailure(done.getError())
@@ -277,7 +274,7 @@ public final class CameraXCameraGatewayImpl implements CameraGateway {
 
     private void finishRecordingAttempt() {
         activeRecording = null;
-        RecordingForegroundService.stop(context);
+        RecordingForegroundService.stopVideo(context);
         if (pendingRecordingType != null) {
             DcamFileType nextType = pendingRecordingType;
             pendingRecordingType = null;
@@ -325,7 +322,7 @@ public final class CameraXCameraGatewayImpl implements CameraGateway {
     public void release() {
         pendingRecordingType = null;
         if (activeRecording != null) activeRecording.stop();
-        RecordingForegroundService.stop(context);
+        RecordingForegroundService.stopVideo(context);
         if (providerFuture != null && providerFuture.isDone()) {
             try { providerFuture.get().unbindAll(); } catch (Exception ignored) {}
         }

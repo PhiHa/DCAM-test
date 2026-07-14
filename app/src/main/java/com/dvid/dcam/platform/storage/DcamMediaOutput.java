@@ -17,6 +17,8 @@ public interface DcamMediaOutput {
             String fileUserId,
             LocalDateTime at,
             boolean encrypted);
+    DcamMediaFile durableAudioMediaFile(
+            String cameraId, String fileUserId, LocalDateTime at, boolean encrypted) throws IOException;
     CaptureStorageCheck checkCaptureReady();
     long recordingFileSizeLimit();
     ImageCapture.OutputFileOptions imageOptions(Context context, DcamMediaFile mediaFile);
@@ -27,6 +29,7 @@ public interface DcamMediaOutput {
             long fileSizeLimitBytes);
     File audioFile(DcamMediaFile mediaFile);
     void encryptSaved(Context context, DcamMediaFile mediaFile, Uri savedUri, String password) throws IOException;
+    File finalizeSavedNow(Context context, DcamMediaFile mediaFile) throws IOException;
     void finalizeSaved(Context context, DcamMediaFile mediaFile, FinalizationCallback callback);
     void recoverStaged(RecoveryCallback callback);
     void publishSaved(Context context, DcamMediaFile mediaFile);
