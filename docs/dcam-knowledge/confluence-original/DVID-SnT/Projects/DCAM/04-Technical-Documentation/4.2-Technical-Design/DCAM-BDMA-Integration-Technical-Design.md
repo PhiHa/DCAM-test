@@ -1,7 +1,7 @@
 # DCAM BDMA Integration Technical Design
 
 **Page ID**: 48595030  
-**Version**: 6  
+**Version**: 11  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/48595030
 
@@ -24,7 +24,7 @@ Technical Design
 
 Version
 
-Draft 0.6
+Draft 0.9
 
 Status
 
@@ -32,7 +32,7 @@ Draft
 
 Approval Scope
 
-Candidate Build 0.1 ADB read/import subset; cần Technical Review trước khi chuyển `Approved Provisional Baseline`.
+Build 0.1 integration profile prepared; physical path/schema and Technical Review remain open
 
 Owner
 
@@ -68,7 +68,7 @@ Technical Review; logical-to-physical ADB path mapping; Device POC; authoritativ
 
 Related Documents
 
-DCAM-BDMA Data Contract, 06 - BDMA Integration Requirements, 08 - DCAM-BDMA Integration Boundary, DCAM Storage Design, DCAM SQLite Database Design
+DCAM-BDMA Data Contract, 06 - BDMA Integration Requirements, 08 - DCAM-BDMA Integration Boundary, DCAM Storage Design, DCAM SQLite Database Design, Decision Brief – DCAM MVP Internal Build 0.1 – Working Recording Slice
 
 ## 1. Purpose
 
@@ -289,7 +289,7 @@ QA-BDMA-001.
 
 MP4 MD5 missing
 
-Import ở trạng thái Unverified/warning, không hard fail theo current contract.
+Build 0.1 block import/evidence/release. Legacy Unverified behavior chưa có approved Build Profile mapping và không thuộc approval candidate này.
 
 QA-BDMA-002.
 
@@ -336,3 +336,66 @@ BDMA nhận dạng app bằng app/data/media/encoder contract metadata.
 BDMA không dùng bdma_decoder_profile_id.
 BDMA có thể hiển thị owner_name và manufacture_date như device information.
 Không duplicate full contract tables tại đây.
+## 13. Proposed Build 0.1 Approval Scope
+
+Integration Rule
+
+Build 0.1 Baseline
+
+Scan Root
+
+Approved logical Internal final-media root; physical/ADB mapping Pending Device POC
+
+Path Mapping
+
+Data Contract owns logical mapping; Storage Design owns Android physical mapping; POC validates NCC-036V/ADB
+
+Final-media-only
+
+Required
+
+Temp / Cache
+
+Ignore
+
+MP4 MD5 Pass
+
+Import eligible
+
+MP4 MD5 Missing
+
+Block import/evidence/release
+
+MP4 MD5 Mismatch
+
+Block import/evidence/release
+
+MP4 MD5 Generation Failure
+
+MP4 preserved; no BDMA_READY/import
+
+Image no-MD5
+
+Giữ behavior hiện có; image không bị yêu cầu MD5 bởi DEC-03
+
+Protected Artifacts
+
+Không cleanup dcam.db, dcam_config.cson, logs.txt, Temp/recovery, failed artifact hoặc historical legacy-unverified artifact; legacy Unverified import không active trong approved profile hiện tại
+
+ADB Disconnect / Permission Failure
+
+Abort/defer safely; không delete source/protected artifact
+
+Filename Parsing
+
+Phân tích DEVICE_TOKEN 6–10 ký tự và OPERATOR_TOKEN đúng 6 ký tự theo Data Contract; Build 0.1 dùng OPERATOR_TOKEN = B01OPR; không silent truncation hoặc underscore normalization.
+
+Legacy Filename Compatibility
+
+Chỉ áp dụng theo declared media_contract_version hoặc approved named profile; không suy diễn compatibility chỉ từ filename shape.
+
+Timestamp / Same-second Collision
+
+Pending Technical Review; page này không tự chọn timezone hoặc collision behavior.
+
+Approval scope đề xuất chỉ cho Build 0.1. Page tiếp tục Draft đến khi Technical Review xác nhận physical path, exact error/state mapping và Data Contract consistency.

@@ -1,7 +1,7 @@
 # DCAM Release & Build Applicability Matrix
 
 **Page ID**: 51020012  
-**Version**: 3  
+**Version**: 7  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/51020012
 
@@ -24,7 +24,7 @@ Release / Build Applicability Matrix
 
 Version
 
-Approved 1.1
+Approved 1.5
 
 Status
 
@@ -32,7 +32,7 @@ Approved
 
 Approval Scope
 
-Build applicability cho DCAM MVP Internal Build 0.1
+Build applicability cho DCAM MVP Internal Build 0.1, DEC-01–DEC-07, Important Media Conditional — Not Activated clarification và legacy MD5 exclusion guardrail cho later profiles.
 
 Owner
 
@@ -56,7 +56,7 @@ PM/BA, Product Owner, Tech Lead, Developers, BDMA Team, QA, Factory, Security Re
 
 Last Updated
 
-2026-07-13
+2026-07-14
 
 Related Jira
 
@@ -296,6 +296,7 @@ StorageService with temp/final flow
 Minimal dcam.db and dcam_config.cson where required
 Sanitized Logs/logs.txt
 MVP Data Contract output
+Media filename dùng DEVICE_TOKEN 6–10 ký tự và OPERATOR_TOKEN đúng 6 ký tự
 BDMA detects/imports sample media
 Build `0.1` must not be blocked by:
 
@@ -316,7 +317,9 @@ Full GPS route
 A QA test marked P0 is a release blocker only when its feature/test group is applicable to the current build profile.
 ```
 
-For Build `0.1`, mandatory QA groups are Working Recording Slice, Recording/Capture, Storage/Finalization, minimal DB/CSON/logs, BDMA sample import, critical-path concurrency, MVP performance and sensitive-data sanitization.
+For Build `0.1`, mandatory QA groups are Working Recording Slice, Recording/Capture, Storage/Finalization, minimal DB/CSON/logs, media filename token validation, BDMA sample import, critical-path concurrency, MVP performance and sensitive-data sanitization.
+
+`QA-MEDIA-IMP-001` giữ `Priority = P0`, nhưng không yêu cầu execution evidence và không chặn Build 0.1 khi Important Media applicability là `Conditional — Not Activated`.
 
 ## 8. Change Control
 
@@ -335,7 +338,7 @@ Build 0.1 is not blocked by Web Portal, full auth, full kiosk, Remote Config, Se
 Build 0.2 activates identity/provisioning/user/platform foundations.
 Build 0.3 activates advanced communication.
 Pilot applies all features and tests included in approved pilot scope.
-## 9. Build 0.1 Approved Decision Applicability
+## 10. Build 0.1 Approved Decision Applicability
 
 Applicability dưới đây được phê duyệt bởi [Decision Brief – DCAM MVP Internal Build 0.1 – Working Recording Slice](/wiki/spaces/DVID/pages/51642452/Decision+Brief+DCAM+MVP+Internal+Build+0.1+Working+Recording+Slice) và override mọi generic/target-state row mâu thuẫn đối với Build 0.1.
 
@@ -403,7 +406,19 @@ Static Build 0.1 Operator
 
 Required
 
-BUILD01_OPERATOR / Build 0.1 Operator; không phải authenticated identity.
+B01OPR / Build 0.1 Operator; không phải authenticated identity.
+
+Media Filename Tokens
+
+Required
+
+DEVICE_TOKEN = validated serial_number snapshot, 6–10 ký tự; OPERATOR_TOKEN = B01OPR, đúng 6 ký tự; chỉ [A-Z0-9], không underscore và không silent truncation. Device POC phải xác nhận serial_number thực tế.
+
+Important Media creation/marking (`_IMP` generation hoặc move vào `Media/IMP`)
+
+Conditional — Not Activated
+
+Chỉ trở thành Required khi Release & Build Applicability Matrix hoặc approved temporary exception kích hoạt rõ ràng. Không chặn Working Recording Slice hoặc Build 0.1 release gate khi chưa được kích hoạt.
 
 Basic Device Status
 
@@ -422,3 +437,45 @@ Multi-model / multi-firmware / fleet qualification
 Not Applicable
 
 WRS chỉ pass trên một reference configuration.
+
+Contract recognition đối với `_IMP`, `_IMP_enc` và `Media/IMP` vẫn được giữ để bảo toàn DCAM-BDMA Data Contract. Việc parser/BDMA nhận diện các contract values này không tự kích hoạt Important Media creation/marking workflow.
+
+Applicability này áp dụng cho REC-VID-003, REC-IMG-003, REC-AUD-003 và phần Important Media của REC-EMG-004/005/009. Encrypted-media implementation vẫn phụ thuộc approved Security Profile và applicability riêng.
+
+## 11. Legacy MD5 Policy Applicability
+
+Legacy `missing MD5 → Unverified import` và `BDMA_READY-before-checksum` không phải là một Build Profile. Các behavior này hiện không được gán cho bất kỳ approved Build Profile nào: Build 0.1 explicitly blocks, còn Build 0.2, Build 0.3 và Pilot/Shipment chưa có approved mapping.
+
+Legacy Policy
+
+Build 0.1
+
+Build 0.2
+
+Build 0.3
+
+Pilot / Shipment
+
+Missing MP4 MD5 → Unverified import
+
+Not Applicable
+
+Not Applicable — no approved mapping
+
+Not Applicable — no approved mapping
+
+Not Applicable — no approved mapping
+
+BDMA_READY before required checksum completes
+
+Not Applicable
+
+Not Applicable — no approved mapping
+
+Not Applicable — no approved mapping
+
+Not Applicable — no approved mapping
+
+Future activation chỉ hợp lệ khi PM phê duyệt một named Build Profile và cập nhật đồng thời Matrix, Data Contract, QA Matrix, Traceability Matrix và release gate. Đây là exclusion guardrail, không tạo Build Profile hoặc product behavior mới.
+
+`MD5 mismatch` không thuộc legacy exception: Data Contract tiếp tục yêu cầu không import và không cleanup source khi verification fail.

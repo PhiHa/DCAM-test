@@ -1,7 +1,7 @@
 # DCAM QA Test Strategy & Test Matrix
 
 **Page ID**: 49545345  
-**Version**: 12  
+**Version**: 17  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/49545345
 
@@ -24,7 +24,7 @@ QA Strategy / Test Matrix
 
 Version
 
-Approved 2.0
+Approved 2.4
 
 Status
 
@@ -32,7 +32,7 @@ Approved
 
 Approval Scope
 
-Test definition baseline; execution status vẫn nằm ở từng Test ID và release evidence. DB/CSON exact physical assertions cần Technical Review.
+Build 0.1 test definitions và release gates; Important Media Conditional — Not Activated; execution evidence Pending Device POC/Jira linkage.
 
 Owner
 
@@ -56,7 +56,7 @@ PM/BA, Tech Lead, Android Developers, QA, BDMA Team, Cloud/WebServer Team, Secur
 
 Last Updated
 
-2026-07-13
+2026-07-14
 
 Related Jira
 
@@ -68,7 +68,7 @@ Technical Review cho minimal DB/CSON physical assertions; Jira/PR/build/test evi
 
 Related Documents
 
-[DCAM Requirement–Design–Test Traceability Matrix](/wiki/spaces/DVID/pages/51085669/DCAM+Requirement+Design+Test+Traceability+Matrix), [DCAM Document Status Registry](/wiki/spaces/DVID/pages/51085647/DCAM+Document+Status+Registry), DCAM Release & Build Applicability Matrix, DCAM Requirements Home, DCAM Non-functional Requirements, 07 - Logging & Diagnostics Requirements, 07 - Logging, Diagnostics, Performance & Security, DCAM Logging & Diagnostics Design, DCAM Performance Budget & Resource Constraints, DCAM-BDMA Data Contract, DCAM Web Portal & Device API Contract, DCAM Android Device Owner & Kiosk Policy Design, DCAM In-App Operation, Device Settings & Media Console Design, ADR - DCAM Android Dedicated Device / Device Owner / Lock Task Decision, DCAM Android Operation Design, DCAM Recording & Capture Design, DCAM Storage Design, DCAM SQLite Database Design, DCAM Security & Encryption Design, DCAM State Machine Design, DCAM Device Capability & Feature Eligibility Design, DCAM Device Provisioning Web Portal Design, DCAM Device Provisioning Web Portal App Design, DCAM Device Provisioning Web Portal Implementation Design, 09 - System Settings Requirements, DCAM Self Update Design, DCAM Android Development Standard, DCAM Device POC & Hardware Validation Report, DCAM Factory Provisioning & Device Production SOP
+[DCAM Requirement–Design–Test Traceability Matrix](/wiki/spaces/DVID/pages/51085669/DCAM+Requirement+Design+Test+Traceability+Matrix), [DCAM Document Status Registry](/wiki/spaces/DVID/pages/51085647/DCAM+Document+Status+Registry), DCAM Release & Build Applicability Matrix, DCAM Requirements Home, DCAM Non-functional Requirements, 07 - Logging & Diagnostics Requirements, 07 - Logging, Diagnostics, Performance & Security, DCAM Logging & Diagnostics Design, DCAM Performance Budget & Resource Constraints, DCAM-BDMA Data Contract, DCAM Web Portal & Device API Contract, DCAM Android Device Owner & Kiosk Policy Design, DCAM In-App Operation, Device Settings & Media Console Design, ADR - DCAM Android Dedicated Device / Device Owner / Lock Task Decision, DCAM Android Operation Design, DCAM Recording & Capture Design, DCAM Storage Design, DCAM SQLite Database Design, DCAM Security & Encryption Design, DCAM State Machine Design, DCAM Device Capability & Feature Eligibility Design, DCAM Device Provisioning Web Portal Design, DCAM Device Provisioning Web Portal App Design, DCAM Device Provisioning Web Portal Implementation Design, 09 - System Settings Requirements, DCAM Self Update Design, DCAM Android Development Standard, DCAM Device POC & Hardware Validation Report, DCAM Factory Provisioning & Device Production SOP, Decision Brief – DCAM MVP Internal Build 0.1 – Working Recording Slice
 
 ## 1. Purpose
 
@@ -109,6 +109,7 @@ Remote Config
 Self Update
 Factory READY_TO_SHIP
 Live Streaming / PTT / Full GPS Route / AI
+Important Media creation/marking
 ## 2. Scope
 
 Area
@@ -397,13 +398,13 @@ Optional
 
 Optional
 
-BodyCamera Device - selected model
+BodyCamera Device - NCC-036V / Android 12 / API 31 / 877AOOAKN1_RK2_V009
 
-Recording/storage/performance/ADB baseline.
-
-Required
+Recording/storage/performance/ADB baseline trên identifiable physical device.
 
 Required
+
+Configuration khác cần impact review/regression và không mặc nhiên pass.
 
 Windows PC with BDMA
 
@@ -689,7 +690,7 @@ QA-PERF-003
 
 Performance
 
-Critical finalization meets `PERF-REC-003`; checksum does not block `BDMA_READY`.
+Critical finalization đạt PERF-REC-003 đến finalized/checksum-pending; async MD5 hoàn tất trước BDMA_READY.
 
 P0
 
@@ -853,17 +854,45 @@ REC-IMG-005 + Recording Design
 
 Draft
 
+QA-MEDIA-NAME-001
+
+Media Filename Tokens
+
+Tên file video/image dùng DEVICE_TOKEN từ validated serial_number với 6–10 ký tự [A-Z0-9] và OPERATOR_TOKEN = B01OPR với đúng 6 ký tự [A-Z0-9]; MP4/MD5 dùng cùng base name.
+
+P0
+
+Required
+
+DEC-07 + REC-VID-002 + REC-IMG-002 + Data Contract §7/§16.4
+
+Draft
+
+QA-MEDIA-NAME-002
+
+Media Filename Validation
+
+Token sai length/charset hoặc chứa underscore phải bị reject có kiểm soát; không silent truncation và artifact không hợp lệ không được trở thành BDMA_READY/import evidence.
+
+P0
+
+Required
+
+DEC-07 + Data Contract §7/§16.4
+
+Draft
+
 QA-MEDIA-IMP-001
 
 Important Media
 
-`_IMP` naming/folder behavior is correct when Important Media is activated.
+Khi Important Media được explicitly activated: kiểm tra marking behavior, `_IMP` filename suffix, placement trong `Media/IMP` theo Data Contract, MD5 bắt buộc nếu artifact là MP4, chỉ `BDMA_READY` sau MD5 success và BDMA recognition/import đúng.
 
 P0
 
-Conditional
+Conditional — Not Activated
 
-Recording Requirements + Data Contract
+REC-VID-003 + Release & Build Applicability Matrix §10 + DCAM-BDMA Data Contract §6–§9/§16
 
 Draft
 
@@ -1235,7 +1264,7 @@ QA-BDMA-001
 
 BDMA
 
-BDMA imports finalized media and verifies `.mp4` checksum when present.
+BDMA chỉ import finalized MP4 có valid MD5 và finalized image theo image contract.
 
 P0
 
@@ -1247,15 +1276,15 @@ Draft
 
 QA-BDMA-002
 
-BDMA
+BDMA Integrity
 
-Missing `.mp4` checksum imports as Unverified/warning, not hard fail.
+Missing MP4 MD5 blocks import, evidence và Build 0.1 release gate; source MP4 được giữ nguyên.
 
 P0
 
-Conditional when checksum contract active
+Required
 
-Data Contract
+Data Contract + Decision Brief
 
 Draft
 
@@ -1263,11 +1292,11 @@ QA-BDMA-003
 
 BDMA Integrity
 
-`.mp4` MD5 mismatch blocks import and cleanup; source evidence remains unchanged.
+MP4 MD5 mismatch blocks import và cleanup; source evidence giữ nguyên.
 
 P0
 
-Required when MP4 checksum sidecar is present
+Required
 
 Data Contract + BDMA Design
 
@@ -1955,6 +1984,10 @@ Local-first logging and bounded storage pass
 
 Required
 
+QA-MEDIA-IMP-001 execution evidence
+
+Not Required khi Important Media activation condition là false; không chặn Build 0.1 release gate.
+
 Web Portal / full auth / kiosk / Remote Config / Self Update / Factory tests
 
 Deferred or Not Applicable; must not block Build 0.1
@@ -2014,3 +2047,118 @@ Only applicable P0 tests block a build.
 Build 0.1 is gated by Working Recording Slice, recording/image capture, storage/finalization, minimal artifacts, BDMA sample import, performance/concurrency and sanitization.
 Web Portal, full auth, full kiosk, Remote Config, Self Update and Factory acceptance do not block Build 0.1 unless explicitly activated.
 Traceability Matrix owns Requirement → Build → Design → QA → Jira → Evidence coverage.
+## 15. Build 0.1 Decision Validation
+
+Test ID
+
+Area
+
+Scenario
+
+Priority
+
+Build 0.1
+
+Source
+
+Status
+
+QA-STO-003
+
+Storage Policy
+
+Internal-only; External/Auto disabled; failed pre-check không start recording.
+
+P0
+
+Required
+
+DEC-02 + Storage Requirements/Design
+
+Draft
+
+QA-STO-004
+
+Storage Failure
+
+Runtime storage failure safe-stop và finalize MP4 nếu còn khả năng; không fallback.
+
+P0
+
+Required
+
+DEC-02 + Storage Design
+
+Draft
+
+QA-BDMA-007
+
+Checksum Failure
+
+MD5 generation failure giữ MP4, ghi log, persist Checksum Pending/Failed và không BDMA_READY/import.
+
+P0
+
+Required
+
+DEC-03 + Data Contract
+
+Draft
+
+QA-WRS-OP-001
+
+Operator
+
+Không login UI; B01OPR / Build 0.1 Operator immutable và nhất quán trong SQLite/CSON/log; không auth claim.
+
+P0
+
+Required
+
+DEC-04 + User/Config/SQLite/Logging
+
+Draft
+
+QA-WRS-STATUS-001
+
+Device Status
+
+Battery level, Internal free storage và GPS state được report đúng; không coordinates/route/tracking.
+
+P0
+
+Required
+
+DEC-05 + Device POC
+
+Draft
+
+QA-WRS-DEV-001
+
+Device Coverage
+
+Evidence chứa physical device ID, NCC-036V, Android 12/API 31 và firmware 877AOOAKN1_RK2_V009.
+
+P0
+
+Required
+
+DEC-01/06 + Device POC
+
+Draft
+
+### 13.1 Release Gate Override
+
+Missing, mismatch hoặc failed MP4 MD5 là hard failure cho Build 0.1.
+
+BDMA_READY timestamp phải sau checksum success timestamp.
+
+WRS evidence phải đến từ ít nhất một identifiable physical reference device.
+
+Filename evidence phải chứa input serial_number/operator_id, generated filename, parsed tokens và media_contract_version; POC xác nhận actual serial_number.
+
+GPS Unavailable/Unsupported không làm fail nếu reporting chính xác.
+
+Build 0.1 pass không phải Device POC qualification cho model khác hoặc Production/fleet approval.
+
+Jira/PR/build/test links phải được bổ sung trước khi đóng implementation Definition of Done; GitHub link chỉ authoritative sau approved repository mapping.

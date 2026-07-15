@@ -1,7 +1,7 @@
 # DCAM Device Provisioning Web Portal Implementation Design
 
 **Page ID**: 51019802  
-**Version**: 4  
+**Version**: 5  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/51019802
 
@@ -24,11 +24,15 @@ Web Application Implementation Design
 
 Version
 
-Approved 1.1
+Approved 1.2
 
 Status
 
 Approved
+
+Approval Scope
+
+Approved Web Portal implementation direction trong phạm vi page; production deployment và security evidence vẫn phải theo approved gates.
 
 Owner
 
@@ -52,7 +56,7 @@ Web Developers, Backend Developers, QA, Security Reviewer, Factory Lead
 
 Last Updated
 
-2026-07-10
+2026-07-14
 
 Related Jira
 

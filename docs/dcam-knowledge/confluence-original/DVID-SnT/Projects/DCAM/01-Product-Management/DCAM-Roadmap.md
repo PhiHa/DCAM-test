@@ -1,7 +1,7 @@
 # DCAM Roadmap
 
 **Page ID**: 41615474  
-**Version**: 13  
+**Version**: 14  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/41615474
 
@@ -24,11 +24,15 @@ Product Roadmap
 
 Version
 
-Approved 1.5
+Approved 1.6
 
 Status
 
 Approved
+
+Approval Scope
+
+Phase và milestone direction; active build applicability và release gate thuộc DCAM Release & Build Applicability Matrix.
 
 Owner
 
@@ -52,7 +56,7 @@ PM/BA, Product Owner, Tech Lead, Developers, QA, Stakeholders
 
 Last Updated
 
-2026-07-10
+2026-07-14
 
 Related Jira
 

@@ -10,6 +10,10 @@
     <string name="recording_notification_text">DCAM recording in progress</string>
     <string name="audio_recording_status">Audio recording</string>
     <string name="audio_recording_notification_text">DCAM audio recording in progress</string>
+    <string name="loggly_notification_channel">DCAM log delivery</string>
+    <string name="loggly_notification_channel_description">Keeps operational log delivery active after app failure</string>
+    <string name="loggly_notification_title">Log delivery active</string>
+    <string name="loggly_notification_text">DCAM is delivering queued operational logs</string>
     <string name="capture">Capture</string>
     <string name="settings_detail_hint">Controls update local UI state; operational persistence comes later</string>
     <string name="files">Files</string>
@@ -40,13 +44,16 @@
     <string name="operator_login_hint">MVP default password: 000000</string>
     <string name="password">Password</string>
     <string name="login">Login</string>
+    <string name="reset_login_database">Reset database</string>
+    <string name="reset_login_database_title">Reset database?</string>
+    <string name="reset_login_database_message">Operator users and sessions will be deleted. Media files will not be deleted.</string>
+    <string name="reset">Reset</string>
     <string name="logout">Log out</string>
     <string name="account_change_pending">Account change flow is not available yet</string>
     <string name="developer_users">Developer users</string>
     <string name="developer_users_hint">Hidden local provisioning. Cloud provisioning uses the same user boundary.</string>
     <string name="manage_developer_users">Manage local users</string>
     <string name="user_id">User ID (6 digits)</string>
-    <string name="login_name_optional">Login name (optional, future login)</string>
     <string name="display_name">Display name</string>
     <string name="password_text">Password (text)</string>
     <string name="save_user">Save user</string>
@@ -55,4 +62,9 @@
     <string name="language_english">English</string>
     <string name="language_vietnamese">Tiếng Việt</string>
     <string name="language_changed">Language changed</string>
+    <string name="battery_status">Battery status</string>
+    <string name="battery_unknown">Battery level unknown</string>
+    <string name="battery_percent">Battery %1$d percent</string>
+    <string name="wifi_disconnected">Wi-Fi disconnected</string>
+    <string name="wifi_signal_level">Wi-Fi signal level %1$d of 4</string>
 </resources>

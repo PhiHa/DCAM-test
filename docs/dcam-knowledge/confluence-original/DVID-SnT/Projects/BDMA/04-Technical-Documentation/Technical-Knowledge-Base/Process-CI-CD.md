@@ -248,7 +248,7 @@ MUI2 (Modern UI 2) — ngôn ngữ English
 
 Khi khởi chạy, installer kiểm tra registry HKLM\Software\BDMA để xác định trạng thái:
 
-Đã có registry và file BDMA.exe tồn tại → đặt IsInstalled = 1, hiển thị dialog chọn hành đ���ng
+Đã có registry và file BDMA.exe tồn tại → đặt IsInstalled = 1, hiển thị dialog chọn hành động
 
 Không có registry hoặc file không tồn tại → xóa registry rác, đặt IsInstalled = 0, UserChoice = 1 (đi thẳng vào cài đặt)
 

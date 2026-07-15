@@ -1,6 +1,6 @@
 # Cloud services, update, and configuration architecture
 
-Source status: **Approved 2.8**, Confluence page version 21, updated 2026-07-08. This is a local implementation-oriented digest of `06 - Cloud Services, Update & Configuration Architecture`; Confluence remains authoritative.
+Source status: current Confluence page version 28, last registry review 2026-07-14. This is a local implementation-oriented digest of `06 - Cloud Services, Update & Configuration Architecture`; Confluence remains authoritative.
 
 ## Purpose
 

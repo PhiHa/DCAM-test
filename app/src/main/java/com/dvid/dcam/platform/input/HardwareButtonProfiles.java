@@ -3,7 +3,6 @@ package com.dvid.dcam.platform.input;
 import static com.dvid.dcam.core.input.domain.ButtonRole.AUDIO_CAPTURE;
 import static com.dvid.dcam.core.input.domain.ButtonRole.IMPORTANT_RECORDING;
 import static com.dvid.dcam.core.input.domain.ButtonRole.PHOTO_CAPTURE;
-import static com.dvid.dcam.core.input.domain.ButtonRole.POWER;
 import static com.dvid.dcam.core.input.domain.ButtonRole.PTT;
 import static com.dvid.dcam.core.input.domain.ButtonRole.RECORD;
 import static com.dvid.dcam.core.input.domain.ButtonRole.SOS;
@@ -31,8 +30,7 @@ public final class HardwareButtonProfiles {
             button(AUDIO_CAPTURE, KeyEvent.KEYCODE_F3, BUTTON),
             button(PTT, KeyEvent.KEYCODE_F4, BUTTON),
             button(RECORD, KeyEvent.KEYCODE_F5, BUTTON),
-            button(SOS, KeyEvent.KEYCODE_F7, BUTTON),
-            button(POWER, KeyEvent.KEYCODE_POWER, BUTTON));
+            button(SOS, KeyEvent.KEYCODE_F7, BUTTON));
 
     private static final DeviceProfile[] PROFILES = {
             new DeviceProfile("BodyCamera", "k69v1_64_k419", "mt6768", BODY_CAMERA),

@@ -31,6 +31,9 @@ public interface PendingLogDao {
     @Query("SELECT COUNT(*) FROM pending_logs WHERE status = 'PENDING'")
     long pendingCount();
 
+    @Query("SELECT COUNT(*) FROM pending_logs WHERE status IN ('PENDING', 'RETRY')")
+    long deliverableCount();
+
     @Query("SELECT COUNT(*) FROM pending_logs")
     long totalCount();
 

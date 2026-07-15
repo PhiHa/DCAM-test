@@ -1,5 +1,7 @@
 # Delivery model, team, and documentation workflow
 
+Source refresh: **2026-07-15**. Documentation workflow now includes registry synchronization, Build 0.1 applicability, DEC-01-DEC-07 traceability, and evidence links before release acceptance.
+
 ## Delivery assumptions
 
 | Item | Assumption |
@@ -69,3 +71,7 @@
 - Create an ADR when a major decision becomes stable or violates an existing principle.
 - Update Project Home and cross-links when pages move or are added.
 - Update relevant documentation before release.
+- Synchronize changed page metadata with Document Status Registry in same change set.
+- Trace each Build 0.1 decision through requirement/design, Jira issue, implementation/PR, QA Test ID, and evidence link.
+- Do not mark Pending Device POC rows Covered/Passed before identifiable physical-device evidence is attached.
+- Do not treat Approved Provisional Baseline or PM-approved reference configuration as production approval.

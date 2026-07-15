@@ -3,7 +3,7 @@ package com.dvid.dcam.core.config.domain;
 /** Immutable application configuration consumed by domain/application workflows. */
 public final class DcamConfig {
     public static final String DEFAULT_ACCOUNT_USER_ID = "000000";
-    public static final String DEFAULT_POLICE_USER_ID = "000000";
+    public static final String DEFAULT_POLICE_USER_ID = "B01OPR";
     public static final boolean DEFAULT_VIDEO_ENCRYPTED = false;
     public static final String DEFAULT_MEDIA_ENCRYPTION_PASSWORD = "123456";
 

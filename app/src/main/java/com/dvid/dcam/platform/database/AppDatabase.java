@@ -71,4 +71,12 @@ public abstract class AppDatabase extends RoomDatabase {
             return instance;
         }
     }
+
+    public static synchronized void reset(Context context) {
+        if (instance != null) {
+            instance.close();
+            instance = null;
+        }
+        context.getApplicationContext().deleteDatabase(DATABASE_NAME);
+    }
 }

@@ -3,16 +3,14 @@ package com.dvid.dcam.platform.storage;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.util.Log;
 import com.dvid.dcam.BuildConfig;
 import com.dvid.dcam.feature.settings.domain.StorageMode;
 import com.dvid.dcam.platform.config.AndroidStorageModePreferenceStoreImpl;
 import com.dvid.dcam.platform.config.AndroidVideoMd5PreferenceStoreImpl;
+import com.dvid.dcam.platform.logging.DcamLogger;
 
 /** Recovers staged media immediately after Android regains access to removable storage. */
 public final class DcamStorageMountedReceiver extends BroadcastReceiver {
-    private static final String TAG = "DcamStorageRecovery";
-
     @Override public void onReceive(Context context, Intent intent) {
         if (!Intent.ACTION_MEDIA_MOUNTED.equals(intent.getAction())) return;
 
@@ -25,7 +23,7 @@ public final class DcamStorageMountedReceiver extends BroadcastReceiver {
         new DcamMediaOutputImpl(storage,
                 videoMd5::isVideoMd5Enabled)
                 .recoverStaged(report -> {
-            Log.i(TAG, "Mounted-storage recovery: recovered=" + report.getRecovered()
+            DcamLogger.i("Mounted-storage recovery: recovered=" + report.getRecovered()
                     + ", preserved=" + report.getPreserved()
                     + ", duplicates=" + report.getDuplicates());
             pendingResult.finish();

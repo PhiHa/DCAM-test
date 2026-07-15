@@ -1,7 +1,7 @@
 # 09 - System Settings Requirements
 
 **Page ID**: 47710614  
-**Version**: 18  
+**Version**: 19  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47710614
 
@@ -24,11 +24,15 @@ Functional Requirements
 
 Version
 
-Approved 1.16
+Approved 1.17
 
 Status
 
 Approved
+
+Approval Scope
+
+System settings target requirements; build applicability thuộc Matrix, exact provider/payload/runtime implementation thuộc Design/Contract.
 
 Owner
 
@@ -52,7 +56,11 @@ PM/BA, Tech Lead, Android Developers, QA, Cloud/WebServer Team
 
 Last Updated
 
-2026-07-10
+2026-07-14
+
+Related Jira
+
+None
 
 Related Documents
 

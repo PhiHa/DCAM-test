@@ -1,7 +1,7 @@
 # DCAM-BDMA Data Contract
 
 **Page ID**: 47743153  
-**Version**: 10  
+**Version**: 13  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47743153
 
@@ -24,7 +24,7 @@ Data Contract / Integration Contract
 
 Version
 
-Approved 1.9
+Approved 1.11
 
 Status
 
@@ -32,7 +32,7 @@ Approved
 
 Approval Scope
 
-Global contract với authoritative Build 0.1 exchange profile
+Global contract với authoritative media filename token mapping, Build 0.1 exchange profile và legacy MD5 applicability guardrail.
 
 Owner
 
@@ -64,7 +64,7 @@ None
 
 Related Documents
 
-DCAM Factory Provisioning & Device Production SOP, DCAM Web Portal & Device API Contract, DCAM Device Provisioning Web Portal Design, DCAM Device Provisioning Web Portal App Design, DCAM Device Provisioning Web Portal Implementation Design, DCAM MVP Scope, DCAM Architecture Home, 04 - Device Configuration Requirements, 05 - User & Device Operation Requirements, 06 - Cloud Services, Update & Configuration Architecture, 07 - Logging & Diagnostics Requirements, 07 - Logging, Diagnostics, Performance & Security, DCAM Logging & Diagnostics Design, 09 - System Settings Requirements, DCAM SQLite Database Design, DCAM Android Operation Design, DCAM Recording & Capture Design, DCAM Storage Design, DCAM Security & Encryption Design, 05 - Data, Storage & BDMA Architecture, 08 - DCAM-BDMA Integration Boundary, DCAM QA Test Strategy & Test Matrix, DCAM Documentation Governance, Decision Brief – DCAM MVP Internal Build 0.1 – Working Recording Slice
+DCAM Factory Provisioning & Device Production SOP, DCAM Web Portal & Device API Contract, DCAM Device Provisioning Web Portal Design, DCAM Device Provisioning Web Portal App Design, DCAM Device Provisioning Web Portal Implementation Design, DCAM MVP Scope, DCAM Release & Build Applicability Matrix, DCAM Architecture Home, 04 - Device Configuration Requirements, 05 - User & Device Operation Requirements, 06 - Cloud Services, Update & Configuration Architecture, 07 - Logging & Diagnostics Requirements, 07 - Logging, Diagnostics, Performance & Security, DCAM Logging & Diagnostics Design, 09 - System Settings Requirements, DCAM SQLite Database Design, DCAM Android Operation Design, DCAM Recording & Capture Design, DCAM Storage Design, DCAM Security & Encryption Design, 05 - Data, Storage & BDMA Architecture, 08 - DCAM-BDMA Integration Boundary, DCAM QA Test Strategy & Test Matrix, DCAM Documentation Governance, Decision Brief – DCAM MVP Internal Build 0.1 – Working Recording Slice
 
 ## 1. Purpose
 
@@ -202,7 +202,7 @@ Scan media ở External và Internal DCAM Media Roots.
 
 MD5 verification
 
-Chỉ verify `.md5` cho `.mp4` nếu file tồn tại.
+Verify `.md5` theo approved Build Profile; Build 0.1 block khi missing, còn legacy Unverified behavior chưa có approved profile mapping.
 
 Import
 
@@ -537,9 +537,73 @@ Important/encrypted examples:
 DCAM_XXXXXX_ZZZZZZ_YYYYMMDD_HHMMSS_IMP.<ext>
 DCAM_XXXXXX_ZZZZZZ_YYYYMMDD_HHMMSS_enc.<ext>
 DCAM_XXXXXX_ZZZZZZ_YYYYMMDD_HHMMSS_IMP_enc.<ext>
+### 7.1 Filename Components
+
+Component
+
+Meaning
+
+Contract Rule
+
+`DCAM`
+
+Fixed Prefix
+
+Luôn là `DCAM`.
+
+`XXXXXX` / `DEVICE_TOKEN`
+
+Snapshot của validated `serial_number`
+
+6–10 ký tự, chỉ `[A-Z0-9]`; không underscore; không silent truncation.
+
+`ZZZZZZ` / `OPERATOR_TOKEN`
+
+Snapshot của `operator_id`
+
+Đúng 6 ký tự, chỉ `[A-Z0-9]`; Build 0.1 dùng `B01OPR`.
+
+`YYYYMMDD`
+
+Date
+
+Ngày gắn với capture/recording; timezone phải được Technical Review chốt.
+
+`HHMMSS`
+
+Time
+
+Thời gian gắn với capture/recording; same-second collision handling phải được Technical Review chốt.
+
+`<ext>`
+
+File Extension
+
+Dùng format được hỗ trợ trong bảng trên.
+
+Format-only example; không phải Device POC evidence:
+
+```
+DCAM_BC240001_B01OPR_20260713_103000.mp4
+```
+
+Guardrails:
+
+Giá trị `serial_number` thực tế phải được validation trước khi tạo `DEVICE_TOKEN`; reference-device value cần Device POC evidence.
+
+Không được cắt ngắn, thêm underscore hoặc tự tạo token thay thế để biến input không hợp lệ thành hợp lệ.
+
+`operator_name` không tham gia filename; Build 0.1 giữ `operator_name = Build 0.1 Operator`.
+
+Artifact có token không hợp lệ không được đánh dấu `BDMA_READY` hoặc đưa vào Build 0.1 import evidence.
+
+Filename legacy không được tự reinterpret theo mapping mới; compatibility chỉ được áp dụng khi có `media_contract_version` hoặc profile rule được phê duyệt và truy xuất được.
+
 ## 8. MD5 Checksum Contract (General / non-Build 0.1 where applicable)
 
 Build 0.1 sử dụng authoritative override tại §16.
+
+Legacy `missing MD5 → Unverified import` là generic compatibility behavior chưa được gán cho approved Build Profile nào. Build 0.2, Build 0.3 và Pilot/Shipment không được tự động áp dụng behavior này; future activation phải được phê duyệt và ghi rõ trong Release & Build Applicability Matrix.
 
 `.md5` chỉ áp dụng cho video `.mp4`.
 
@@ -559,9 +623,9 @@ Same base name
 
 `.md5` dùng cùng base name với `.mp4`.
 
-Optional for import
+Legacy compatibility only
 
-Thiếu `.md5` vẫn có thể import dạng Unverified/warning.
+Thiếu `.md5` chỉ có thể import dạng Unverified/warning khi một named Build Profile được phê duyệt rõ ràng; hiện không có approved profile mapping.
 
 Not applicable for image/audio
 
@@ -604,9 +668,9 @@ No.
 
 `.mp4` missing `.md5`
 
-Yes, Unverified
+No for every currently approved profile
 
-User confirm per file.
+Legacy Unverified import chỉ được phép sau future named-profile approval; Build 0.1 hard-block.
 
 Image/audio supported
 
@@ -1000,9 +1064,9 @@ Expected Handling
 
 Missing `.md5` for `.mp4`
 
-Warning
+Blocking for every currently approved profile
 
-Import video as Unverified.
+Build 0.1 không import; legacy Unverified handling chưa được gán cho approved profile nào.
 
 Missing `.md5` for image/audio
 
@@ -1171,7 +1235,7 @@ MD5 applies only to .mp4 video files.
 BDMA_READY means safe for BDMA scan/import, not already imported.
 ## 16. Build 0.1 Authoritative Contract Profile
 
-Section này override các generic/legacy rules mâu thuẫn đối với DCAM MVP Internal Build 0.1. Behavior ngoài Build 0.1 không bị thay đổi.
+Section này override các generic/legacy rules mâu thuẫn đối với DCAM MVP Internal Build 0.1. Generic/legacy behavior ngoài Build 0.1 chỉ có hiệu lực khi Release & Build Applicability Matrix gán rõ cho một named Build Profile; hiện chưa có mapping đó.
 
 ### 16.1 Storage and Scan Root
 
@@ -1243,7 +1307,7 @@ Cleanup
 
 Không xóa MP4/MD5/protected artifact khi verification/import chưa success
 
-Legacy missing-MD5 → Unverified import và BDMA_READY-before-checksum không áp dụng cho Build 0.1.
+Legacy `missing MD5 → Unverified import` và `BDMA_READY-before-checksum` không áp dụng cho Build 0.1 và hiện không được gán cho Build 0.2, Build 0.3 hoặc Pilot/Shipment. `MD5 mismatch` luôn là verification error, không thuộc legacy exception.
 
 ### 16.3 Operator Attribution
 
@@ -1253,7 +1317,7 @@ Build 0.1 Value
 
 operator_id
 
-BUILD01_OPERATOR
+B01OPR
 
 operator_name
 
@@ -1269,6 +1333,36 @@ Technical traceability; không phải authenticated identity
 
 Hai fields được phép trong SQLite, CSON và log tại nơi approved schema yêu cầu. Exact placement/serialization vẫn cần Technical Review.
 
-### 16.4 Evidence Boundary
+### 16.4 Build 0.1 Filename Token Profile
+
+Rule
+
+Build 0.1 Baseline
+
+Pattern
+
+`DCAM_<DEVICE_TOKEN>_<OPERATOR_TOKEN>_YYYYMMDD_HHMMSS.<ext>`
+
+DEVICE_TOKEN
+
+Validated `serial_number` snapshot, 6–10 ký tự, `[A-Z0-9]`.
+
+OPERATOR_TOKEN
+
+`B01OPR`, đúng 6 ký tự, `[A-Z0-9]`.
+
+Validation Failure
+
+Không silent truncation; không `BDMA_READY`; ghi evidence lỗi theo approved Logging baseline.
+
+Qualification
+
+Device POC phải xác nhận `serial_number` thực tế và filename evidence trên reference device.
+
+Open Technical Review
+
+Timestamp timezone và same-second collision handling.
+
+### 16.5 Evidence Boundary
 
 GitHub code, PR, build hoặc test chỉ được dùng làm authoritative evidence sau khi Confluence/Jira ghi rõ repository mapping. Mapping chưa được phê duyệt bởi changeset này.

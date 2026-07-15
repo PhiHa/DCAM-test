@@ -1,7 +1,7 @@
 # 01 - Recording & Capture Requirements
 
 **Page ID**: 47743356  
-**Version**: 6  
+**Version**: 7  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47743356
 
@@ -24,7 +24,7 @@ Functional Requirements
 
 Version
 
-Approved 1.4
+Approved 1.5
 
 Status
 
@@ -152,7 +152,7 @@ Approved
 
 REC-VID-002
 
-Video file phải tuân thủ naming convention trong DCAM-BDMA Data Contract.
+Video file phải tuân thủ naming convention và authoritative DEVICE_TOKEN/OPERATOR_TOKEN mapping trong DCAM-BDMA Data Contract.
 
 Approved
 
@@ -196,7 +196,7 @@ Approved
 
 REC-IMG-002
 
-Image file phải tuân thủ naming convention trong DCAM-BDMA Data Contract.
+Image file phải tuân thủ naming convention và authoritative DEVICE_TOKEN/OPERATOR_TOKEN mapping trong DCAM-BDMA Data Contract.
 
 Approved
 

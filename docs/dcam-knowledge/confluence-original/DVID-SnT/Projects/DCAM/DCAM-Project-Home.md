@@ -1,7 +1,7 @@
 # DCAM Project Home
 
 **Page ID**: 41648280  
-**Version**: 64  
+**Version**: 66  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/41648280
 
@@ -24,11 +24,15 @@ Project Home / Chỉ mục tài liệu
 
 Version
 
-Approved 3.33
+Approved 3.35
 
 Status
 
 Approved
+
+Approval Scope
+
+Project navigation, physical hierarchy và current-summary only; không sở hữu mutable version/status hoặc requirement/design baseline.
 
 Owner
 
@@ -52,7 +56,11 @@ PM/BA, Tech Lead, Developers, BDMA Team, Cloud/WebServer Team, QA, Factory, Supp
 
 Last Updated
 
-2026-07-10
+2026-07-14
+
+Related Jira
+
+None
 
 Related Documents
 
@@ -109,33 +117,85 @@ Current project decision remains hardcoded in approved APK
 Value must not appear in logs, QR, API, records or evidence
 ## 4. Documentation Structure
 
+**Hierarchy snapshot:** 2026-07-13.
+
 DCAM
 ├── DCAM Project Home
 ├── 01 - Product Management
 │   ├── DCAM Project Charter
-│   ├── DCAM Product Vision
 │   ├── DCAM Roadmap
+│   ├── DCAM Product Vision
 │   └── DCAM MVP Scope
 ├── 02 - Sprint Operations
 │   ├── DCAM 9-Month Development Plan
 │   ├── DCAM Documentation Governance
 │   ├── DCAM Release & Build Applicability Matrix
-│   └── DCAM Document Status Registry
+│   ├── DCAM Document Status Registry
+│   └── Decision Brief – DCAM MVP Internal Build 0.1 – Working Recording Slice
 ├── 03 - Requirements
+│   ├── DCAM-BDMA Data Contract
 │   ├── DCAM Requirements Home
-│   │   ├── Functional Requirements 01–10
+│   │   ├── 01 - Recording & Capture Requirements
+│   │   ├── 02 - Media Storage Requirements
+│   │   ├── 03 - Media Management Requirements
+│   │   ├── 04 - Device Configuration Requirements
+│   │   ├── 05 - User & Device Operation Requirements
+│   │   ├── 06 - BDMA Integration Requirements
+│   │   ├── 07 - Logging & Diagnostics Requirements
+│   │   ├── 08 - Security & Encryption Requirements
+│   │   ├── 09 - System Settings Requirements
+│   │   ├── 10 - Android Device Operation Requirements
 │   │   └── DCAM Requirement–Design–Test Traceability Matrix
-│   ├── DCAM Non-functional Requirements
-│   └── DCAM-BDMA Data Contract
+│   └── DCAM Non-functional Requirements
 ├── 04 - Technical Documentation
-│   ├── 4.1 - Software Architecture / DCAM Architecture Home
+│   ├── 4.1 - Software Architecture
+│   │   └── DCAM Architecture Home
+│   │       ├── DCAM Architecture Delivery Profile
+│   │       ├── 01 - Architecture Overview
+│   │       ├── 02 - Architecture Principles
+│   │       ├── 03 - Android Platform & Compatibility Strategy
+│   │       ├── 04 - Application & Module Architecture
+│   │       ├── 05 - Data, Storage & BDMA Architecture
+│   │       ├── 06 - Cloud Services, Update & Configuration Architecture
+│   │       ├── 07 - Logging, Diagnostics, Performance & Security
+│   │       └── 08 - DCAM-BDMA Integration Boundary
 │   ├── 4.2 - Technical Design
+│   │   ├── DCAM Android Operation Design
+│   │   ├── DCAM State Machine Design
+│   │   ├── DCAM SQLite Database Design
+│   │   ├── DCAM Recording & Capture Design
+│   │   ├── DCAM Storage Design
+│   │   ├── DCAM BDMA Integration Technical Design
+│   │   ├── DCAM Self Update Design
+│   │   ├── DCAM Security & Encryption Design
+│   │   ├── DCAM Sensor & Location Monitoring Design
+│   │   ├── DCAM Realtime AI Detection Design
+│   │   ├── DCAM Device Capability & Feature Eligibility Design
+│   │   ├── DCAM Device Provisioning Web Portal Design
+│   │   │   ├── DCAM Device Provisioning Web Portal App Design
+│   │   │   └── DCAM Device Provisioning Web Portal Implementation Design
+│   │   ├── DCAM Android Device Owner & Kiosk Policy Design
+│   │   ├── DCAM In-App Operation, Device Settings & Media Console Design
+│   │   ├── DCAM Web Portal & Device API Contract
+│   │   ├── DCAM Concurrency & Threading Model Design
+│   │   ├── DCAM Performance Budget & Resource Constraints
+│   │   └── DCAM Logging & Diagnostics Design
 │   ├── 4.3 - Android Development
-│   └── 4.4 - Architecture Decision Records
+│   │   ├── DCAM Android Training & Architecture Onboarding
+│   │   ├── DCAM Android Development Standard
+│   │   └── DCAM Device POC & Hardware Validation Report
+│   └── 4.4 - Architecture Decision Records (ADR)
+│       ├── ADR - DCAM Android Dedicated Device / Device Owner / Lock Task Decision
+│       └── ADR - DCAM Device Identity Baseline: serial_number + dcam_cloud_device_id
 ├── 05 - Release Management
 │   ├── DCAM QA Test Strategy & Test Matrix
 │   └── DCAM Factory Provisioning & Device Production SOP
+│       └── DCAM DSetup Factory Tool Design
 └── 06 - Incident Log
+Project Home chỉ mô tả navigation hierarchy. Reading order chi tiết thuộc [DCAM Requirements Home](/wiki/spaces/DVID/pages/47710513/DCAM+Requirements+Home) và [DCAM Architecture Home](/wiki/spaces/DVID/pages/47185929/DCAM+Architecture+Home); version/status tập trung thuộc [DCAM Document Status Registry](/wiki/spaces/DVID/pages/51085647/DCAM+Document+Status+Registry).
+
+Page ID `49774716` vẫn xuất hiện dưới `4.4 - Architecture Decision Records (ADR)` trong live descendants nhưng direct fetch trả `404` và CQL không tìm thấy current content. Theo DCAM Documentation Governance §5.3.2, entry này được phân loại `Dangling`, loại khỏi navigation và Registry named-page coverage; physical cleanup cần Confluence admin xác nhận.
+
 ## 5. Status and TBD Governance
 
 Document status taxonomy, approval integrity và version synchronization được quản lý bởi:

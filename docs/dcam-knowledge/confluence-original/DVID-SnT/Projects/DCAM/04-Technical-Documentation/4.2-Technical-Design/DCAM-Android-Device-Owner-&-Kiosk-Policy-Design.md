@@ -1,7 +1,7 @@
 # DCAM Android Device Owner & Kiosk Policy Design
 
 **Page ID**: 49840280  
-**Version**: 9  
+**Version**: 10  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/49840280
 
@@ -24,11 +24,15 @@ Technical Design / Device Owner / Kiosk Policy Design
 
 Version
 
-Approved 0.8
+Approved Pending Device POC 0.9
 
 Status
 
-Approved
+Approved Pending Device POC
+
+Approval Scope
+
+Device Owner/Kiosk implementation direction và runtime guards; exact OEM/firmware feasibility, Device Owner component, restrictions/allowlist và install behavior Pending Device POC.
 
 Owner
 
@@ -52,7 +56,15 @@ Tech Lead, Android Developers, QA, Security Reviewer, Support, Factory
 
 Last Updated
 
-2026-07-10
+2026-07-13
+
+Related Jira
+
+None
+
+Dependencies / Blockers
+
+NCC-036V Device POC; exact DPC/Device Owner component; target-firmware feasibility; OEM restrictions/allowlist; Play Store/silent-install evidence.
 
 Related Documents
 
@@ -240,3 +252,14 @@ TBD / Support + Factory
 
 The kiosk architecture is defined.
 Only implementation values and target-device evidence remain TBD.
+## 8. Status Interpretation
+
+`Approved Pending Device POC` có nghĩa:
+
+Device Owner/Kiosk architecture direction, runtime guards và policy boundaries đã được phê duyệt.
+
+Exact Device Owner/DPC component, target-firmware feasibility, OEM-specific User Restrictions, allowlist và Play Store/silent-install behavior chưa được xác nhận.
+
+Các mục chưa xác nhận phải giữ TBD hoặc Pending Device POC và không được dùng làm production claim.
+
+Chỉ Device POC evidence trên approved reference configuration mới có thể đóng dependency; status này không phải hardware certification hoặc Production approval.

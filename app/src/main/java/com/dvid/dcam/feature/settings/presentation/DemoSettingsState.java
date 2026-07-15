@@ -101,9 +101,13 @@ public final class DemoSettingsState {
     }
 
     public SettingsScreenModel storage() {
+        return storage(STORAGE_OPTIONS);
+    }
+
+    public SettingsScreenModel storage(List<String> storageOptions) {
         return new SettingsScreenModel(List.of(new SettingsSection("Storage", List.of(
                 SettingItem.radio(SettingId.DEFAULT_STORAGE, "Default storage",
-                        STORAGE_OPTIONS, defaultStorageIndex),
+                        storageOptions, defaultStorageIndex),
                 SettingItem.slider(SettingId.LOW_STORAGE_WARNING_GB, "Low-storage warning",
                         1, 20, lowStorageWarningGb, "GB"),
                 SettingItem.checkbox(SettingId.RECYCLE_OLD_RECORDINGS,

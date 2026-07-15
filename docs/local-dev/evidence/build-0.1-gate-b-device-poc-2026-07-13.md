@@ -2,7 +2,8 @@
 
 Status: partial pass
 Device: `KF5OF2126040802193`
-Model: `BWC`
+Business model: `NCC-036V`
+ADB `ro.product.model`: `BWC`
 Android: `12` / API `31`
 Firmware: `877AOOAKN1_RK2_V009`
 Package: `com.dvid.dcam`
@@ -12,6 +13,16 @@ APK size: `8,286,386` bytes
 Installed: `2026-07-13 13:50:14 +07:00`
 App external root: `/storage/emulated/0/Android/data/com.dvid.dcam/files`
 
+## Qualification blocker: DEVICE_TOKEN contradiction
+
+- Device POC evidence identifies actual reference-device `serial_number` as `KF5OF2126040802193`.
+- Exact value has `17` characters and satisfies `[A-Z0-9]`.
+- Approved filename rule requires `DEVICE_TOKEN` to be the validated `serial_number` snapshot and also limits it to `6–10` characters.
+- Approved guardrails prohibit silent truncation, underscore padding, aliasing, hashing, or an invented replacement token.
+- Therefore this device cannot satisfy all approved `DEVICE_TOKEN` rules: full serial violates length; any shortened or substituted value violates snapshot/no-replacement rules.
+- `OPERATOR_TOKEN` value `B01OPR` is valid: exactly `6` characters and `[A-Z0-9]` only.
+- Filename identity qualification is `BLOCKED - requirement contradiction`, not failed source code. Existing filenames containing the full serial are evidence of actual identity, not proof of DEC-07 compliance.
+- Device POC owner must reconfirm the serial from physical-device evidence before qualification resumes.
 ## Build/install
 
 - `./gradlew.bat test assembleDebug`: PASS, 2026-07-13 13:48 +07:00.

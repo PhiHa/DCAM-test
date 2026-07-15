@@ -63,7 +63,8 @@ public final class DcamKioskController {
             devicePolicyManager.setLockTaskPackages(admin, new String[] { packageName });
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 devicePolicyManager.setLockTaskFeatures(
-                        admin, DevicePolicyManager.LOCK_TASK_FEATURE_NONE);
+                        admin, DevicePolicyManager.LOCK_TASK_FEATURE_GLOBAL_ACTIONS
+                                | DevicePolicyManager.LOCK_TASK_FEATURE_HOME);
             }
             devicePolicyManager.setStatusBarDisabled(admin, true);
             devicePolicyManager.setUninstallBlocked(admin, packageName, true);
@@ -102,6 +103,7 @@ public final class DcamKioskController {
         if (lockTaskActive(activity)) return;
         try {
             activity.startLockTask();
+            devicePolicyManager.setStatusBarDisabled(admin, true);
             DcamLogger.i("DCAM entered lock task mode");
         } catch (RuntimeException error) {
             DcamLogger.w("Could not enter lock task mode", error);

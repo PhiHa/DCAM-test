@@ -1,7 +1,7 @@
 # Decision Brief – DCAM MVP Internal Build 0.1 – Working Recording Slice
 
 **Page ID**: 51642452  
-**Version**: 1  
+**Version**: 2  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/51642452
 
@@ -24,7 +24,7 @@ Decision Brief / Build Baseline
 
 Version
 
-1.0
+1.1
 
 Status
 
@@ -32,7 +32,7 @@ Approved for Build DCAM MVP Internal Build 0.1
 
 Approval Scope
 
-DEC-01–DEC-06 cho Working Recording Slice; không phải Production approval hoặc Device POC pass
+DEC-01–DEC-07 cho Working Recording Slice; không phải Production approval hoặc Device POC pass
 
 Owner
 
@@ -72,11 +72,11 @@ Device POC evidence; Camera1/Camera2 Technical Review; physical Internal storage
 
 ## 1. Objective
 
-Đồng bộ các quyết định PM-approved cho **DCAM MVP Internal Build 0.1 – Working Recording Slice** thành baseline đủ rõ để chuyển sang **03 — Jira Planning** mà không mở rộng product scope, requirement hoặc approved architecture ngoài sáu quyết định dưới đây.
+Đồng bộ các quyết định PM-approved cho **DCAM MVP Internal Build 0.1 – Working Recording Slice** thành baseline đủ rõ để chuyển sang **03 — Jira Planning** mà không mở rộng product scope, requirement hoặc approved architecture ngoài bảy quyết định dưới đây.
 
 ## 2. Authority and Applicability
 
-Tài liệu này sở hữu quyết định Build 0.1 đối với DEC-01–DEC-06.
+Tài liệu này sở hữu quyết định Build 0.1 đối với DEC-01–DEC-07.
 
 Nếu nội dung generic hoặc target-state ở tài liệu downstream mâu thuẫn với quyết định dưới đây, Build 0.1 phải tuân theo Decision Brief này. Behavior của build khác không tự động bị thay đổi.
 
@@ -206,7 +206,7 @@ Not Applicable for Build 0.1
 
 operator_id
 
-BUILD01_OPERATOR
+B01OPR
 
 operator_name
 
@@ -272,6 +272,48 @@ Evidence phải lấy từ ít nhất một physical device có định danh rõ
 
 Kết quả không đại diện cho multi-model, multi-firmware, production hoặc fleet readiness.
 
+### DEC-07 — Media Filename Token Mapping
+
+Build 0.1 giữ format tên file media sau:
+
+```
+DCAM_XXXXXX_ZZZZZZ_YYYYMMDD_HHMMSS.<ext>
+```
+
+Token
+
+Source
+
+Approved Rule
+
+XXXXXX / DEVICE_TOKEN
+
+Snapshot của validated `serial_number`
+
+6–10 ký tự, chỉ `[A-Z0-9]`; không có underscore; không silent truncation.
+
+ZZZZZZ / OPERATOR_TOKEN
+
+Snapshot của `operator_id`
+
+Đúng 6 ký tự, chỉ `[A-Z0-9]`; Build 0.1 dùng `B01OPR`.
+
+operator_name
+
+Build 0.1 Operator
+
+Giữ nguyên; không tham gia filename.
+
+Important / Encrypted suffix
+
+`_IMP`, `_enc`, `_IMP_enc`
+
+Giữ nguyên contract hiện có.
+
+Giá trị `serial_number` thực tế của reference device phải được Device POC xác nhận trước khi qualification. Không được cắt ngắn, thêm underscore hoặc tự tạo token thay thế để làm cho giá trị không hợp lệ trở thành hợp lệ.
+
+Timezone của `YYYYMMDD_HHMMSS` và collision handling khi tạo nhiều artifact trong cùng một giây vẫn là Technical Review items; DEC-07 không tự chốt hai behavior này.
+
 ## 4. Technical Review Items
 
 Item
@@ -297,6 +339,18 @@ Tech Lead; SQLite Design review
 CSON placement của operator fields
 
 Android Lead / BDMA Lead; Data Contract review
+
+Timestamp timezone cho media filename
+
+Tech Lead / Android Lead / BDMA Lead; Data Contract Technical Review
+
+Same-second filename collision handling
+
+Tech Lead / Android Lead; Storage/Recording Technical Review
+
+Reference-device serial_number charset và length
+
+Android Lead / QA Lead; Device POC evidence
 
 MD5 execution time và resource threshold
 
@@ -328,7 +382,7 @@ Item
 
 Result
 
-DEC-01–DEC-06
+DEC-01–DEC-07
 
 PM Approved
 
@@ -378,4 +432,4 @@ Document Status Registry.
 
 ## 8. Practical Conclusion
 
-Sáu decisions đã đủ để chuyển thành Build 0.1 Acceptance Criteria sau khi documentation synchronization hoàn tất. Device qualification, Technical Review items và GitHub repository mapping vẫn là dependency mở.
+Bảy decisions đã đủ để chuyển thành Build 0.1 Acceptance Criteria sau khi documentation synchronization hoàn tất. Device qualification, Technical Review items và GitHub repository mapping vẫn là dependency mở.

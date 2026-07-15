@@ -66,6 +66,10 @@ final class LogglyOutboxSender {
         return dao.earliestRetryAt();
     }
 
+    static boolean hasDeliverableEvents(Context context) {
+        return AppDatabase.get(context).pendingLogs().deliverableCount() > 0;
+    }
+
     static long retryDelayMillis(int attemptCount) {
         long delay = BASE_RETRY_MS;
         for (int attempt = 1; attempt < attemptCount && delay < MAX_RETRY_MS; attempt++) {

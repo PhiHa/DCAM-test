@@ -36,6 +36,9 @@ jobs:
       - name: Grant Gradle permission
         run: chmod +x gradlew
 
+      - name: Run unit tests
+        run: ./gradlew test
+
       - name: Build APK
         run: |
           printf 'loggly.token=%s\n' '${{ secrets.LOGGLY_TOKEN }}' > application-local.properties

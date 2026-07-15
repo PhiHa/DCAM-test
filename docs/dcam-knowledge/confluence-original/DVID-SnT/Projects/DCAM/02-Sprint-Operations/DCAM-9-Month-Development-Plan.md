@@ -1,7 +1,7 @@
 # DCAM 9-Month Development Plan
 
 **Page ID**: 46759955  
-**Version**: 9  
+**Version**: 10  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/46759955
 
@@ -24,11 +24,15 @@ Development Plan
 
 Version
 
-Approved 1.5
+Approved 1.6
 
 Status
 
 Approved
+
+Approval Scope
+
+Execution sequencing và delivery planning; active scope thuộc DCAM Release & Build Applicability Matrix, delivery status thuộc Jira.
 
 Owner
 
@@ -52,7 +56,7 @@ PM/BA, Product Owner, Tech Lead, Developers, QA, Stakeholders
 
 Last Updated
 
-2026-07-10
+2026-07-14
 
 Related Jira
 

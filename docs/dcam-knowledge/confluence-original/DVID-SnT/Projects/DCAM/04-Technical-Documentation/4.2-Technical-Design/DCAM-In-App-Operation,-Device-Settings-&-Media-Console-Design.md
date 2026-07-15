@@ -1,7 +1,7 @@
 # DCAM In-App Operation, Device Settings & Media Console Design
 
 **Page ID**: 49840330  
-**Version**: 12  
+**Version**: 13  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/49840330
 
@@ -24,11 +24,15 @@ Technical Design / In-App Console Design
 
 Version
 
-Draft 1.1
+Draft 1.2
 
 Status
 
 Draft
+
+Approval Scope
+
+Draft in-app console/device-settings/media-console design only; không phải approved implementation hoặc release baseline.
 
 Owner
 
@@ -52,7 +56,7 @@ PM/BA, Tech Lead, Android Developers, QA, Support, Security Reviewer, BDMA Team
 
 Last Updated
 
-2026-07-09
+2026-07-14
 
 Related Jira
 

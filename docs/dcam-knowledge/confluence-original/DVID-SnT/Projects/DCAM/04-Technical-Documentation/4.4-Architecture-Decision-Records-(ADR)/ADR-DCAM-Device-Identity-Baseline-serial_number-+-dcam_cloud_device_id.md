@@ -1,7 +1,7 @@
 # ADR - DCAM Device Identity Baseline: serial_number + dcam_cloud_device_id
 
 **Page ID**: 50692110  
-**Version**: 2  
+**Version**: 3  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/50692110
 
@@ -24,11 +24,15 @@ Architecture Decision Record
 
 Version
 
-Approved 1.0
+Approved Direction 1.1
 
 Status
 
-Accepted
+Approved Direction
+
+Approval Scope
+
+Device Identity direction: serial_number là Hardware Identity / primary recovery key và dcam_cloud_device_id là Cloud Identity; implementation, migration, Security/Factory/QA evidence chưa được Production-approved.
 
 Decision Date
 
@@ -54,27 +58,60 @@ Target Audience
 
 PM/BA, Tech Lead, Android Developers, Backend/Web Portal Developers, QA, Factory, Support, Security Reviewer, BDMA Team
 
+Last Updated
+
+2026-07-13
+
+Related Jira
+
+None
+
+Dependencies / Blockers
+
+Security Review; downstream implementation alignment; Factory/QA evidence; authoritative GitHub/Jira linkage.
+
 Related Documents
 
 DCAM Project Home, DCAM Architecture Home, DCAM Documentation Governance, 04 - Device Configuration Requirements, DCAM Android Operation Design, DCAM SQLite Database Design, DCAM Security & Encryption Design, DCAM Web Portal & Device API Contract, DCAM Device Provisioning Web Portal Design, DCAM Factory Provisioning & Device Production SOP, DCAM QA Test Strategy & Test Matrix
 
 ## 1. Status
 
-`Proposed`.
+`Approved Direction`.
 
-ADR này trở thành `Accepted` sau khi các tài liệu liên quan được cập nhật và review để thống nhất một identity baseline duy nhất cho current production baseline.
+Identity direction trong ADR này đã được phê duyệt theo approved status taxonomy:
 
-Các tài liệu cần kiểm tra sau ADR này:
+Item
 
-DCAM Security & Encryption Design
-DCAM QA Test Strategy & Test Matrix
-DCAM Web Portal & Device API Contract
-DCAM Device Provisioning Web Portal Design
-DCAM Factory Provisioning & Device Production SOP
-DCAM Android Operation Design
-DCAM SQLite Database Design
-DCAM Project Home
-DCAM Architecture Home
+Approval Result
+
+serial_number
+
+Hardware Identity / primary recovery key.
+
+dcam_cloud_device_id
+
+Cloud Identity / primary cloud device ID.
+
+Identity mapping semantics
+
+Approved Direction theo nội dung ADR.
+
+Exact implementation / migration
+
+Chưa được Production-approved; phải theo downstream Technical Review và change control.
+
+Security / Factory / QA evidence
+
+Chưa hoàn tất; giữ là dependency mở.
+
+Production Approval
+
+Not Granted.
+
+Status này thay thế cả metadata `Accepted` và body `Proposed` trước đây. `Approved Direction` không được diễn giải là implementation complete, Device POC pass hoặc `Production Approved`.
+
+Các tài liệu downstream cần tham chiếu ADR này và chỉ ghi local implementation impact. Nếu downstream baseline mâu thuẫn, phải mở controlled change; không copy hoặc tự tạo identity baseline mới.
+
 ## 2. Context
 
 DCAM là Android BodyCamera Application chạy trong dedicated-device / kiosk deployment. Thiết bị cần một identity model ổn định để dùng xuyên suốt các tình huống production và support.

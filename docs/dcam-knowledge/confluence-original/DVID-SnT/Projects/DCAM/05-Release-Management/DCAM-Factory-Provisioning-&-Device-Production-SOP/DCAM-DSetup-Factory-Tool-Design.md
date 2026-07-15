@@ -1,7 +1,7 @@
 # DCAM DSetup Factory Tool Design
 
 **Page ID**: 50626624  
-**Version**: 4  
+**Version**: 5  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/50626624
 
@@ -24,11 +24,15 @@ Factory Tool Design
 
 Version
 
-Approved 1.2
+Approved 1.3
 
 Status
 
 Approved
+
+Approval Scope
+
+Approved DSetup factory-tool behavior; không phải Device POC pass, device qualification hoặc Production shipment approval.
 
 Owner
 
@@ -52,7 +56,11 @@ Android Developers, Factory Tool Developers, Factory Operator, Factory Admin, QA
 
 Last Updated
 
-2026-07-10
+2026-07-14
+
+Related Jira
+
+None
 
 Related Documents
 

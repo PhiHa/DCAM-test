@@ -1,7 +1,7 @@
 # DCAM Requirements Home
 
 **Page ID**: 47710513  
-**Version**: 6  
+**Version**: 7  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47710513
 
@@ -24,11 +24,15 @@ Requirements Home / Documentation Hub
 
 Version
 
-Approved 1.3
+Approved 1.4
 
 Status
 
 Approved
+
+Approval Scope
+
+Requirements navigation, physical structure và reading order only; requirement behavior thuộc từng Requirements page.
 
 Owner
 
@@ -52,7 +56,7 @@ PM/BA, Tech Lead, Android Developers, BDMA Developers, QA
 
 Last Updated
 
-2026-07-10
+2026-07-14
 
 Related Jira
 

@@ -1,7 +1,7 @@
 # 04 - Application & Module Architecture
 
 **Page ID**: 47218698  
-**Version**: 15  
+**Version**: 16  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47218698
 
@@ -24,11 +24,15 @@ Software Architecture Document / Application Architecture
 
 Version
 
-Approved 1.10
+Approved 1.11
 
 Status
 
 Approved
+
+Approval Scope
+
+Module boundaries với approved Build 0.1 reference/camera/checksum constraints
 
 Owner
 
@@ -52,7 +56,7 @@ PM/BA, Tech Lead, Android Developers, AI/ML Engineer, QA
 
 Last Updated
 
-2026-07-09
+2026-07-13
 
 Related Jira
 
@@ -60,7 +64,7 @@ None
 
 Related Documents
 
-DCAM Architecture Home, DCAM Architecture Delivery Profile, 05 - User & Device Operation Requirements, 03 - Android Platform & Compatibility Strategy, DCAM Android Device Owner & Kiosk Policy Design, DCAM In-App Operation, Device Settings & Media Console Design, DCAM Self Update Design, 05 - Data, Storage & BDMA Architecture, 06 - Cloud Services, Update & Configuration Architecture, DCAM Android Operation Design, DCAM Recording & Capture Design, DCAM Storage Design, DCAM SQLite Database Design, DCAM Security & Encryption Design, DCAM State Machine Design, DCAM Device Capability & Feature Eligibility Design, DCAM Sensor & Location Monitoring Design, DCAM Realtime AI Detection Design, DCAM Android Development Standard
+DCAM Architecture Home, DCAM Architecture Delivery Profile, 05 - User & Device Operation Requirements, 03 - Android Platform & Compatibility Strategy, DCAM Android Device Owner & Kiosk Policy Design, DCAM In-App Operation, Device Settings & Media Console Design, DCAM Self Update Design, 05 - Data, Storage & BDMA Architecture, 06 - Cloud Services, Update & Configuration Architecture, DCAM Android Operation Design, DCAM Recording & Capture Design, DCAM Storage Design, DCAM SQLite Database Design, DCAM Security & Encryption Design, DCAM State Machine Design, DCAM Device Capability & Feature Eligibility Design, DCAM Sensor & Location Monitoring Design, DCAM Realtime AI Detection Design, DCAM Android Development Standard, Decision Brief – DCAM MVP Internal Build 0.1 – Working Recording Slice
 
 ## 1. Purpose
 
@@ -1148,3 +1152,19 @@ Use small MVP module/component/state set.
 Deliver Working Recording Slice first.
 Expand platform architecture only after recording/storage/BDMA slice is demoable.
 TBD statuses trên trang này hiện đại diện cho implementation choices thực tế, Device POC outcomes hoặc future features, không phải các architecture decisions đã có source of truth.
+
+## 17. Build 0.1 Module Constraints
+
+CameraService phải bao Android platform Camera API; không tích hợp vendor SDK cho Build 0.1.
+
+State coordination phải enforce Internal storage pre-check trước recording.
+
+File/storage layer finalize MP4 trước khi enqueue async MD5.
+
+BDMA readiness publisher chỉ nhận artifact sau valid MD5.
+
+SQLite/CSON/log adapters phải sử dụng static Build 0.1 operator tại nơi schema yêu cầu.
+
+Device Status integration chỉ gồm battery level, Internal free storage và GPS availability state.
+
+Exact Camera API generation, physical path và schema placement không được suy diễn tại module level.

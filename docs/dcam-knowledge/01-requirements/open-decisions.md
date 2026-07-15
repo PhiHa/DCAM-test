@@ -1,10 +1,14 @@
 # Open decisions, risks, and missing documents
 
+## Current source position
+
+July 14 governance closes several old documentation gaps: Build 0.1 DEC-01-DEC-07 decisions exist, traceability exists as Approved Provisional Baseline, and two ADR pages cover dedicated-device/device-owner/lock-task direction and device identity. Remaining work is evidence and implementation validation, not recreating those documents.
+
 ## Highest-priority missing documents
 
 | Priority | Document | Why it blocks or reduces rework |
 |---|---|---|
-| P1 | Expand initial Functional Requirements | Add workflows, exceptions, and acceptance criteria, especially for capture and BDMA integration |
+| P1 | Expand initial Functional Requirements | Add workflows, exceptions, and acceptance criteria where traceability still lacks Jira/QA/evidence links |
 | P1 | Jira backlog from Requirements + MVP + Data Contract | Turns approved direction into traceable epics/stories/tasks and tests |
 | P2 | Non-functional Requirements completion/review | Sets measurable stability, performance, battery, storage, GPS, offline, and security constraints |
 | P2 | Storage Design correction/completion | Defines root/folders, filenames, temporary/final handling, DB/files, and ADB visibility |
@@ -12,9 +16,9 @@
 | P2 | Security & Encryption Design correction/completion | Defines Phase 2 basic and Phase 3 advanced encryption and BDMA compatibility |
 | P3 | Streaming, PTT, GPS-route designs | Required before Phase 3 implementation |
 | P3 | Release Plan | Defines build/version/release/pilot process |
-| P3 | ADRs | Records stable choices and their trade-offs |
+| P3 | ADRs | Add evidence-driven ADRs for remaining unresolved implementation choices; two ADR pages already exist |
 
-The DCAM-BDMA Data Contract is no longer missing: version 1.6 is Approved. The following are the remaining design/requirement gaps around that baseline and the July 8 draft Technical Design set.
+The DCAM-BDMA Data Contract is current page version 13. The following are remaining design/requirement gaps around that baseline and the refreshed Technical Design set.
 
 ## Data and BDMA decisions
 
@@ -25,7 +29,7 @@ The DCAM-BDMA Data Contract is no longer missing: version 1.6 is Approved. The f
 - Stable local implementation of `dcam_cloud_device_id`, `android_id_hash`, app/contract metadata, and user/operator mapping.
 - Source-state vocabulary; `recording`, `pending`, `completed`, `corrupted`, and `recovered` are only proposed directions.
 - Schema evolution and backward-compatibility rules.
-- MP4 MD5 enablement/default, generation timing, file content format, and performance; its import and cleanup outcomes are already contracted.
+- MP4 MD5 performance evidence and exact sidecar/content implementation remain open; Build 0.1 applicability is decided: finalize first, checksum MP4, then expose affected item as `BDMA_READY`.
 - Duplicate import, partial import, retry/resume, and interruption rules beyond the contracted result categories.
 - Where import/sync state lives in `dcam.db` and how DCAM/BDMA coordinate concurrent access.
 - Retention policy beyond the contracted post-success cleanup permissions.
@@ -35,7 +39,7 @@ The DCAM-BDMA Data Contract is no longer missing: version 1.6 is Approved. The f
 
 - Final supported device matrix and real pilot hardware.
 - Final `minSdk`, `targetSdk`, and `compileSdk` policy in documentation.
-- CameraX versus Camera2/vendor SDK after real-device POC.
+- Reference-device camera qualification evidence; Build 0.1 Decision Brief selects Android platform Camera API and excludes vendor SDK, without guessing unverified Camera1/Camera2 capability.
 - Preview and background-recording requirements.
 - Behavior when microphone is unavailable.
 - Final package/module naming.

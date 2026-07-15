@@ -9,8 +9,7 @@ import androidx.room.PrimaryKey;
 @Entity(
         tableName = "user_profile",
         indices = {
-                @Index(value = "file_user_id", unique = true),
-                @Index(value = "login_name", unique = true)
+                @Index(value = "file_user_id", unique = true)
         })
 public final class UserProfileEntity {
     @PrimaryKey
@@ -20,8 +19,6 @@ public final class UserProfileEntity {
     @NonNull
     @ColumnInfo(name = "file_user_id")
     public String fileUserId;
-    @ColumnInfo(name = "login_name")
-    public String loginName;
     @NonNull
     @ColumnInfo(name = "display_name")
     public String displayName;
@@ -38,7 +35,6 @@ public final class UserProfileEntity {
     public UserProfileEntity(
             @NonNull String userId,
             @NonNull String fileUserId,
-            String loginName,
             @NonNull String displayName,
             @NonNull String status,
             @NonNull String source,
@@ -47,7 +43,6 @@ public final class UserProfileEntity {
             long revision) {
         this.userId = userId;
         this.fileUserId = fileUserId;
-        this.loginName = loginName;
         this.displayName = displayName;
         this.status = status;
         this.source = source;

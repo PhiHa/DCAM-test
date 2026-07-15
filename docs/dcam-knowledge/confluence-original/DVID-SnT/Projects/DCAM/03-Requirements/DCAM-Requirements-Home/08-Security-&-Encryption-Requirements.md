@@ -1,7 +1,7 @@
 # 08 - Security & Encryption Requirements
 
 **Page ID**: 47710594  
-**Version**: 6  
+**Version**: 7  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47710594
 
@@ -24,11 +24,15 @@ Functional Requirements
 
 Version
 
-Approved 1.4
+Approved 1.5
 
 Status
 
 Approved
+
+Approval Scope
+
+Security requirement direction; exact algorithm, key management và policy values thuộc DCAM Security & Encryption Design và Security Review.
 
 Owner
 
@@ -52,7 +56,11 @@ PM/BA, Tech Lead, Android Developers, QA, Security Reviewer, BDMA Team
 
 Last Updated
 
-2026-07-08
+2026-07-14
+
+Related Jira
+
+None
 
 Related Documents
 

@@ -1,5 +1,7 @@
 # Feature map by product phase
 
+Source refresh: **2026-07-15**. For Build 0.1, Release & Build Applicability Matrix overrides phase-level feature lists. Important Media is Conditional - Not Activated; only Working Recording Slice features can block acceptance.
+
 ## Phase 1 — MVP Foundation
 
 ### Capture
@@ -79,4 +81,16 @@ These are beta capabilities, not a promise of full production hardening.
 
 ## Important prototype-vs-scope note
 
-The current repository contains standalone AAC recording, SOS action/state, legacy CSON configuration, Loggly upload, a Room-backed log outbox, and contract-shaped media folders/naming. SOS is an application action; its persisted artifact is important media in `Media/IMP` with `_IMP`. Contract storage modes, device-information-only CSON migration, app/contract metadata, MP4 MD5 generation, `dcam.db` operational scope, and BDMA integration remain implementation gaps.
+The current repository contains standalone AAC recording, SOS action/state, legacy CSON configuration, Loggly upload, a Room-backed log outbox, and contract-shaped media folders/naming. SOS remains an application action in current code, but Important Media creation/activation is conditional and not active for Build 0.1. Contract storage modes, device-information-only CSON migration, app/contract metadata, MP4 MD5 generation, `dcam.db` operational scope, and BDMA integration remain implementation gaps.
+
+## Cross-feature platform capabilities
+
+- **Runtime operation:** boot/process recovery, foreground visibility, command arbitration, safe/degraded mode, and state reconciliation.
+- **Dedicated-device policy:** Device Owner/DPC, Lock Task, Home/Launcher role, user restrictions, controlled maintenance, and policy restore.
+- **In-app console:** operation, device status, settings, media view, diagnostics, maintenance actions, and permission/policy-aware controls without external Settings/file manager dependency.
+- **Capability eligibility:** hardware, permission, policy, safety, and performance gating with explicit enabled/degraded/unsupported states.
+- **Provisioning:** QR lookup, serial/owner/manufacture-date validation, cloud device identity, audit, and conflict handling.
+- **Self Update:** signed APK metadata, safe download/install guard, recording-aware scheduling, rollback/recovery direction, and no Managed Google Play dependency.
+- **Diagnostics:** local logs, crash/stability evidence, correlation, metrics, recovery data, optional provider upload, and secret-safe redaction.
+- **Factory/production:** identity validation, DSetup workflow, kiosk/update/storage/ADB checks, READY_TO_SHIP or QUARANTINED decision, and evidence retention.
+- **Optional advanced modules:** sensor/location and realtime AI remain capability-gated producers of observations/events; streaming/PTT stay future design work.

@@ -1,9 +1,24 @@
-# DCAM-BDMA Data Contract
+# Data contract
 
-Source status: **Approved 1.6**, Confluence page version 7, updated 2026-07-08. This page is a local implementation-oriented digest; the [Confluence Data Contract](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47743153) remains authoritative.
+Source status: current Confluence page version 13, last registry review 2026-07-14. This page is a local implementation-oriented digest; the [Confluence Data Contract](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47743153) remains authoritative.
 
 ## System boundary
 
+Build 0.1 overlay: Decision Brief and Release & Build Applicability Matrix control active-build exceptions. MP4 MD5 is required before affected item becomes `BDMA_READY`; checksum failure preserves MP4 but blocks BDMA import for that item.
+
+Build 0.1 also overrides generic target-state identity and storage behavior: use fixed technical operator `B01OPR` / `Build 0.1 Operator`, internal storage only, no external fallback, and no login UI. These exceptions do not change later build profiles.
+
+## Build 0.1 filename-token contradiction
+
+Current source requirements cannot all be satisfied for the reference device:
+
+- `DEVICE_TOKEN` must be an exact snapshot of validated `serial_number`, use `[A-Z0-9]`, and be `6–10` characters.
+- Truncation, underscore padding, aliasing, hashing, and invented replacement tokens are prohibited.
+- Device POC observed `serial_number` `KF5OF2126040802193`: `17` characters, valid charset, invalid required length.
+- Keeping the exact value violates length. Any shortening or replacement violates snapshot and no-replacement rules.
+- `OPERATOR_TOKEN` `B01OPR` is valid at exactly `6` characters.
+
+Treat filename identity qualification as blocked by a requirement contradiction until authoritative documents change. Device POC must confirm the physical `serial_number`; local code or documentation must not manufacture a compliant-looking substitute.
 DCAM is the Android-side data producer. BDMA is the desktop-side consumer, importer, sync/write-back actor, and cleanup actor. Firebase/WebServer owns cloud device identity, Web Portal provisioning, remote-config metadata, and audit metadata.
 
 BDMA discovers data over ADB and must scan both the external and internal DCAM media roots, external first. Physical Android paths remain device-specific and require validation on real BodyCamera hardware.

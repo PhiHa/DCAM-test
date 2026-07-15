@@ -113,6 +113,18 @@ adb pull /storage/XXXX-XXXX/DCIM/DCAM ./test-pull
 
 **Deliverable:** Document physical paths, atomicity behavior, choose finalization strategy.
 
+### 3.4 Audio physical power-loss result - 2026-07-15
+
+- [x] Start audio with External storage selected.
+- [x] Confirm active AAC grows under removable `Temp`; internal `Temp` stays empty.
+- [x] Remove battery during active recording.
+- [x] Reconnect and wait for removable volume `6162-6433` to reach mounted state.
+- [x] Confirm recovery publishes AAC to removable `Media/Audio`.
+- [x] Confirm final result: `recovered=1, preserved=0, duplicates=0`.
+- [x] Confirm removable `Temp` is empty.
+
+Evidence: `docs/local-dev/evidence/build-0.1-audio-device-tests-2026-07-14.md`.
+
 ---
 
 ## Test 4: Screen/Power Policy
@@ -138,11 +150,22 @@ adb pull /storage/XXXX-XXXX/DCIM/DCAM ./test-pull
 - Device must be factory reset or un-provisioned
 
 ```bash
-# Provision as Device Owner:
-adb shell dpm set-device-owner com.dvid.dcam/.DcamDeviceAdminReceiver
+# Before uninstall/reprovisioning, select another Home app:
+adb shell am start -a android.settings.HOME_SETTINGS
+
+# Inspect current Device/Profile Owner state:
+adb shell dpm list-owners
+
+# Provision DCAM as Device Owner, then launch it:
+adb shell dpm set-device-owner com.dvid.dcam/.platform.device.DcamDeviceAdminReceiver
+adb shell monkey -p com.dvid.dcam 1
 
 # Enable Lock Task:
 adb shell appops set com.dvid.dcam SYSTEM_ALERT_WINDOW allow
+
+# Remove DCAM Device Owner during POC cleanup, then stop the app:
+adb shell dpm remove-active-admin --user 0 com.dvid.dcam/.platform.device.DcamDeviceAdminReceiver
+adb shell am force-stop com.dvid.dcam
 ```
 
 | Test | Steps | Result |
@@ -153,6 +176,22 @@ adb shell appops set com.dvid.dcam SYSTEM_ALERT_WINDOW allow
 
 **Deliverable:** Document Device Owner support, decide kiosk strategy for MVP.
 
+Run `adb shell dpm list-owners` before provisioning and after cleanup. Do not uninstall DCAM while it remains active Device Owner. Select another Home app before uninstall/reprovisioning when DCAM is configured as launcher.
+
+## Test 6: Filename identity qualification
+
+**Goal:** Confirm physical `serial_number` and determine whether approved filename-token rules are satisfiable without altering device identity.
+
+Reference-device observation:
+
+- Device POC must independently confirm actual `serial_number` from device evidence before qualification.
+- Current observed value: `KF5OF2126040802193` (`17` characters, valid `[A-Z0-9]` charset).
+- `OPERATOR_TOKEN`: `B01OPR` (`6` characters, valid `[A-Z0-9]`).
+- Approved `DEVICE_TOKEN` rule simultaneously requires a validated `serial_number` snapshot, length `6–10`, `[A-Z0-9]` only, no underscore, no silent truncation, and no invented alias/hash/replacement.
+- Current serial cannot satisfy both snapshot and length rules. Keeping all `17` characters violates length; shortening or replacing it violates identity guardrails.
+- Treat this as a requirement contradiction, not an implementation defect. Do not qualify filename behavior until source authority resolves it.
+
+**Deliverable:** Attach serial evidence and record filename qualification as `BLOCKED - requirement contradiction` until approved rules change.
 ---
 
 ## POC Report Template

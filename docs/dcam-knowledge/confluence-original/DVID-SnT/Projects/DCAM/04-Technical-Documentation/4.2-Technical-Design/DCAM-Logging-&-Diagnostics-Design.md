@@ -1,7 +1,7 @@
 # DCAM Logging & Diagnostics Design
 
 **Page ID**: 51019937  
-**Version**: 7  
+**Version**: 9  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/51019937
 
@@ -24,7 +24,7 @@ Technical Design / Logging & Diagnostics
 
 Version
 
-Approved 0.4
+Approved 0.5
 
 Status
 
@@ -1122,7 +1122,7 @@ Readiness transition hoặc blocked reason
 
 Operator
 
-BUILD01_OPERATOR / Build 0.1 Operator tại nơi schema yêu cầu; technical traceability only
+B01OPR / Build 0.1 Operator tại nơi schema yêu cầu; technical traceability only
 
 Device Status
 

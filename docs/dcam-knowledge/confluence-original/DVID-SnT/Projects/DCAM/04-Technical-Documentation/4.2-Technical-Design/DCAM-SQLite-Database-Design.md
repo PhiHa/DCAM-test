@@ -1,7 +1,7 @@
 # DCAM SQLite Database Design
 
 **Page ID**: 48529463  
-**Version**: 17  
+**Version**: 19  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/48529463
 
@@ -24,7 +24,7 @@ Technical Design
 
 Version
 
-Approved Provisional Baseline 1.6
+Approved Provisional Baseline 1.7
 
 Status
 
@@ -1593,7 +1593,7 @@ State đủ để reconcile MP4, MD5 và interrupted finalization sau restart
 
 Operator Snapshot
 
-operator_id = BUILD01_OPERATOR; operator_name = Build 0.1 Operator
+operator_id = B01OPR; operator_name = Build 0.1 Operator
 
 Ownership
 

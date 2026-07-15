@@ -1,7 +1,7 @@
 # DCAM MVP Scope
 
 **Page ID**: 42532866  
-**Version**: 11  
+**Version**: 12  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/42532866
 
@@ -24,7 +24,7 @@ MVP Scope
 
 Version
 
-Approved 2.6
+Approved 2.7
 
 Status
 
@@ -32,7 +32,7 @@ Approved
 
 Approval Scope
 
-DEC-01–DEC-06 và Working Recording Slice cho DCAM MVP Internal Build 0.1
+DEC-01–DEC-07 và Working Recording Slice cho DCAM MVP Internal Build 0.1
 
 Owner
 
@@ -420,7 +420,7 @@ Working Recording Slice is the current gate.
 Build applicability is owned by DCAM Release & Build Applicability Matrix.
 ## 10. Build 0.1 Controlled Baseline
 
-Tài liệu [Decision Brief – DCAM MVP Internal Build 0.1 – Working Recording Slice](/wiki/spaces/DVID/pages/51642452/Decision+Brief+DCAM+MVP+Internal+Build+0.1+Working+Recording+Slice) sở hữu DEC-01–DEC-06. Baseline dưới đây chỉ áp dụng cho Build 0.1 và không phải Production approval.
+Tài liệu [Decision Brief – DCAM MVP Internal Build 0.1 – Working Recording Slice](/wiki/spaces/DVID/pages/51642452/Decision+Brief+DCAM+MVP+Internal+Build+0.1+Working+Recording+Slice) sở hữu DEC-01–DEC-07. Baseline dưới đây chỉ áp dụng cho Build 0.1 và không phải Production approval.
 
 Decision
 
@@ -444,7 +444,11 @@ Mọi MP4 phải có MD5; chỉ BDMA_READY sau MD5 success; missing/mismatch/fai
 
 Operator Policy
 
-Không login UI; operator_id = BUILD01_OPERATOR; operator_name = Build 0.1 Operator; không phải authenticated identity.
+Không login UI; operator_id = B01OPR; operator_name = Build 0.1 Operator; không phải authenticated identity.
+
+Media Filename Tokens
+
+DEVICE_TOKEN = validated serial_number snapshot, 6–10 ký tự; OPERATOR_TOKEN = B01OPR, đúng 6 ký tự; chỉ [A-Z0-9], không underscore hoặc silent truncation.
 
 Basic Device Status
 
@@ -483,3 +487,7 @@ Battery level, Internal free storage và GPS state được báo đúng; GPS Una
 WRS-AC-006
 
 Kết quả chỉ áp dụng cho NCC-036V / Android 12 / API 31 / 877AOOAKN1_RK2_V009; thay configuration cần impact review và regression.
+
+WRS-AC-007
+
+Media filename tuân thủ DEC-07 và DCAM-BDMA Data Contract; Device POC/QA evidence xác nhận token length/charset, không truncation và BDMA parsing/import boundary.

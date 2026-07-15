@@ -101,7 +101,6 @@ public class HardwareButtonHandlerTest {
         assertTrue(audioRecording[0]);
         assertTrue(router.onKeyUp(KeyEvent.KEYCODE_F3));
         assertTrue(router.onKeyDown(KeyEvent.KEYCODE_F3, 0, 1L));
-        assertFalse(router.onKeyDown(KeyEvent.KEYCODE_POWER, 0, 0L));
         assertFalse(router.onKeyDown(KeyEvent.KEYCODE_F4, 0, 0L));
         assertEquals(1, videos.starts);
         assertEquals(0, videos.stops);

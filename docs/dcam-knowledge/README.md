@@ -2,7 +2,7 @@
 
 This folder is a local, task-oriented digest of the DCAM Confluence space. It is intended to give a developer or AI assistant enough context to reason about product intent, scope, architecture, and delivery without rereading every source page.
 
-Snapshot date: **2026-07-09** (Asia/Saigon). The July 8 refresh updates the Data Contract, Android Device Operation Requirements, Cloud Services/Update/Configuration Architecture, System Settings Requirements, Architecture pages, Android Development Standard, and the 4.2 Technical Design folder. The July 9 targeted refresh adds the approved Architecture Delivery Profile and its Phase 1 Gradle/module guardrails. Confluence remains the source of truth; this folder is a navigational summary.
+Snapshot date: **2026-07-15** (Asia/Saigon). Full DVID refresh contains 131 downloadable pages after excluding three credential-bearing pages. DCAM sources now include July 14 governance/status synchronization, Build 0.1 applicability, DEC-01-DEC-07 decisions, provisional traceability, two approved ADR pages, and expanded technical design. Confluence remains source of truth.
 
 Repository-local implementation notes, evidence reports, and plans live outside this mirror in [docs/local-dev](../local-dev/README.md).
 

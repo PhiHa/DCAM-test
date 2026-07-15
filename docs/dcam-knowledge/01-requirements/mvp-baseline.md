@@ -2,9 +2,19 @@
 
 ## Status of requirements
 
-As of the 2026-07-08 refresh, `03 - Requirements` contains an **Approved 1.6 DCAM-BDMA Data Contract**, a Requirements Home, functional-requirement pages, an updated **Approved 1.8 Android Device Operation Requirements** page, **Approved 1.13 System Settings Requirements**, and updated Non-functional Requirements content. The 4.2 Technical Design folder also contains the July 8 draft/target design set. Those Technical Design pages should be read as expected design intent until implementation and review correct/complete them.
+As of the 2026-07-15 refresh, `03 - Requirements` contains Data Contract page version 13, Android Device Operation Requirements page version 10, System Settings Requirements page version 19, Non-functional Requirements page version 14, functional requirements, and an Approved Provisional Baseline traceability matrix. Build 0.1 applicability is controlled by Release & Build Applicability Matrix and DEC-01-DEC-07 Decision Brief. Technical Design pages remain expected design intent until implementation and review correct/complete them.
 
 The requirements below remain a consolidated orientation baseline from Product Vision, Charter, MVP Scope, Roadmap, Development Plan, Architecture, and the Data Contract. They do not replace detailed acceptance criteria, an approved Jira backlog, or the source Confluence pages.
+
+## Build 0.1 requirement profile
+
+- Required path: record/capture, internal staging/finalization, minimal SQLite/CSON/log outputs, MP4 MD5 readiness, and BDMA sample import through ADB.
+- Reference configuration: NCC-036V, Android 12/API 31, firmware `877AOOAKN1_RK2_V009`; physical-device evidence must identify actual device.
+- Identity exception: fixed `B01OPR` / `Build 0.1 Operator`, no login UI, persisted consistently where schema requires it.
+- Device status: battery level, internal free space, and GPS availability state only; GPS coordinates/routes do not belong to acceptance.
+- Important Media: parser/contract recognition stays, but Build 0.1 does not activate creation or marking workflow.
+- Deferred work cannot reject Build 0.1 unless applicability changes: cloud provisioning, full auth, full kiosk, Remote Config, Self Update, AI, streaming, PTT, production encryption/key management, and fleet/portal expansion.
+- Traceability matrix proves backlog readiness only. Release acceptance still requires Jira linkage, authoritative repository mapping, PR/build/test evidence, Technical Review, and Device POC evidence.
 
 ## Functional baseline
 

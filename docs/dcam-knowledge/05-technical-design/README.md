@@ -1,10 +1,37 @@
 # Technical design draft digest
 
-Source status: Confluence folder [4.2 - Technical Design](https://ducviet.atlassian.net/wiki/spaces/DVID/folder/47120392), refreshed on **2026-07-08**.
+Source status: Confluence folder [4.2 - Technical Design](https://ducviet.atlassian.net/wiki/spaces/DVID/folder/47120392), refreshed on **2026-07-15**; current page versions are recorded in `docs/dcam-knowledge/confluence-original`.
 
 Interpretation rule: these pages describe expected target behavior and design direction. Treat them as draft/boss-intent material, not as a concrete description of the current repository and not as final acceptance evidence. After implementation, the official Confluence pages should be corrected and completed against actual behavior.
 
+Build 0.1 overlay: generic later-phase design is not a release blocker. Use Release & Build Applicability Matrix and DEC-01-DEC-07 Decision Brief: Working Recording Slice, internal storage, MP4 MD5 before `BDMA_READY`, fixed placeholder operator, and one reference-device evidence set.
+
+Generic Internal/External/Auto storage, authenticated operator flow, and Important Media workflow remain later-profile behavior unless explicitly activated. Build 0.1 uses internal storage, fixed placeholder operator, no login UI, and Important Media Conditional - Not Activated.
+
 ## Source pages
+
+The original table below is a July 8 digest snapshot. For current versions, use the downloaded source files. Latest key versions: Android Operation `v23`, Device Owner/Kiosk `v10`, In-App Console `v13`, Recording `v14`, Storage `v11`, SQLite `v19`, State Machine `v14`, BDMA Integration `v11`, Device Capability `v8`, Provisioning `v12`, Web API `v10`, Self Update `v12`, Security `v17`, Sensors `v7`, AI `v8`, Concurrency `v5`, Logging `v9`, and Performance `v7`.
+
+## Technical Documentation coverage map
+
+This digest set preserves content from every current page under `04 - Technical Documentation`:
+
+| Source group | Pages condensed into maintained summaries |
+|---|---|
+| Architecture navigation | Architecture Home; Architecture Overview; Architecture Principles |
+| Platform and modules | Android Platform & Compatibility Strategy; Application & Module Architecture; Architecture Delivery Profile |
+| Data boundary | Data, Storage & BDMA Architecture; DCAM-BDMA Integration Boundary |
+| Cloud and quality | Cloud Services, Update & Configuration Architecture; Logging, Diagnostics, Performance & Security |
+| Runtime operation | Android Operation; State Machine; Concurrency & Threading Model |
+| Dedicated device | Android Device Owner & Kiosk Policy; In-App Operation, Device Settings & Media Console |
+| Capture and persistence | Recording & Capture; Storage; SQLite Database; BDMA Integration Technical Design |
+| Capability and diagnostics | Device Capability & Feature Eligibility; Logging & Diagnostics; Performance Budget & Resource Constraints |
+| Provisioning | Device Provisioning Web Portal; Web Portal App Design; Web Portal Implementation Design; Web Portal & Device API Contract |
+| Platform services | Self Update; Security & Encryption; Sensor & Location Monitoring; Realtime AI Detection |
+| Development | Android Development Standard; Android Training & Architecture Onboarding; Device POC & Hardware Validation Report |
+| Decisions | ADR for Dedicated Device / Device Owner / Lock Task; ADR for `serial_number` + `dcam_cloud_device_id` |
+
+Architecture pages are condensed mainly in `02-architecture`; Android rules and training in `03-development`; feature applicability in `04-features`; detailed runtime/design behavior remains in this file. These summaries are intended to remain usable if downloaded originals are removed.
 
 | Page | Confluence status/version | Last API update (UTC) | Local interpretation |
 |---|---:|---|---|
@@ -47,7 +74,7 @@ Interpretation rule: these pages describe expected target behavior and design di
 - Recording prechecks include operator session or emergency override, feature eligibility, camera/audio permissions, storage writable state, free-space threshold, DB availability, battery/thermal policy, update/install safety, and active finalization.
 - Recording states include `IDLE`, `PRECHECKING`, `PREPARING_CAMERA`, `PREPARING_STORAGE`, `STARTING`, `RECORDING`, `STOPPING`, `FINALIZING`, `BDMA_READY`, `COMPLETED`, and failure/recovery states.
 - Storage design expects temp/staging files to remain invisible to BDMA. Final media appears in approved Media folders only after finalization and DB readiness conditions pass.
-- Internal/External/Auto root selection should be resolved before recording. Auto prefers External and falls back to Internal before recording when External is unavailable, full, missing, not writable, or invalid.
+- Generic Internal/External/Auto root selection resolves before recording. Auto prefers External and falls back to Internal when External is unavailable, full, missing, not writable, or invalid. Build 0.1 overrides this generic behavior with its Internal-only authoritative storage profile.
 - Free-space threshold names exist as design placeholders: `WARNING_FREE_SPACE`, `MIN_START_FREE_SPACE`, `CRITICAL_ACTIVE_FREE_SPACE`, `RESERVED_FINALIZATION_SPACE`, and `MIN_RECOVERY_SPACE`. Exact values remain TBD.
 - `BDMA_READY` means safe for BDMA scan/import, not already imported.
 
@@ -79,3 +106,66 @@ Interpretation rule: these pages describe expected target behavior and design di
 ## Implementation caution
 
 Use these pages to understand intended direction, design vocabulary, and future acceptance discussions. Do not mark a feature complete just because it appears here. Current implementation status remains under [local current repository notes](../../local-dev/current-repo/current-state.md), and source-backed gaps remain under [local evidence](../../local-dev/evidence/README.md).
+
+## Concurrency and threading model
+
+- One serialized recording authority owns camera/recording state transitions. UI, hardware keys, services, recovery, and remote commands submit commands to that authority instead of mutating state independently.
+- Main thread is limited to UI work and short dispatch. Camera callbacks stay short; storage, checksum, DB, diagnostics, and provider work run on bounded dedicated executors.
+- Camera commands must not share an uncontrolled general thread pool. Start/stop/finalize ordering, duplicate-command rejection, timeout, cancellation, and recovery must remain deterministic.
+- MP4 finalization and MD5 are separate steps. MD5 may run asynchronously, but affected media cannot become `BDMA_READY` until checksum success. New capture must not wait for unrelated checksum/provider work.
+- DB access must use transactions, bounded retry for temporary lock/busy states, and no destructive reset on corruption. BDMA reads must not observe partial DB/filesystem publication.
+- MainThread stalls, queue delay, camera callback duration, DB retry, checksum duration, startup, finalization, memory, storage throughput, and long-recording stability are measured diagnostics, not log-only guesses.
+
+## Logging, diagnostics, and performance
+
+- Local operational logging is mandatory and remains functional offline. Cloud providers such as Loggly or Crashlytics are adapters; provider failure cannot block capture, finalization, local logs, or `logs.txt` output.
+- Logs use stable categories, severity, reason codes, correlation/session IDs, timestamps, component, device/app/contract version, and safe state transitions. Raw secrets, tokens, credentials, maintenance passwords, raw Android identifiers, and sensitive media content are forbidden.
+- Diagnostics cover startup, policy/capability evaluation, permissions, camera/audio, storage capacity and I/O, DB health, recording lifecycle, finalization/checksum, BDMA exposure/import state, update, provisioning, recovery, and controlled maintenance.
+- Crash monitoring must preserve local evidence and avoid crash loops. Recovery classifies incomplete work, reconciles staged/final files with DB state, and enters safe/degraded mode instead of silently deleting evidence.
+- Performance budgets are release evidence only after measurement on target hardware. Missing device measurements remain Pending Device POC, not passed by desktop/unit tests.
+
+## Provisioning, Web Portal, and device API
+
+- Business provisioning is separate from Android Enterprise enrollment. Current direction uses Android-generated local QR data, Web Portal lookup by `android_id_hash`, authenticated operator review, validation, and server-side provisioning result.
+- `dcam_cloud_device_id` is cloud primary identity. `android_id_hash` is recovery/lookup input, not business identity or authentication secret. Raw Android identifiers must not be logged or exposed.
+- APIs are versioned and return stable reason codes. Server configuration is requested state; Android still validates capability, permission, device policy, safety, active recording/finalization, and local applicability before applying it.
+- Portal workflow includes login, QR scan/manual lookup, serial/owner/manufacture-date review, conflict validation, submit, result/error state, audit, and safe retry. Duplicate serials, stale challenges, invalid QR, identity conflict, and unauthorized changes must fail explicitly.
+- Portal app and backend implementation separate UI, authentication, QR parsing, validation, provisioning service, and repositories. Secrets remain server-side; client code must not embed privileged credentials.
+- Provisioning, remote config, and portal outages never block Build 0.1 local recording. Their runtime modules remain deferred unless build applicability enables them.
+
+## Identity and factory baseline
+
+- Device identity has two different keys: immutable/audited business `serial_number` and server-generated `dcam_cloud_device_id`. Neither derives from the other; `serial_number` is not an authentication secret.
+- `serial_lookup/{serial_number}` must resolve uniqueness. Duplicate serials cannot silently create another active device. Missing, invalid, or conflicting identity places device into provisioning/factory-required or quarantine state.
+- SD identity file is factory input, not automatic authority. DSetup validates it, can require barcode scan, records audit evidence, and applies READY_TO_SHIP or QUARANTINED rules.
+- Android persists identity consistently in approved local stores, prevents silent serial overwrite, and reports identity state without leaking secrets. Identity changes require permission, reason, audit, and downstream reconciliation.
+- Factory shipment requires validated identity, app/config state, policy capability, storage/ADB behavior, update path, security checks, and required POC/QA evidence. PM approval of a reference configuration is not factory or production approval.
+
+## Dedicated-device and kiosk ADR
+
+- Current architecture rejects external EMM, Android Management API, and Managed Google Play as required baseline dependencies. Direction is local DCAM policy control using Device Owner/DPC and Lock Task where target firmware permits.
+- Fullscreen or launcher behavior alone is insufficient for production kiosk assurance. Missing required authority yields `DEVICE_POLICY_REQUIRED` or `POLICY_DEGRADED`; normal unrestricted field operation must not continue silently.
+- Controlled Maintenance Mode is audited temporary escape for approved settings/tools. Entry requires safe runtime state and protected authorization; exit restores required policy.
+- Build 0.1 does not require full kiosk implementation unless device POC proves Working Recording Slice cannot operate without it. Dedicated-device direction remains binding for later production profiles.
+
+## Device POC and hardware validation
+
+- POC records exact model, Android/API, firmware, build, hardware identity, storage, camera/audio, GPS, GMS, policy authority, and test evidence. Empty/TBD rows mean not qualified.
+- Build 0.1 WRS covers start/stop video, image capture, internal staging/finalization, MD5 success and mismatch behavior, DB/CSON/log outputs, ADB visibility/import, storage failure, interruption/reboot recovery, and basic battery/storage/GPS status.
+- Kiosk/Device Owner, Self Update, optional Play Store fallback, in-app console, storage/BDMA/ADB, and factory flow each have separate POC matrices. A pass in one matrix does not imply another.
+- Evidence must come from identifiable physical reference device. Emulator, desktop tests, or another firmware cannot substitute without impact review and appropriate regression.
+- POC output drives capability eligibility, implementation selection, ADR updates, factory acceptance, and documented unsupported/degraded states.
+
+## State, capability, and safety composition
+
+- Runtime eligibility is composed from requested setting, hardware capability, permission, device-policy capability, safety policy, and temporary availability. A setting alone never proves feature availability.
+- Stable eligibility states include `ENABLED`, `DEGRADED`, `DISABLED_BY_POLICY`, `DISABLED_BY_PERMISSION`, `UNSUPPORTED_HARDWARE`, `UNSUPPORTED_PERFORMANCE`, `TEMPORARILY_UNAVAILABLE`, `PRUNED`, and `ERROR`.
+- State machine guards prevent recording during unsafe update/install, conflicting finalization, missing required storage/permission/camera, or policy states that apply to active profile.
+- Optional sensor/location/AI modules emit observations or event candidates through boundaries. They cannot directly seize camera/storage or crash/block core recording unless future approved applicability makes them required.
+
+## QA and traceability expectations
+
+- Each applicable decision maps requirement/design to Jira, implementation/PR, QA Test ID, and evidence. Missing links keep row Pending, Blocked, or Partially Covered.
+- Required tests include positive flow, invalid input, permission loss, unsupported capability, storage full/removal, DB busy/corrupt, camera error, process death/reboot, checksum missing/mismatch, provider outage, concurrent commands, and BDMA read during recording.
+- Build 0.1 acceptance is one physical-device Working Recording Slice, not production, fleet, multi-model, multi-firmware, or shipment certification.
+- Security, factory, kiosk, update, provisioning, and later-phase features require their own applicability and evidence gates; they cannot be inferred from WRS success.

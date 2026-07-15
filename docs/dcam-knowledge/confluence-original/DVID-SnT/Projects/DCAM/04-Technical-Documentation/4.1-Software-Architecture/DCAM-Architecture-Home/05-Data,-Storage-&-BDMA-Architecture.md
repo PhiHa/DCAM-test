@@ -1,7 +1,7 @@
 # 05 - Data, Storage & BDMA Architecture
 
 **Page ID**: 47185950  
-**Version**: 9  
+**Version**: 13  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47185950
 
@@ -24,11 +24,15 @@ Software Architecture Document / Data Architecture
 
 Version
 
-Approved 1.6
+Approved 1.9
 
 Status
 
 Approved
+
+Approval Scope
+
+High-level data/storage/BDMA architecture; MD5 applicability theo Matrix/Data Contract; cryptographic algorithm, key management và decryption policy thuộc DCAM Security & Encryption Design và approved Security Profile.
 
 Owner
 
@@ -52,15 +56,19 @@ PM/BA, Tech Lead, Android Developers, QA, BDMA Team
 
 Last Updated
 
-2026-07-08
+2026-07-13
 
 Related Jira
 
 None
 
+Dependencies / Blockers
+
+Approved Security Profile / Security Review cho exact cryptographic algorithm, key management và decryption behavior.
+
 Related Documents
 
-DCAM Architecture Home, 04 - Application & Module Architecture, 08 - DCAM-BDMA Integration Boundary, DCAM-BDMA Data Contract, DCAM Documentation Governance
+DCAM Architecture Home, 04 - Application & Module Architecture, 08 - DCAM-BDMA Integration Boundary, DCAM-BDMA Data Contract, DCAM Documentation Governance, DCAM Security & Encryption Design
 
 ## 1. Purpose
 
@@ -76,7 +84,7 @@ Nguyên tắc chính:
 
 DCAM creates and exposes local data.
 BDMA reads, imports, updates allowed data and performs cleanup according to Data Contract.
-Chi tiết chính thức về folder structure, file naming, MD5 cho video `.mp4`, AES-256 suffix, CSON, SQLite DB, logs và cleanup policy nằm trong **DCAM-BDMA Data Contract**.
+Chi tiết chính thức về folder structure, file naming, MD5 cho video `.mp4`, media-encryption suffix theo approved Security Profile, CSON, SQLite DB, logs và cleanup policy nằm trong **DCAM-BDMA Data Contract** và **DCAM Security & Encryption Design**.
 
 ## 2. Data Architecture Boundary
 
@@ -108,7 +116,7 @@ DCAM generates media file
     ↓
 DCAM embeds media metadata if supported by media format
     ↓
-DCAM optionally generates matching .md5 file for .mp4 video only
+DCAM generates matching .md5 for .mp4 according to approved Build Profile; Build 0.1 requires it
     ↓
 DCAM saves media in Internal or External DCAM Media Root
     ↓
@@ -120,7 +128,7 @@ BDMA detects device through ADB
     ↓
 BDMA scans External then Internal DCAM Media Root
     ↓
-BDMA verifies .md5 for .mp4 video if available
+BDMA verifies .md5 according to approved Build Profile; Build 0.1 blocks missing/mismatch
     ↓
 BDMA imports media and reads allowed config/database/logs
     ↓
@@ -211,7 +219,7 @@ BDMA
 
 DCAM tạo; BDMA import/decrypt nếu supported
 
-AES-256 encrypted media naming rule. `.md5` chỉ áp dụng cho encrypted `.mp4`.
+Encrypted media naming phải tuân theo approved Security Profile; `.md5` chỉ áp dụng cho encrypted `.mp4` khi approved build/profile applicability yêu cầu.
 
 MD5 Checksum
 
@@ -225,7 +233,7 @@ BDMA
 
 BDMA không được modify content; có thể delete cùng `.mp4` cleanup
 
-Optional cho `.mp4` import, required cho verified `.mp4` import. Không áp dụng cho `.jpg`, `.mp3`, `.aac`, `.wav`.
+Required cho mọi Build 0.1 MP4. Legacy optional/Unverified behavior chưa có approved Build Profile mapping. Không áp dụng cho `.jpg`, `.mp3`, `.aac`, `.wav`.
 
 Device Config
 
@@ -337,7 +345,7 @@ Media file completed
     ↓
 Metadata embedded in media if supported
     ↓
-Optional .md5 generated only if completed media is .mp4 video
+Generate .md5 only for completed .mp4 when required by approved Build Profile; Build 0.1 requires it
     ↓
 Media available in Media/Video, Media/Image, Media/Audio or Media/IMP
     ↓
@@ -430,6 +438,28 @@ Audio
 
 `.mp3`, `.aac`, `.wav`
 
+Token mapping dưới đây chỉ là architecture summary; **DCAM-BDMA Data Contract** sở hữu authoritative rule:
+
+Token
+
+Build 0.1 Mapping
+
+Constraint
+
+XXXXXX / DEVICE_TOKEN
+
+Snapshot của validated `serial_number`
+
+6–10 ký tự, `[A-Z0-9]`; không underscore hoặc silent truncation.
+
+ZZZZZZ / OPERATOR_TOKEN
+
+`B01OPR` từ `operator_id`
+
+Đúng 6 ký tự, `[A-Z0-9]`.
+
+Reference-device `serial_number` thực tế cần Device POC evidence. Timestamp timezone và same-second collision handling vẫn Pending Technical Review.
+
 MD5 naming là video-only rule. Nếu DCAM tạo `.md5`, DCAM chỉ tạo `.md5` cho `.mp4` video files, bao gồm normal, important, encrypted và important encrypted `.mp4` variants.
 
 ## 9. BDMA Compatibility Principles
@@ -454,9 +484,9 @@ Data Contract Required
 
 Hành vi của BDMA phải tuân theo DCAM-BDMA Data Contract.
 
-MD5 Optional for `.mp4` Import
+Legacy Missing-MD5 Import
 
-Thiếu `.md5` không chặn import video `.mp4`, nhưng import result của video phải được đánh dấu Unverified/warning. Image/audio không áp dụng `.md5`.
+Unverified/warning chỉ là compatibility behavior chưa có approved Build Profile mapping; không áp dụng cho Build 0.1, Build 0.2, Build 0.3 hoặc Pilot/Shipment theo current Matrix. Image/audio không áp dụng `.md5`.
 
 Verified `.mp4` Import
 
@@ -636,7 +666,7 @@ SQLite database schema
 
 DCAM SQLite Database Design
 
-AES-256 key storage and decryption process
+Encryption key storage and decryption process theo approved Security Profile
 
 DCAM Security & Encryption Design
 
@@ -657,5 +687,5 @@ BDMA Technical Documentation / Data Contract update if needed
 Kiến trúc dữ liệu của DCAM cần được thiết kế ngay từ đầu để phục vụ BDMA ingest, nhưng boundary về ownership phải luôn rõ ràng:
 
 DCAM chịu trách nhiệm tạo dữ liệu và đảm bảo source data sẵn sàng ở local storage.
-BDMA chịu trách nhiệm đọc qua ADB, import, verify .mp4 bằng .md5 nếu có, lưu trữ, index, quản lý và hiển thị dữ liệu.
+BDMA chịu trách nhiệm đọc qua ADB, import và verify `.mp4` theo approved Build Profile; Build 0.1 yêu cầu valid `.md5` trước BDMA_READY/import. BDMA lưu trữ, index, quản lý và hiển thị dữ liệu.
 Contract baseline cuối cùng hiện đã được định nghĩa trong **DCAM-BDMA Data Contract**. Tất cả tài liệu Storage Design, SQLite Database Design, Security & Encryption Design và BDMA import implementation sau này phải align với contract này, đặc biệt rule mới: `.md5` chỉ áp dụng cho video `.mp4`, không áp dụng cho `.jpg`, `.mp3`, `.aac` hoặc `.wav`.

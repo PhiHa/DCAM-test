@@ -1,7 +1,7 @@
 # DCAM Storage Design
 
 **Page ID**: 48496699  
-**Version**: 9  
+**Version**: 11  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/48496699
 
@@ -24,7 +24,7 @@ Technical Design
 
 Version
 
-0.9
+0.10
 
 Status
 
@@ -322,7 +322,7 @@ Mark missing source and log diagnostics.
 
 Missing checksum
 
-Generate if policy allows; otherwise classify unverified/warning according to Data Contract.
+Build 0.1 giữ blocked/recoverable, tạo MD5 nếu policy cho phép và không publish BDMA_READY/import trước valid MD5. Legacy Unverified behavior chưa có approved Build Profile mapping.
 
 External removed
 
@@ -456,3 +456,5 @@ Recovery
 Reconcile file/DB/checksum state; không cleanup protected artifact
 
 Logical-to-physical Internal path, scoped-storage behavior và ADB visibility vẫn Pending Device POC. Exact checksum state names và recovery schema cần Technical Review.
+
+Legacy `missing MD5 → Unverified import` không thuộc Build 0.1 và hiện không được gán cho Build 0.2, Build 0.3 hoặc Pilot/Shipment.

@@ -197,7 +197,7 @@ public final class MainViewModel extends ViewModel {
         if ("USER_ID_MUST_BE_SIX_DIGITS".equals(code)) return "User ID must be exactly 6 digits";
         if ("PASSWORD_REQUIRED".equals(code)) return "Password is required";
         if ("USER_OR_LOGIN_NAME_ALREADY_EXISTS".equals(code)) {
-            return "User ID or login name is already assigned";
+            return "User ID is already assigned";
         }
         return "Could not save user";
     }

@@ -1,7 +1,7 @@
 # DCAM Product Vision
 
 **Page ID**: 41648238  
-**Version**: 8  
+**Version**: 9  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/41648238
 
@@ -24,11 +24,15 @@ Product Vision
 
 Version
 
-Approved 2.4
+Approved 2.5
 
 Status
 
 Approved
+
+Approval Scope
+
+Long-term product direction và target outcomes; không phải build, release hoặc Production approval.
 
 Owner
 
@@ -52,7 +56,7 @@ PM/BA, Product Owner, Tech Lead, Developers, QA, Stakeholders
 
 Last Updated
 
-2026-07-10
+2026-07-14
 
 Related Jira
 
@@ -451,7 +455,7 @@ DCAM chỉ định hướng cho thiết bị BodyCamera do DVID cung cấp, khô
 
 BDMA Dependency
 
-DCAM không thay thế BDMA; DCAM tạo dữ li���u, BDMA quản lý và khai thác dữ liệu.
+DCAM không thay thế BDMA; DCAM tạo dữ liệu, BDMA quản lý và khai thác dữ liệu.
 
 Platform Foundation
 

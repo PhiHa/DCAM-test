@@ -1,7 +1,7 @@
 # DCAM Device POC & Hardware Validation Report
 
 **Page ID**: 49545399  
-**Version**: 7  
+**Version**: 10  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/49545399
 
@@ -24,11 +24,15 @@ Device POC / Hardware Validation Report
 
 Version
 
-Draft 0.5
+Approved Pending Device POC 0.8
 
 Status
 
-Draft
+Approved Pending Device POC
+
+Approval Scope
+
+Reference configuration và Build 0.1 test plan approved; qualification/result chưa pass
 
 Owner
 
@@ -52,11 +56,15 @@ Tech Lead, Android Developers, QA, Security Reviewer, Support, Factory/Admin Use
 
 Last Updated
 
-2026-07-09
+2026-07-14
+
+Related Jira
+
+None
 
 Related Documents
 
-DCAM Project Home, DCAM Architecture Home, DCAM Android Device Owner & Kiosk Policy Design, DCAM In-App Operation, Device Settings & Media Console Design, DCAM Android Operation Design, DCAM Self Update Design, DCAM QA Test Strategy & Test Matrix, DCAM Factory Provisioning & Device Production SOP, DCAM Security & Encryption Design, DCAM Device Capability & Feature Eligibility Design, DCAM Storage Design, DCAM Recording & Capture Design, DCAM-BDMA Data Contract
+DCAM Project Home, DCAM Architecture Home, DCAM Android Device Owner & Kiosk Policy Design, DCAM In-App Operation, Device Settings & Media Console Design, DCAM Android Operation Design, DCAM Self Update Design, DCAM QA Test Strategy & Test Matrix, DCAM Factory Provisioning & Device Production SOP, DCAM Security & Encryption Design, DCAM Device Capability & Feature Eligibility Design, DCAM Storage Design, DCAM Recording & Capture Design, DCAM-BDMA Data Contract, Decision Brief – DCAM MVP Internal Build 0.1 – Working Recording Slice
 
 ## 1. Purpose
 
@@ -348,7 +356,7 @@ POC-KIOSK-009
 
 Enter Controlled Maintenance bằng password.
 
-Chỉ approved targets được mở và c�� audit event.
+Chỉ approved targets được mở và có audit event.
 
 TBD
 
@@ -842,3 +850,130 @@ Nếu không kiểm soát được Play Store fallback thì phải disable cho p
 BDMA ADB import/user sync phải hoạt động dưới approved restriction profile.
 Factory SOP chỉ được approve sau khi required POC gates đã closed hoặc được accept rõ ràng.
 Tất cả TBD từ POC này phải feed back vào Technical Design, QA Matrix, Factory SOP và ADR nếu cần.
+## 16. Build 0.1 Reference Configuration and Test Plan
+
+Field
+
+Approved Test Configuration
+
+Reference Model
+
+NCC-036V
+
+Android Version
+
+Android 12
+
+API Level
+
+31
+
+Firmware / Build
+
+877AOOAKN1_RK2_V009
+
+Camera Integration
+
+Android platform Camera API
+
+Vendor SDK
+
+Not Applicable
+
+Physical Device Identifier
+
+Pending execution evidence
+
+Qualification Status
+
+Pending Device POC
+
+Execution Status
+
+Not Executed
+
+PM approval xác nhận test target, không xác nhận device qualification hoặc production readiness.
+
+### 16.1 Working Recording Slice POC Cases
+
+Test ID
+
+Validation
+
+Expected Result
+
+Status
+
+POC-WRS-001
+
+Ghi model, OS/API, firmware và physical device identifier.
+
+Evidence xác định rõ một exact reference configuration.
+
+Not Executed
+
+POC-WRS-002
+
+Xác nhận Android platform Camera API và capability thực tế.
+
+Recording/capture capability được ghi bằng evidence; Camera1/Camera2 không suy diễn.
+
+Not Executed
+
+POC-WRS-003
+
+Xác nhận physical Internal storage path, scoped-storage behavior và ADB visibility.
+
+Logical-to-physical mapping được review; không External fallback.
+
+Not Executed
+
+POC-WRS-004
+
+Failed Internal pre-check và runtime storage failure.
+
+Không start khi pre-check fail; safe-stop/finalize nếu runtime failure và còn khả năng.
+
+Not Executed
+
+POC-WRS-005
+
+MP4 finalize và async MD5.
+
+Chỉ BDMA_READY sau valid MD5; missing/mismatch/failure block import/evidence.
+
+Not Executed
+
+POC-WRS-006
+
+Static operator artifacts.
+
+B01OPR / Build 0.1 Operator nhất quán tại nơi DB/CSON/log schema yêu cầu.
+
+Not Executed
+
+POC-WRS-007
+
+Basic Device Status.
+
+Battery level, Internal free storage và GPS Available/Unavailable/Unsupported được report chính xác.
+
+Not Executed
+
+POC-WRS-008
+
+End-to-end WRS và BDMA sample import.
+
+Pass/fail kèm APK, media, DB/CSON/log, MD5 và import evidence.
+
+Not Executed
+
+POC-WRS-009
+
+Media filename token validation.
+
+Xác nhận serial_number thực tế đáp ứng [A-Z0-9]{6,10}; filename dùng DEVICE_TOKEN từ validated serial_number và OPERATOR_TOKEN = B01OPR; không truncation/underscore; lưu filename + parser/import evidence.
+
+Not Executed
+
+GPS Unavailable/Unsupported không làm fail POC-WRS-007 nếu trạng thái được báo đúng. Kết quả trên configuration này không đại diện multi-model, multi-firmware, Production hoặc fleet readiness.

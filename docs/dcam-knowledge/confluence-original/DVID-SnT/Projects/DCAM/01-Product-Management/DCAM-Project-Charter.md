@@ -1,7 +1,7 @@
 # DCAM Project Charter
 
 **Page ID**: 41156610  
-**Version**: 18  
+**Version**: 19  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/41156610
 
@@ -28,11 +28,15 @@ Project Charter
 
 Version
 
-Approved 1.4
+Approved 1.5
 
 Status
 
 Approved
+
+Approval Scope
+
+Project objectives, governance, roles và project-direction baseline; active build applicability thuộc DCAM Release & Build Applicability Matrix; không phải Production approval.
 
 Owner
 
@@ -56,7 +60,7 @@ Project Sponsor, PM/BA, Product Owner, Tech Lead, Developers, QA
 
 Last Updated
 
-2026-07-08
+2026-07-14
 
 Related Jira
 
@@ -535,7 +539,7 @@ ID
 
 Assumption
 
-Impact nếu thay đổi
+Change Impact
 
 A-01
 

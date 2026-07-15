@@ -1,6 +1,6 @@
 # Confluence Original Documentation
-Downloaded: 2026-07-13T04:42:31.165Z
-Total pages: 133
+Downloaded: 2026-07-15T03:56:13.490Z
+Total pages: 131
 
 ## Page Structure
 
@@ -52,7 +52,6 @@ Total pages: 133
           - [Module Sync & Backup](DVID-SnT/Projects/BDMA/04-Technical-Documentation/Technical-Knowledge-Base/Module-Sync-&-Backup.md)
           - [Module Restore](DVID-SnT/Projects/BDMA/04-Technical-Documentation/Technical-Knowledge-Base/Module-Restore.md)
         - [Weekly Team Meeting 5.4](DVID-SnT/Projects/BDMA/02-Sprint-Operations/Weekly-Team-Meeting-5.4.md)
-- [Báo cáo lỗi: thiết bị validation fail vẫn hiển thị trên danh sách thiết bị](Báo-cáo-lỗi-thiết-bị-validation-fail-vẫn-hiển-thị-trên-danh-sách-thiết-bị.md)
         - [Incident Log Template](DVID-SnT/Projects/BDMA/06-Incident-Log/Incident-Log-Template.md)
         - [Validation failed devices still got showed on list](DVID-SnT/Projects/BDMA/06-Incident-Log/Validation-failed-devices-still-got-showed-on-list.md)
           - [Device Management Tab Specification](DVID-SnT/Projects/BDMA/01-Product-Management/Feature-Specifications/Device-Management-Tab-Specification.md)
@@ -65,7 +64,6 @@ Total pages: 133
         - [Weekly Team Meeting 2026-06-20](DVID-SnT/Projects/BDMA/02-Sprint-Operations/Weekly-Team-Meeting-2026-06-20.md)
         - [Devices without external storage can't be synced](DVID-SnT/Projects/BDMA/06-Incident-Log/Devices-without-external-storage-can't-be-synced.md)
         - [DCAM Project Charter](DVID-SnT/Projects/DCAM/01-Product-Management/DCAM-Project-Charter.md)
-- [DCAM Phase 2 Documentation Plan](DCAM-Phase-2-Documentation-Plan.md)
         - [Installer false-positive app running detection](DVID-SnT/Projects/BDMA/06-Incident-Log/Installer-false-positive-app-running-detection.md)
         - [DCAM Roadmap](DVID-SnT/Projects/DCAM/01-Product-Management/DCAM-Roadmap.md)
         - [DCAM Product Vision](DVID-SnT/Projects/DCAM/01-Product-Management/DCAM-Product-Vision.md)

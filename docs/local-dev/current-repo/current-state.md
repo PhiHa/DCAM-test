@@ -1,6 +1,6 @@
 # Current repository state
 
-This page describes the refactored code visible on 2026-07-11. It records implementation reality and compares it with the approved Data Contract baseline now refreshed to 1.6; it is not a substitute for the contract or formal requirements.
+This page describes the refactored code visible on 2026-07-15. It records implementation reality against current Confluence. Build 0.1-specific rules come from the Decision Brief and Release & Build Applicability Matrix; this page is not a substitute for formal requirements.
 
 ## Build and platform
 
@@ -13,7 +13,7 @@ This page describes the refactored code visible on 2026-07-11. It records implem
 - JUnit Jupiter 6.1.0 is used for local tests.
 - No Retrofit, dependency-injection framework, or Kotlin dependency is present.
 
-The SDK values remain implementation choices. Data Contract 1.6 now fixes the logical database location, purpose, access rights, and need for schema/app/contract versioning, while the exact SQLite table details and final device/SDK policy remain TBD.
+The SDK values remain implementation choices until device/profile review. Current Build 0.1 reference is NCC-036V / Android 12 / API 31 / firmware `877AOOAKN1_RK2_V009`, pending physical POC; exact SQLite table details and physical paths remain TBD.
 
 ## Refactored architecture
 

@@ -1,7 +1,7 @@
 # DCAM Non-functional Requirements
 
 **Page ID**: 48595009  
-**Version**: 13  
+**Version**: 14  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/48595009
 
@@ -24,11 +24,15 @@ Non-functional Requirements
 
 Version
 
-Approved 1.12
+Approved 1.13
 
 Status
 
 Approved
+
+Approval Scope
+
+System quality direction; numeric performance budgets và hardware-dependent behavior thuộc Performance Budget và Device POC.
 
 Owner
 
@@ -52,7 +56,11 @@ PM/BA, Tech Lead, Developers, QA, Security Reviewer, Support, Factory
 
 Last Updated
 
-2026-07-10
+2026-07-14
+
+Related Jira
+
+None
 
 Related Documents
 

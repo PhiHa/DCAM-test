@@ -1,7 +1,7 @@
 # DCAM Sensor & Location Monitoring Design
 
 **Page ID**: 48496794  
-**Version**: 6  
+**Version**: 7  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/48496794
 
@@ -24,23 +24,47 @@ Technical Design
 
 Version
 
-Draft 0.6
+Draft 0.7
 
 Status
 
 Draft
 
+Approval Scope
+
+Draft sensor/location design only; không phải approved implementation, Build 0.1 hoặc Production baseline.
+
 Owner
 
 Hoàng Ngọc Quyền
 
+Technical Reviewer
+
+Tech Lead / Android Lead / QA Lead
+
+Approver
+
+Hoàng Ngọc Quyền
+
+Parent Folder
+
+4.2 - Technical Design
+
 Last Updated
 
-2026-07-08
+2026-07-14
+
+Related Jira
+
+None
 
 Related Documents
 
 DCAM Android Operation Design, DCAM Device Capability & Feature Eligibility Design, DCAM State Machine Design, DCAM Recording & Capture Design, 09 - System Settings Requirements
+
+Target Audience
+
+Tech Lead, Android Developers, QA, Support
 
 ## 1. Purpose
 

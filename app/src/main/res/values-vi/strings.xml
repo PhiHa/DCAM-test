@@ -38,4 +38,9 @@
     <string name="language_english">English</string>
     <string name="language_vietnamese">Tiếng Việt</string>
     <string name="language_changed">Đã đổi ngôn ngữ</string>
+    <string name="battery_status">Tr&#7841;ng th&#225;i pin</string>
+    <string name="battery_unknown">Kh&#244;ng r&#245; m&#7913;c pin</string>
+    <string name="battery_percent">Pin %1$d ph&#7847;n tr&#259;m</string>
+    <string name="wifi_disconnected">Wi-Fi &#273;&#227; ng&#7855;t k&#7871;t n&#7889;i</string>
+    <string name="wifi_signal_level">T&#237;n hi&#7879;u Wi-Fi m&#7913;c %1$d tr&#234;n 4</string>
 </resources>

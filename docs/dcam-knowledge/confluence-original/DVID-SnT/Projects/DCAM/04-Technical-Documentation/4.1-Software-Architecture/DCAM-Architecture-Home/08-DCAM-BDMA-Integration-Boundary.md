@@ -1,7 +1,7 @@
 # 08 - DCAM-BDMA Integration Boundary
 
 **Page ID**: 47153235  
-**Version**: 9  
+**Version**: 13  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47153235
 
@@ -24,11 +24,15 @@ Software Architecture Document / Integration Boundary
 
 Version
 
-Approved 1.7
+Approved 1.10
 
 Status
 
 Approved
+
+Approval Scope
+
+DCAM–BDMA boundary với approved Build 0.1 import eligibility overlay và legacy MD5 no-profile-mapping guardrail; cryptographic algorithm/key/decryption policy thuộc approved Security Profile.
 
 Owner
 
@@ -52,15 +56,19 @@ PM/BA, Tech Lead, Android Developers, QA, BDMA Team, Support
 
 Last Updated
 
-2026-07-08
+2026-07-13
 
 Related Jira
 
 None
 
+Dependencies / Blockers
+
+Approved Security Profile / Security Review cho exact cryptographic algorithm, key management và BDMA decryption behavior.
+
 Related Documents
 
-DCAM Architecture Home, 05 - Data, Storage & BDMA Architecture, DCAM-BDMA Data Contract, 05 - User & Device Operation Requirements, DCAM Storage Design, DCAM SQLite Database Design, DCAM Recording & Capture Design, DCAM Security & Encryption Design, DCAM BDMA Integration Technical Design, DCAM Documentation Governance
+DCAM Architecture Home, 05 - Data, Storage & BDMA Architecture, DCAM-BDMA Data Contract, 05 - User & Device Operation Requirements, DCAM Storage Design, DCAM SQLite Database Design, DCAM Recording & Capture Design, DCAM Security & Encryption Design, DCAM BDMA Integration Technical Design, DCAM Documentation Governance, Decision Brief – DCAM MVP Internal Build 0.1 – Working Recording Slice
 
 ## 1. Purpose
 
@@ -86,11 +94,11 @@ DCAM lưu dữ liệu cục bộ trên thiết bị BodyCamera.
 
 DCAM quản lý user/operator và operator session offline trong `dcam.db`.
 
-DCAM expose dữ liệu dưới dạng media files, `.md5` cho video `.mp4` nếu có, CSON, SQLite DB và logs để BDMA đọc được qua ADB.
+DCAM expose media files và `.md5` cho video `.mp4` theo approved Build Profile; Build 0.1 yêu cầu `.md5` cho mọi MP4. CSON, SQLite DB và logs được expose để BDMA đọc qua ADB.
 
 BDMA chủ động kết nối thiết bị qua ADB.
 
-BDMA chủ động đọc, verify `.mp4` nếu có `.md5`, import, lưu trữ, index, quản lý và hiển thị dữ liệu.
+BDMA chủ động đọc và verify `.mp4` theo approved Build Profile; Build 0.1 chỉ import sau valid `.md5`. BDMA lưu trữ, index, quản lý và hiển thị dữ liệu.
 
 BDMA quản lý user/operator trong BDMA database và sync hai chiều với DCAM qua ADB.
 
@@ -129,7 +137,7 @@ Status
 
 DCAM is Data Producer
 
-DCAM tạo media, `.md5` cho video `.mp4` nếu có, device config, SQLite DB và logs trên thiết bị.
+DCAM tạo media và `.md5` cho video `.mp4` theo approved Build Profile; Build 0.1 yêu cầu `.md5` cho mọi MP4. DCAM cũng tạo device config, SQLite DB và logs trên thiết bị.
 
 Decided
 
@@ -141,7 +149,7 @@ Decided
 
 BDMA is Data Consumer / Importer / Manager
 
-BDMA đọc, verify video `.mp4` nếu có `.md5`, import, index, quản lý và hiển thị dữ liệu do DCAM tạo.
+BDMA đọc và verify video `.mp4` theo approved Build Profile; Build 0.1 không import khi MD5 missing/mismatch/failed. BDMA index, quản lý và hiển thị dữ liệu do DCAM tạo.
 
 Decided
 
@@ -171,7 +179,7 @@ Decided
 
 Local Files are Source Data
 
-Dữ liệu gốc trên thiết bị được lưu dưới dạng media files, `.md5` cho `.mp4` nếu có, CSON, SQLite DB và logs.
+Dữ liệu gốc gồm media files, `.md5` cho `.mp4` theo approved Build Profile, CSON, SQLite DB và logs; Build 0.1 yêu cầu `.md5` cho mọi MP4.
 
 Decided
 
@@ -225,7 +233,7 @@ DCAM
 
 BDMA
 
-Chỉ áp dụng cho `.mp4`; BDMA verify nếu có và xử lý missing MD5 theo Data Contract.
+Chỉ áp dụng cho `.mp4`; behavior theo Data Contract và Matrix. Build 0.1 yêu cầu valid MD5; legacy Unverified behavior chưa có approved profile mapping.
 
 Device Config `dcam_config.cson`
 
@@ -427,7 +435,7 @@ Sửa media naming; BDMA report skipped/unknown file.
 
 DCAM / BDMA handling
 
-BDMA imports video as Unverified/warning.
+Block đối với mọi currently approved profile. Legacy Unverified import chỉ được phép sau future named-profile approval.
 
 `.jpg`, `.mp3`, `.aac`, `.wav` MD5 missing
 
@@ -559,7 +567,7 @@ TBD
 
 DCAM + BDMA / Security Design
 
-AES-256 key storage and BDMA decryption process
+Encryption key storage and BDMA decryption process theo approved Security Profile
 
 TBD
 
@@ -599,3 +607,19 @@ Data Contract định nghĩa file/import/user-sync rules.
 SQLite Design định nghĩa DB write-back rules.
 Storage/Recording designs định nghĩa BDMA readiness và operator attribution.
 Remaining TBD items trên boundary page này là các implementation/BDMA-side open decisions thật sự, không phải các source-of-truth issues đã được resolve.
+
+## 12. Build 0.1 Boundary Override
+
+DCAM sở hữu recording, Internal storage, finalization, MD5 generation, SQLite/CSON/log state và readiness publication.
+
+BDMA chỉ scan approved logical Internal final-media root.
+
+MP4 phải finalized và có valid MD5 trước khi đủ điều kiện import.
+
+Missing/mismatch/failed MD5 không được import Unverified trong Build 0.1. Legacy Unverified behavior hiện không được gán cho Build 0.2, Build 0.3 hoặc Pilot/Shipment.
+
+Image no-MD5 behavior không đổi.
+
+BDMA không cleanup protected artifacts hoặc source data khi ADB/permission/import/checksum chưa success.
+
+Physical ADB path phải chờ Device POC; GitHub repository mapping chưa được phê duyệt.

@@ -100,6 +100,7 @@ public final class AppComposition {
     private final SerializedRecordingCoordinator recordingCoordinator;
     private final CameraXCameraGatewayImpl recordingCamera;
     private volatile HardwareButtonLayout hardwareButtonLayout;
+    private final HardwareButtonLayout builtInHardwareButtons;
     private final DeveloperHardwareButtonSettings developerHardwareButtons;
 
     private AppComposition(Context context) {
@@ -110,9 +111,8 @@ public final class AppComposition {
         DeviceRepository deviceRepository = new AndroidDeviceRepositoryImpl(context, storage::captureRoot);
         DeviceInfo deviceInfo = deviceRepository.readInfo();
         developerHardwareButtons = new DeveloperHardwareButtonSettings(context);
-        HardwareButtonLayout builtInButtons =
-                HardwareButtonProfiles.resolve(AndroidHardwareDeviceIdentity.read());
-        developerHardwareButtons.initializeIfEmpty(builtInButtons);
+        builtInHardwareButtons = HardwareButtonProfiles.resolve(AndroidHardwareDeviceIdentity.read());
+        developerHardwareButtons.initializeIfEmpty(builtInHardwareButtons);
         hardwareButtonLayout = developerHardwareButtons.loadLayout();
         initialDeviceStatus = deviceRepository.readStatus();
         featureGateSettings = AndroidFeatureGateSettingsFactory.create(context);
@@ -178,6 +178,13 @@ public final class AppComposition {
     public HardwareButtonLayout applyDeveloperHardwareButtonLayout() {
         hardwareButtonLayout = developerHardwareButtons.loadLayout();
         return hardwareButtonLayout;
+    }
+    public HardwareButtonLayout resetDeveloperHardwareButtonLayout() {
+        if (!developerHardwareButtons.resetToDefaults(builtInHardwareButtons)) return null;
+        return applyDeveloperHardwareButtonLayout();
+    }
+    public boolean hasDeveloperHardwareButtonDefaults() {
+        return !builtInHardwareButtons.isEmpty();
     }
     public MediaEncryptionSettingsUseCase mediaEncryptionSettingsUseCase() { return mediaEncryptionSettings; }
     public VideoMd5SettingsUseCase videoMd5SettingsUseCase() { return videoMd5Settings; }

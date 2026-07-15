@@ -1,7 +1,7 @@
 # 01 - Architecture Overview
 
 **Page ID**: 47120395  
-**Version**: 10  
+**Version**: 11  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47120395
 
@@ -24,11 +24,15 @@ Software Architecture Document / Overview
 
 Version
 
-Approved 1.5
+Approved 1.6
 
 Status
 
 Approved
+
+Approval Scope
+
+High-level system context, component boundary và architecture overview; detailed decisions thuộc authoritative Architecture/ADR/Contract pages.
 
 Owner
 
@@ -52,7 +56,7 @@ PM/BA, Tech Lead, Android Developers, QA
 
 Last Updated
 
-2026-07-08
+2026-07-14
 
 Related Jira
 

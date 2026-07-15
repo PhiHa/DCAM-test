@@ -1,7 +1,7 @@
 # 04 - Device Configuration Requirements
 
 **Page ID**: 47710554  
-**Version**: 8  
+**Version**: 9  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47710554
 
@@ -24,7 +24,7 @@ Functional Requirements
 
 Version
 
-Approved 1.6
+Approved 1.7
 
 Status
 
@@ -433,7 +433,7 @@ CFG-B01-001
 
 operator_id
 
-BUILD01_OPERATOR
+B01OPR
 
 Immutable trong Build 0.1
 

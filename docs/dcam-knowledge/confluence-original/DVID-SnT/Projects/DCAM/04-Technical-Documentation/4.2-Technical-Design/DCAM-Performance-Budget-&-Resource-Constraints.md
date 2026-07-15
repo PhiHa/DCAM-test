@@ -1,7 +1,7 @@
 # DCAM Performance Budget & Resource Constraints
 
 **Page ID**: 50659486  
-**Version**: 5  
+**Version**: 7  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/50659486
 
@@ -24,7 +24,7 @@ Technical Design / Performance Budget
 
 Version
 
-0.4
+0.5
 
 Status
 
@@ -316,21 +316,21 @@ Rule
 
 `BDMA_READY`
 
-Final media tồn tại, DB đã update, file safe cho BDMA scan/import.
+Final media tồn tại, DB đã update và mọi integrity gate bắt buộc của approved Build Profile đã pass.
 
-Không cần chờ checksum hoàn tất.
+Build 0.1 yêu cầu valid MD5 trước state này.
 
 `CHECKSUM_PENDING`
 
-Final media đã ready nhưng checksum chưa xong.
+MP4 đã finalized nhưng checksum chưa hoàn tất.
 
-BDMA có thể import với warning/unverified policy nếu contract cho phép.
+Không BDMA_READY/import trong Build 0.1; legacy Unverified behavior chưa có approved Build Profile mapping.
 
 `CHECKSUM_READY`
 
 Checksum đã tạo xong và sẵn sàng cho verification.
 
-BDMA có thể verify integrity nếu checksum available.
+BDMA verify integrity trước readiness/import khi Build Profile yêu cầu.
 
 `CHECKSUM_FAILED`
 
@@ -1185,6 +1185,22 @@ Approved Pending Device POC
 
 Align metadata, approval scope, build-scoped enforcement and evidence-based adjustment rules.
 
+0.4
+
+2026-07-13
+
+Approved Pending Device POC
+
+Đồng bộ Build 0.1 checksum/readiness override theo DEC-03.
+
+0.5
+
+2026-07-13
+
+Approved Pending Device POC
+
+Làm rõ legacy Unverified behavior chưa có approved Build Profile mapping.
+
 ## 11. Practical Conclusion
 
 DCAM cần performance budget để tránh tranh luận cảm tính về “nhanh/chậm/ổn định”.
@@ -1223,4 +1239,4 @@ Build 0.1 sử dụng Internal storage only.
 
 Không tự đặt MD5 latency/resource threshold; số liệu phải lấy từ NCC-036V Device POC.
 
-Mọi statement cũ cho phép checksum không chặn BDMA_READY không áp dụng cho Build 0.1.
+Mọi statement cũ cho phép checksum không chặn BDMA_READY không áp dụng cho Build 0.1. Legacy `missing MD5 → Unverified import` hiện không được gán cho Build 0.2, Build 0.3 hoặc Pilot/Shipment và chỉ có thể được kích hoạt bằng approved named-profile change.

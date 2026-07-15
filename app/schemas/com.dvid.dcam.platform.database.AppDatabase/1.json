@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "a362b1d3f9684397085d7f491b084ff7",
+    "identityHash": "2a18ce7e8c8b4a96b927120bc500f928",
     "entities": [
       {
         "tableName": "pending_logs",
@@ -226,7 +226,7 @@
       },
       {
         "tableName": "user_profile",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`user_id` TEXT NOT NULL, `file_user_id` TEXT NOT NULL, `login_name` TEXT, `display_name` TEXT NOT NULL, `status` TEXT NOT NULL, `source` TEXT NOT NULL, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `revision` INTEGER NOT NULL, PRIMARY KEY(`user_id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`user_id` TEXT NOT NULL, `file_user_id` TEXT NOT NULL, `display_name` TEXT NOT NULL, `status` TEXT NOT NULL, `source` TEXT NOT NULL, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `revision` INTEGER NOT NULL, PRIMARY KEY(`user_id`))",
         "fields": [
           {
             "fieldPath": "userId",
@@ -239,11 +239,6 @@
             "columnName": "file_user_id",
             "affinity": "TEXT",
             "notNull": true
-          },
-          {
-            "fieldPath": "loginName",
-            "columnName": "login_name",
-            "affinity": "TEXT"
           },
           {
             "fieldPath": "displayName",
@@ -297,15 +292,6 @@
             ],
             "orders": [],
             "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_user_profile_file_user_id` ON `${TABLE_NAME}` (`file_user_id`)"
-          },
-          {
-            "name": "index_user_profile_login_name",
-            "unique": true,
-            "columnNames": [
-              "login_name"
-            ],
-            "orders": [],
-            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_user_profile_login_name` ON `${TABLE_NAME}` (`login_name`)"
           }
         ]
       },
@@ -542,7 +528,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a362b1d3f9684397085d7f491b084ff7')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '2a18ce7e8c8b4a96b927120bc500f928')"
     ]
   }
 }

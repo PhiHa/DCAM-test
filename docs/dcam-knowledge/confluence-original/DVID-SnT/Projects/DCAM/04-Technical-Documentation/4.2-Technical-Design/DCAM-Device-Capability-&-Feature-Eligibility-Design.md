@@ -1,7 +1,7 @@
 # DCAM Device Capability & Feature Eligibility Design
 
 **Page ID**: 48758788  
-**Version**: 7  
+**Version**: 8  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/48758788
 
@@ -24,23 +24,47 @@ Technical Design
 
 Version
 
-Draft 0.6
+Draft 0.7
 
 Status
 
 Draft
 
+Approval Scope
+
+Draft capability/eligibility design only; exact device support phụ thuộc approved Build Profile và Device POC evidence.
+
 Owner
 
 Hoàng Ngọc Quyền
 
+Technical Reviewer
+
+Tech Lead / Android Lead / QA Lead
+
+Approver
+
+Hoàng Ngọc Quyền
+
+Parent Folder
+
+4.2 - Technical Design
+
 Last Updated
 
-2026-07-08
+2026-07-14
+
+Related Jira
+
+None
 
 Related Documents
 
 DCAM Android Operation Design, DCAM Android Device Owner & Kiosk Policy Design, DCAM In-App Operation, Device Settings & Media Console Design, DCAM Self Update Design, DCAM State Machine Design, DCAM Recording & Capture Design, DCAM Storage Design, DCAM SQLite Database Design, DCAM Sensor & Location Monitoring Design, DCAM Realtime AI Detection Design, DCAM Device POC & Hardware Validation Report
+
+Target Audience
+
+Tech Lead, Android Developers, QA, Support
 
 ## 1. Purpose
 
