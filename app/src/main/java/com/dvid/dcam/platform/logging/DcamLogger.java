@@ -19,6 +19,7 @@ import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -27,6 +28,7 @@ public final class DcamLogger {
     private static final String TAG = "DCAM";
     private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
     private static final DateTimeFormatter LOG_DATE = DateTimeFormatter.ISO_LOCAL_DATE;
+    private static final ZoneId BDMA_TIME_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
     private static final int LOCAL_LOG_RETENTION_DAYS = 14;
     private static final long CRASH_FALLBACK_JOIN_MS = 2_500L;
     private static Context appContext;
@@ -38,35 +40,47 @@ public final class DcamLogger {
     private static String model = "unknown";
     private static String camId = "unknown";
     private static boolean remoteUploadsEnabled;
+    private static boolean crashHandlerInstalled;
 
     private DcamLogger() {
     }
 
-    public static synchronized void init(Context context, DeviceInfo deviceInfo) {
+    public static synchronized void bootstrap(Context context) {
         appContext = context.getApplicationContext();
-        File root = appContext.getExternalFilesDir(null);
-        if (root == null)
-            root = appContext.getFilesDir();
-        logDir = new File(root, "Logs");
-        logDir.mkdirs();
-        logFile = new File(logDir, "logs.txt");
-        prepareLocalLog();
-        hardwareId = safe(deviceInfo.getHardwareId());
-        model = safe(deviceInfo.getModel());
-        Thread.UncaughtExceptionHandler previous = Thread.getDefaultUncaughtExceptionHandler();
-        Thread.setDefaultUncaughtExceptionHandler((thread, error) -> {
-            e("Crash on " + thread.getName(), error);
-            if (previous != null)
-                previous.uncaughtException(thread, error);
-        });
+        if (logFile == null) {
+            File root = appContext.getExternalFilesDir(null);
+            if (root == null) root = appContext.getFilesDir();
+            logDir = new File(root, "Logs");
+            logDir.mkdirs();
+            logFile = new File(logDir, "logs.txt");
+            prepareLocalLog();
+        }
+        installCrashHandler();
         if (logOutbox == null) {
             try {
                 logOutbox = new LogOutbox(appContext, remoteUploadsEnabled);
             } catch (Exception error) {
                 writeInternal("Loggly outbox initialization failed: " + error.getMessage());
+                sendDirect("Loggly outbox initialization failed", error);
             }
         }
+    }
+
+    public static synchronized void init(Context context, DeviceInfo deviceInfo) {
+        bootstrap(context);
+        hardwareId = safe(deviceInfo.getHardwareId());
+        model = safe(deviceInfo.getModel());
         i("Logger started: " + logFile.getAbsolutePath());
+    }
+
+    private static void installCrashHandler() {
+        if (crashHandlerInstalled) return;
+        Thread.UncaughtExceptionHandler previous = Thread.getDefaultUncaughtExceptionHandler();
+        Thread.setDefaultUncaughtExceptionHandler((thread, error) -> {
+            e("Crash on " + thread.getName(), error);
+            if (previous != null) previous.uncaughtException(thread, error);
+        });
+        crashHandlerInstalled = true;
     }
 
     public static synchronized void setCamId(String nextCamId) {
@@ -132,6 +146,19 @@ public final class DcamLogger {
         }
     }
 
+    public static void setContinuousDrainEnabled(boolean enabled) {
+        LogUploadScheduler.setContinuousDrainEnabled(enabled);
+    }
+
+    static void sendDirect(String message, Throwable error) {
+        sendCrashFallback(json(message, error, Thread.currentThread().getName(),
+                DcamLogger.class.getName()));
+    }
+
+    public static void sendBootstrapFailure(String message, Throwable error) {
+        sendDirect(message, error);
+    }
+
     private static void sendCrashFallbackOnWorker(String payload) {
         HttpURLConnection connection = null;
         try {
@@ -160,7 +187,8 @@ public final class DcamLogger {
     }
 
     static String json(String message, Throwable error, String thread, String source) {
-        String timestamp = Instant.now().toString();
+        String timestamp = OffsetDateTime.now(BDMA_TIME_ZONE)
+                .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
         return "{\"app\":\"DCAM\",\"version\":\"" + escape(BuildConfig.VERSION_NAME) + "\",\"timestamp\":\""
                 + escape(timestamp) + "\",\"thread\":\"" + escape(safe(thread)) + "\",\"source\":\""
                 + escape(source) + "\",\"hardwareId\":\"" + escape(hardwareId) + "\",\"model\":\""

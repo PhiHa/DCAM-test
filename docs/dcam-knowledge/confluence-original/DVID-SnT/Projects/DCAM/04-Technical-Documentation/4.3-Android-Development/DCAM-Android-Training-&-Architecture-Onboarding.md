@@ -1,7 +1,7 @@
 # DCAM Android Training & Architecture Onboarding
 
 **Page ID**: 46825510  
-**Version**: 9  
+**Version**: 10  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/46825510
 
@@ -24,11 +24,15 @@ Developer Onboarding Guide
 
 Version
 
-Approved 1.5
+Approved 1.6
 
 Status
 
 Approved
+
+Approval Scope
+
+Developer onboarding và reading guidance; không thay thế Requirements, Architecture, Technical Design hoặc Build Applicability baseline.
 
 Owner
 
@@ -52,7 +56,7 @@ Java Desktop Developers, Android Newcomers, QA, Tech Lead, PM/BA
 
 Last Updated
 
-2026-07-08
+2026-07-14
 
 Related Jira
 

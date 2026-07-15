@@ -1,7 +1,7 @@
 # DCAM Factory Provisioning & Device Production SOP
 
 **Page ID**: 49545629  
-**Version**: 14  
+**Version**: 15  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/49545629
 
@@ -24,11 +24,15 @@ Factory SOP / Device Production Procedure
 
 Version
 
-Approved 1.2
+Approved 1.3
 
 Status
 
-Approved 
+Approved
+
+Approval Scope
+
+Factory provisioning procedure và acceptance gates; device qualification/shipment acceptance chỉ hợp lệ khi required evidence và gates hoàn tất.
 
 Owner
 
@@ -52,7 +56,7 @@ Factory Operator, Factory Worker, Factory Admin, QA, Android Developers, Tech Le
 
 Last Updated
 
-2026-07-10
+2026-07-14
 
 Related Jira
 
@@ -252,7 +256,7 @@ Không thuộc DSetup Tool Design.
 
 Exact serial injection command/action/component
 
-Thuộc DCAM DSetup Factory Tool Design + Android/Security approval.
+Thu��c DCAM DSetup Factory Tool Design + Android/Security approval.
 
 Exact Device Owner component/command wrapper
 

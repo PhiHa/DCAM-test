@@ -1,7 +1,7 @@
 # 02 - Architecture Principles
 
 **Page ID**: 47120416  
-**Version**: 13  
+**Version**: 14  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47120416
 
@@ -24,11 +24,15 @@ Software Architecture Document / Principles
 
 Version
 
-Approved 1.7
+Approved 1.8
 
 Status
 
 Approved
+
+Approval Scope
+
+Project architecture principles và cross-cutting constraints; build applicability thuộc DCAM Release & Build Applicability Matrix.
 
 Owner
 
@@ -52,7 +56,11 @@ PM/BA, Tech Lead, Android Developers, QA, BDMA Team, Cloud/WebServer Team
 
 Last Updated
 
-2026-07-10
+2026-07-14
+
+Related Jira
+
+None
 
 Related Documents
 

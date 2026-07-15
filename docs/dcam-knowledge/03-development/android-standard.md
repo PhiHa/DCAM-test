@@ -1,8 +1,8 @@
 # Android development standard
 
-Source status: **Approved 1.7**, Confluence page version 10, updated 2026-07-08.
+Source status: current Confluence page version 14, last registry review 2026-07-14.
 
-Delivery overlay: the [DCAM Architecture Delivery Profile](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/50626744) is **Approved 1.1**, page version 4, updated 2026-07-09. It determines which target-architecture rules are mandatory in Phase 1 and which activate only when the corresponding later-phase feature enters implementation scope.
+Delivery overlay: [DCAM Architecture Delivery Profile](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/50626744) is current page version 6, reviewed 2026-07-14. It determines which target-architecture rules are mandatory in Phase 1 and which activate only when corresponding later-phase feature enters scope.
 
 ## Target stack from the documentation
 
@@ -92,6 +92,16 @@ Do not put fragile hardware commands into a general thread pool. Do not expose r
 - Storage/metadata details do not leak upward.
 - Tests use fakes at application boundaries where practical.
 - Jira issue is linked when applicable.
+
+## Build 0.1 implementation evidence
+
+- Implement against NCC-036V / Android 12/API 31 reference profile without claiming untested device compatibility.
+- Keep camera integration behind Android platform boundary; do not add vendor SDK because Decision Brief marks it not applicable for Build 0.1.
+- Use internal storage only for active profile. Preserve staging/final artifacts on failure; never expose partial media to BDMA.
+- Persist fixed `B01OPR` / `Build 0.1 Operator` consistently where required; do not build login/auth framework for this build.
+- Finalize MP4, compute MD5 off main thread, persist checksum state, then publish `BDMA_READY`. Missing/mismatch digest blocks import for affected item.
+- Record battery, internal free space, and GPS availability state. Coordinates/routes and continuous tracking are outside acceptance.
+- Attach Jira, PR/build, QA Test ID, logs, generated artifacts, and identifiable physical-device evidence. Unit tests alone do not close Pending Device POC.
 
 ## Training context
 

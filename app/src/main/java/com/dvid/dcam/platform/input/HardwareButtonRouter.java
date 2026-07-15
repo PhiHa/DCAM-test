@@ -77,7 +77,6 @@ public final class HardwareButtonRouter {
             case SOS:
                 return handleSosDown(buttonKeyCode, repeatCount, eventTimeMs);
             case PTT:
-            case POWER:
                 return false;
             default:
                 throw new IllegalArgumentException("Unsupported button role " + binding.role());
@@ -96,7 +95,7 @@ public final class HardwareButtonRouter {
             stopVideoRecording();
             return true;
         }
-        return binding.role() != ButtonRole.PTT && binding.role() != ButtonRole.POWER;
+        return binding.role() != ButtonRole.PTT;
     }
 
     public boolean isSosButton(int buttonKeyCode) {

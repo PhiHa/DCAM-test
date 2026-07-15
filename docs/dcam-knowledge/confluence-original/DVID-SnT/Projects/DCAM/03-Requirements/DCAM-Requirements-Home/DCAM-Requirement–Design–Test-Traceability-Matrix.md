@@ -1,7 +1,7 @@
 # DCAM Requirement–Design–Test Traceability Matrix
 
 **Page ID**: 51085669  
-**Version**: 2  
+**Version**: 6  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/51085669
 
@@ -24,7 +24,7 @@ Requirement–Design–Test Traceability Matrix
 
 Version
 
-Approved Provisional Baseline 1.1
+Approved Provisional Baseline 1.5
 
 Status
 
@@ -32,7 +32,7 @@ Approved Provisional Baseline
 
 Approval Scope
 
-Build 0.1 backlog-readiness traceability; chưa phải release acceptance khi Jira/evidence còn thiếu.
+DEC-01–DEC-07 Build 0.1 backlog-readiness traceability, gồm Important Media Conditional — Not Activated; chưa phải release acceptance khi Jira/evidence còn thiếu.
 
 Owner
 
@@ -56,7 +56,7 @@ PM/BA, Tech Lead, Developers, QA, BDMA Team, Security Reviewer
 
 Last Updated
 
-2026-07-13
+2026-07-14
 
 Related Jira
 
@@ -64,11 +64,11 @@ Not linked
 
 Dependencies / Blockers
 
-Jira implementation linkage; PR/build/test evidence; Technical Review cho DB/CSON assertions; Device POC cho physical path.
+Jira implementation linkage; authoritative GitHub mapping; PR/build/test evidence; Technical Review cho Camera/path/DB/CSON; Device POC execution.
 
 Related Documents
 
-DCAM Release & Build Applicability Matrix, DCAM Requirements Home, DCAM Architecture Home, DCAM QA Test Strategy & Test Matrix, DCAM Documentation Governance, DCAM Document Status Registry
+DCAM Release & Build Applicability Matrix, DCAM Requirements Home, DCAM Architecture Home, DCAM QA Test Strategy & Test Matrix, DCAM Documentation Governance, DCAM Document Status Registry, Decision Brief – DCAM MVP Internal Build 0.1 – Working Recording Slice
 
 ## 1. Purpose
 
@@ -176,29 +176,29 @@ REC-VID-002
 
 Required
 
-DCAM-BDMA Data Contract §7; DCAM Recording & Capture Design §5
+DCAM-BDMA Data Contract §7/§16.4; DCAM Recording & Capture Design §5
 
-QA-BDMA-001
+QA-MEDIA-NAME-001/002, QA-BDMA-001
 
 Not linked
 
-Final media naming/import result
+Filename token validation và final media import evidence not attached
 
 Partially Covered
 
 REC-VID-003
 
-Conditional for important-media scope
+Conditional — Not Activated
 
-DCAM-BDMA Data Contract §7; Recording Design §6
+DCAM-BDMA Data Contract §6–§9; Recording Design §6; Release & Build Applicability Matrix §10
 
-QA gap: dedicated Important Media test ID required
+QA-MEDIA-IMP-001
 
 Not linked
 
-None
+Not required while activation condition is false
 
-Gap
+Planned
 
 REC-VID-004
 
@@ -214,17 +214,17 @@ Security Review pending
 
 Blocked
 
-REC-VID-005
+REC-VID-005 / REC-VID-007 / REC-VID-008
 
-Conditional when checksum policy is enabled
+Required
 
-Data Contract §8; Performance Budget §4.2
+Data Contract §16.2; Recording Design §12; Storage Design §11
 
-QA-BDMA-001, QA-BDMA-002, QA-PERF-003
+QA-BDMA-001/002/003/007, QA-PERF-003
 
 Not linked
 
-MD5/import result
+MP4/MD5 timestamps, failure/import result not attached
 
 Partially Covered
 
@@ -260,13 +260,13 @@ REC-IMG-002
 
 Required
 
-Data Contract §7
+Data Contract §7/§16.4
 
-QA-IMG-002
+QA-IMG-002, QA-MEDIA-NAME-001/002
 
 Not linked
 
-BDMA sample import not attached
+Filename token validation và BDMA sample import evidence not attached
 
 Partially Covered
 
@@ -470,27 +470,27 @@ DATA-CONTRACT-MVP
 
 Required
 
-DCAM-BDMA Data Contract §§5–13
+DCAM-BDMA Data Contract §16
 
-QA-BDMA-001, QA-BDMA-002, QA-LOG-009
+QA-BDMA-001/002/003/004/005/006/007
 
 Not linked
 
-BDMA sample import report
+BDMA sample import and error evidence not attached
 
 Partially Covered
 
-STO-LOC-001 / STO-LOC-002 / STO-MODE-001
+STO-LOC-001 / STO-LOC-002 / STO-MODE-001 / STO-PRE-001 / STO-FAIL-001/002
 
-Conditional / Decision Required
+Internal Required; External/Auto Not Applicable
 
-Media Storage Requirements §2; Storage Design §§2–3
+Media Storage Requirements §2/§4; Storage Design §11; Data Contract §16.1
 
-QA-STO-001, QA-PERF-007/008; device-profile cases TBD
+QA-STO-003/004, QA-PERF-007/008
 
 Not linked
 
-Active storage profile and Device POC not attached
+Internal path and failure evidence Pending Device POC
 
 Blocked
 
@@ -722,14 +722,6 @@ PM / QA Lead / Android Lead
 
 P0
 
-Important Media behavior lacks dedicated QA ID.
-
-Add `_IMP` naming/folder and active-recording marking tests.
-
-QA Lead
-
-P0
-
 Working Recording Slice has no single evidence record/Jira link.
 
 Create Jira Epic/Task set and link runnable APK, artifacts and BDMA import report.
@@ -781,4 +773,127 @@ Mark Covered
 
 Document links alone are not complete traceability.
 An active requirement is covered only when Requirement → Build → Design → QA → Jira → Evidence is visible.
-Build 0.1 đã có image QA mapping và dedicated DB/CSON/BDMA test IDs; Jira linkage, execution evidence, Important Media và các Technical Review/Device POC decision vẫn còn mở.
+Build 0.1 đã có image QA mapping, dedicated DB/CSON/BDMA test IDs và QA-MEDIA-IMP-001 cho Important Media `Conditional — Not Activated`. Các gap đang active còn lại thuộc Jira linkage, execution evidence và Technical Review/Device POC decisions.
+## 9. DEC-01–DEC-07 Controlled Traceability
+
+Requirement / Decision ID
+
+Build
+
+Design / Contract
+
+QA Test ID
+
+Jira
+
+Evidence
+
+Coverage Status
+
+DEC-01 / WRS-AC-001
+
+DCAM MVP Internal Build 0.1
+
+Architecture Delivery Profile §13; Recording Design §12; Platform Strategy §11; Device POC §16
+
+QA-WRS-DEV-001, POC-WRS-001/002
+
+Not linked
+
+Physical device/configuration and Camera API capability evidence Pending Device POC
+
+Blocked
+
+DEC-02 / STO-LOC-001 / STO-PRE-001 / STO-FAIL-001/002
+
+DCAM MVP Internal Build 0.1
+
+Storage Design §11; Data Contract §16.1
+
+QA-STO-003/004, POC-WRS-003/004
+
+Not linked
+
+Internal path, pre-check and safe-stop evidence not attached
+
+Blocked
+
+DEC-03 / REC-VID-005/007/008 / BDMA-B01-002/003/004
+
+DCAM MVP Internal Build 0.1
+
+Recording Design §12; Storage Design §11; Data Contract §16.2; BDMA Design §13
+
+QA-PERF-003, QA-BDMA-001/002/003/007, POC-WRS-005
+
+Not linked
+
+Finalize/MD5/readiness/import evidence not attached
+
+Partially Covered
+
+DEC-04 / UDO-B01-001…004 / CFG-B01-001/002 / LOG-B01-OP-001
+
+DCAM MVP Internal Build 0.1
+
+State Machine §16; Android Operation §12; SQLite §18; Data Contract §16.3; Logging Design §16
+
+QA-WRS-OP-001, POC-WRS-006
+
+Not linked
+
+SQLite/CSON/log artifact evidence và schema Technical Review pending
+
+Partially Covered
+
+DEC-05 / LOG-B01-STATUS-001
+
+DCAM MVP Internal Build 0.1
+
+Delivery Profile §13; Android Operation §12; Device POC §16
+
+QA-WRS-STATUS-001, POC-WRS-007
+
+Not linked
+
+Battery/storage/GPS status evidence not attached
+
+Partially Covered
+
+DEC-06 / WRS-AC-006
+
+DCAM MVP Internal Build 0.1
+
+MVP Scope §10; Delivery Profile §13; Device POC §16
+
+QA-WRS-DEV-001, POC-WRS-001/008
+
+Not linked
+
+End-to-end WRS evidence from identifiable physical device not attached
+
+Blocked
+
+DEC-07 / REC-VID-002 / REC-IMG-002 / WRS-AC-007
+
+DCAM MVP Internal Build 0.1
+
+Data Contract §7/§16.4; Data Architecture §8; BDMA Design §13
+
+QA-MEDIA-NAME-001/002, POC-WRS-009
+
+Not linked
+
+Actual serial_number, generated filename, parser/import và contract-version evidence not attached; timezone/collision Technical Review open
+
+Partially Covered
+
+### Coverage Interpretation
+
+Approved decisions và documentation mappings đã có.
+
+Jira linkage, authoritative GitHub repository mapping và execution evidence chưa có.
+
+Pending Device POC rows không được chuyển sang Covered/Passed trước khi evidence được gắn.
+
+Build 0.1 result không đại diện Production, fleet, multi-model hoặc multi-firmware readiness.

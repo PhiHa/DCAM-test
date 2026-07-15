@@ -1,5 +1,7 @@
 # Scope, roadmap, and release intent
 
+Source refresh: **2026-07-15**. Active profile is DCAM MVP Internal Build 0.1 / Working Recording Slice. Important Media is Conditional - Not Activated; cloud provisioning, full kiosk, auth expansion, Self Update, AI, streaming, PTT, and production security remain deferred unless approved applicability changes.
+
 ## MVP definition
 
 The first MVP validates the complete local capture-to-desktop path:
@@ -11,6 +13,19 @@ record or capture
 → expose data in an ADB-readable form
 → BDMA discovers, imports, maps, and displays it
 ```
+
+## Active Build 0.1 decisions
+
+| Area | Condensed baseline |
+|---|---|
+| Reference device | One NCC-036V running Android 12 / API 31 / firmware `877AOOAKN1_RK2_V009`; result does not prove multi-model, fleet, or production readiness |
+| Camera | Android platform Camera API; vendor SDK excluded; exact Camera1/Camera2 capability waits for device evidence |
+| Storage | Internal storage only; no external fallback; physical path still needs device/design review |
+| MP4 integrity | Finalize MP4, compute MD5 asynchronously, expose as `BDMA_READY` only after success; mismatch/missing digest blocks import for that item |
+| Operator | No login UI; fixed technical identity `B01OPR` / `Build 0.1 Operator`; not authenticated identity |
+| Device status | Battery level, internal free storage, and GPS Available/Unavailable/Unsupported |
+| Evidence | One identifiable physical reference device must pass Working Recording Slice |
+| Important Media | Contract values remain recognizable, but creation/marking workflow is Conditional - Not Activated |
 
 Required MVP capabilities:
 

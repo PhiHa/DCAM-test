@@ -1,7 +1,7 @@
 # DCAM Architecture Delivery Profile
 
 **Page ID**: 50626744  
-**Version**: 4  
+**Version**: 6  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/50626744
 
@@ -24,7 +24,7 @@ Architecture Delivery Profile / MVP Implementation Architecture Guardrail
 
 Version
 
-1.2
+1.3
 
 Status
 
@@ -760,7 +760,11 @@ MP4 finalized trước; async MD5; BDMA_READY chỉ sau valid MD5.
 
 Operator
 
-No login UI; BUILD01_OPERATOR / Build 0.1 Operator; technical traceability only.
+No login UI; B01OPR / Build 0.1 Operator; technical traceability only.
+
+Media Filename
+
+Data Contract-owned mapping: DEVICE_TOKEN là validated serial_number snapshot 6–10 ký tự; OPERATOR_TOKEN là B01OPR đúng 6 ký tự; không underscore hoặc silent truncation.
 
 Device Status
 

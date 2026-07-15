@@ -28,7 +28,7 @@ Do not expand platform architecture before this slice is demoable on selected Bo
 | Requirement-Design-Test Traceability Matrix | Defines Requirement, Design, Jira, PR, QA Test ID and evidence mapping |
 | Device POC & Hardware Validation Report | Owns hardware-sensitive Camera SDK, FGS, storage, ADB, power and recovery evidence |
 
-Source snapshot refreshed from Confluence on 2026-07-13 with `node download-confluence.js`.
+Source snapshot refreshed from Confluence on 2026-07-15 with `node download-confluence.js`. Latest Build 0.1 authority includes DEC-01-DEC-07 and requires MP4 MD5 success before `BDMA_READY`.
 
 ## 3. Current source status
 
@@ -243,7 +243,7 @@ Decision owner must update Confluence/Jira before implementation changes contrac
 | `current-repo/current-state.md` | Detailed code inventory appendix |
 | `poc-capability-assessment.md` | Pre-implementation POC forecast; superseded where 2026-07-13 evidence exists |
 | `sprint-0-action-checklist.md` | Historical risk checklist; not independent release authority |
-| `evidence/confluence-refresh-gap-report-2026-07-13.md` | Refresh snapshot; gaps merged here |
+| `evidence/confluence-refresh-gap-report-2026-07-15.md` | Current refresh snapshot; gaps merged here |
 | `evidence/build-0.1-item-9-adb-recovery-2026-07-13.md` | Accepted raw device evidence appendix |
 
 Use this report for daily Build 0.1 coordination. Update it when source status, POC evidence, BDMA contract decision or gate result changes.

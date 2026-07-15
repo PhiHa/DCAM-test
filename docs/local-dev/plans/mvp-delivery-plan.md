@@ -1,10 +1,10 @@
 ﻿# DCAM MVP Delivery Plan
 
-**Confluence refresh note:** 2026-07-13 gap report is docs/local-dev/evidence/confluence-refresh-gap-report-2026-07-13.md. Treat it as current local gap triage before expanding Build 0.1 scope.
+**Confluence refresh note:** 2026-07-15 gap report is `docs/local-dev/evidence/confluence-refresh-gap-report-2026-07-15.md`. Treat it as current local gap triage before expanding Build 0.1 scope.
 
 - Status: active implementation plan
 - Prepared from repository state: 2026-07-09
-- Last Confluence scope review: 2026-07-10
+- Last Confluence scope review: 2026-07-15
 - Active build profile: DCAM MVP Internal Build 0.1
 - Active delivery gate: Working Recording Slice
 - Contract baseline: DCAMâ€“BDMA Data Contract, Confluence version 9
@@ -117,26 +117,41 @@ platform concerns remain valid target work, but they are not Build 0.1 release b
 | Increment | Status | Evidence / remaining boundary |
 |---|---|---|
 | Approved small Gradle shape | Complete | `:app` depends one-way on independently compiled/tested `:core` |
-| Password-first login UI and use cases | Implemented foundation | Login, ambiguous-password handling, provisioning and logout have JVM tests |
-| Boot-scoped operator session | Implemented foundation | Room session row plus boot-ID restore/invalidation; Android/Room integration still needs instrumentation |
+| Password-first login and operator session | Implemented | User ID is login credential; login DB reset is available without deleting media; JVM and device login verified |
 | Password protection at rest | Implemented | bcrypt cost 10 with embedded per-hash salts; no plaintext credential column; no PBKDF2 compatibility verifier |
-| Capture session enforcement | Conditional foundation | Navigation/hardware guards exist; do not expand auth until the Working Recording Slice passes |
-| Build 0.1 minimal DB/contract state | Not complete | Auth/platform tables exist; a minimal media/finalization/BDMA fixture remains |
-| Service-owned recording | Not started | Notification service still does not own CameraX or finalization |
-| Staging/finalization/BDMA readiness | Not started | Capture still targets final media paths and has no `BDMA_READY` transaction |
-| Recovery and BDMA E2E | Not started | No DB/filesystem reconciliation or joint import fixture |
+| Capture session enforcement | Implemented foundation | Navigation and hardware capture require active operator session |
+| Serialized recording authority | Complete | UI, hardware and camera events route through one coordinator; focused tests pass |
+| Temp staging and safe publication | Complete | Video, image and audio stage outside `Media`; verified publication and conservative recovery exist |
+| Storage selection and capacity handling | Complete | Internal/External/Auto resolution and capture prechecks have focused tests |
+| Activity-independent recording lifetime | Complete | App-scoped composition/coordinator survive Activity recreation |
+| Audio physical power-loss recovery | Complete on reference device | External `Temp` retest recovered one AAC with `preserved=0`; see audio device evidence |
+| Video destructive recovery proof | In progress | Force-stop/reboot evidence exists; remaining production-profile repetitions stay open |
+| BDMA ADB import fixture | Pending | Finalized sample video/image import remains Build 0.1 gate |
 
 ### 3.4 Immediate execution order
 
-1. Prove record 30 seconds plus image capture on the selected BodyCamera and record device/firmware
-   evidence.
-2. Route touch/hardware commands through one small single-threaded coordinator with Camera, File I/O
-   and DB work off the MainThread.
-3. Implement Temp/staging, verified final publication and the minimum DB/CSON state needed by the
-   supported Build 0.1 Data Contract.
-4. Export sanitized `Logs/logs.txt` independently of Loggly/Crashlytics availability.
-5. Run the shared ADB fixture and prove BDMA detects/imports the sample media.
-6. Measure the mandatory Build 0.1 concurrency, performance and long-running stability budgets.
+This is the canonical execution checklist. Do not maintain parallel status checklists.
+
+- [x] Force Build 0.1 encryption default off.
+- [x] Serialize recording commands and camera completion events.
+- [x] Stage video, image and audio under selected `Temp`.
+- [x] Add capacity prechecks and safe storage-full rejection.
+- [x] Validate and publish staged media without overwrite.
+- [x] Preserve recording state across Activity recreation.
+- [x] Prove external-audio physical battery-loss recovery on `BODYCAMERA4HHITK`.
+- [ ] Complete destructive video recovery repetitions on applicable production storage profile.
+- [ ] Prove 30-second video plus image capture on selected release firmware.
+- [ ] Export and inspect sanitized local `Logs/logs.txt` fixture.
+- [ ] Run shared ADB fixture and prove BDMA detects/imports sample media.
+- [ ] Measure required concurrency, performance, thermal and long-running stability budgets.
+- [ ] Attach final device/firmware evidence, known limitations and decision references.
+
+Specialized procedures and results remain separate because they are evidence, not competing plans:
+
+- Hardware procedure: [`sprint-0-poc-test-plan.md`](sprint-0-poc-test-plan.md)
+- Current repository state: [`../current-repo/current-state.md`](../current-repo/current-state.md)
+- Audio device evidence: [`../evidence/build-0.1-audio-device-tests-2026-07-14.md`](../evidence/build-0.1-audio-device-tests-2026-07-14.md)
+- Confluence/code gap report: [`../evidence/confluence-refresh-gap-report-2026-07-15.md`](../evidence/confluence-refresh-gap-report-2026-07-15.md)
 
 ## 4. MVP product surface
 
@@ -439,7 +454,7 @@ Release gate:
 | Physical storage root and finalization mechanics | Required device/storage decision | Sprint 2 exit |
 | SQLite implementation and minimal BDMA fixture | Required for the supported Build 0.1 schema/output | Before Sprint 4 |
 | Critical-path execution lanes and timeouts | Required by Concurrency & Threading Model v3 | Before Sprint 3 exit |
-| MP4 checksum policy | Optional feature; if enabled, it runs after `BDMA_READY` | Before Sprint 4 |
+| MP4 checksum policy | Required for every Build 0.1 MP4; finalize first, compute MD5 asynchronously, then set `BDMA_READY` only after success | Before Sprint 4 |
 | Encryption/key management | Full implementation deferred to Build 0.2; Build 0.1 behavior must be deterministic | Before Sprint 3 exit |
 | Password auth, emergency identity and advanced user management | Deferred to Build 0.2 unless explicitly enabled | Build 0.2 planning |
 | BDMA write-back fields, import tracking and cleanup | Deferred unless the Build 0.1 fixture explicitly requires them | Build 0.2 planning |
@@ -462,7 +477,7 @@ hardware:
 | App restart/reboot after interrupted work | Preserve Temp/final candidates, reconcile the minimum state and return to recording readiness within the applicable budget |
 | Storage full before start | Controlled rejection |
 | Storage full during recording | Safe stop/failure classification; preserve staging where possible |
-| External storage removed | Safe stop/failure; Auto fallback applies only to a new session |
+| External storage removed | Build 0.1 uses internal storage only; reject external-root dependency. Auto/removable behavior is later-profile evidence, not Build 0.1 acceptance |
 | DB busy/locked by BDMA | Bounded retry/defer; no corruption; recording policy remains deterministic |
 | DB corrupt | Preserve original DB; safe mode/recovery; no destructive auto-reset |
 | BDMA reads while recording | Only finalized media visible; `Temp` ignored |
@@ -470,7 +485,7 @@ hardware:
 | FGS cannot start | Reject/defer operation; no false active recording state |
 | Permission revoked | Only affected command blocked; app remains usable |
 | Encryption configured while MVP policy is off | Output remains unencrypted and policy decision is logged safely |
-| MP4 checksum still running or fails | Final media remains `BDMA_READY`; new recording is not blocked; safe warning/reason is logged |
+| MP4 checksum still running or fails | Preserve final MP4, record Checksum Pending/Failed, block `BDMA_READY` and BDMA import for that item; new recording remains independent |
 | Loggly/Crashlytics/backend unavailable | Local operational logs and `logs.txt` continue; capture/finalization does not fail |
 
 ## 11. Test strategy
@@ -480,7 +495,7 @@ hardware:
 | Area | Mandatory target |
 |---|---|
 | Recording | Warm start â‰¤ 2.0s; stop â‰¤ 1.5s; critical finalization to `BDMA_READY` â‰¤ 5.0s; image capture â‰¤ 1.5s; precheck â‰¤ 500ms |
-| Critical path | Checksum excluded from finalization; it must not block `BDMA_READY` or a new recording |
+| Critical path | MP4 finalization precedes asynchronous MD5; checksum blocks only that item's `BDMA_READY`, never a new recording or unrelated capture |
 | Memory | Idle â‰¤ 80 MB; recording â‰¤ 200 MB; growth â‰¤ 5 MB/hour |
 | Storage/I/O | Sustained recording write â‰¥ 15 MB/s; same-filesystem move â‰¤ 500ms; media DB transaction â‰¤ 100ms |
 | Free space | Start threshold = estimated 30-minute recording size + 500 MB; storage-full handling causes no file corruption |
@@ -498,7 +513,7 @@ evidence and approval; it is not silently relaxed in code or tests.
 - Filename and contract-version validation.
 - Finalization decision logic and failure classification.
 - Basic interrupted-artifact reconciliation with fake DB/files.
-- Checksum-after-readiness ordering and provider-failure isolation.
+- Finalize-before-checksum ordering, checksum-gated `BDMA_READY`, and provider-failure isolation.
 - Developer-gate behavior only for explicitly disableable surfaces.
 - Architecture dependency rules and always-on infrastructure rule.
 
@@ -538,7 +553,7 @@ Build 0.1 is done only when:
 - applicable concurrency, performance, sanitization, failure and stability gates pass;
 - no critical bug remains in the Build 0.1 flow;
 - contract versions, device/firmware evidence, test report and known limitations accompany the build;
-- existing conditional login behavior remains safe if enabled, but full auth completion is not used
+- fixed `B01OPR` / `Build 0.1 Operator` identity is consistent; full auth/login completion is not used
   as a Build 0.1 acceptance criterion.
 
 ## 13. Explicit non-goals for the first MVP

@@ -2,9 +2,24 @@
 
 ## Architecture intent
 
-The Architecture Home is **Approved 1.23** (Confluence page version 29, updated 2026-07-09). It identifies the approved Data Contract as the official baseline for storage/data/integration details. The Requirements set now includes Approved Data Contract 1.6, Android Device Operation Requirements 1.8, and System Settings Requirements 1.13.
+Architecture Home is current Confluence page version 39, last registry review 2026-07-14. It identifies current Data Contract as official storage/data/integration baseline. Active Build 0.1 profile is controlled by Release & Build Applicability Matrix, Architecture Delivery Profile, and DEC-01-DEC-07 Decision Brief.
 
 The July 8 Technical Design pages add target-direction language for Android operation, kiosk policy, in-app console/settings, recording, storage, SQLite, BDMA integration, provisioning, update, security, sensors, and AI. Treat those pages as draft/expected design intent until implementation and review correct/complete them.
+
+For Build 0.1, architecture must collapse to one recording-first vertical slice. Generic platform layers activate only when needed by capture, finalization, minimum contract outputs, local diagnostics, or BDMA import. Device-owner policy, cloud/provider adapters, advanced auth, update, AI, streaming, and PTT remain outside release-critical path.
+
+## Current consolidated architecture decisions
+
+- DCAM is Android-side evidence producer; BDMA is desktop-side active reader/importer/manager. Android never depends on BDMA being connected to record or finalize data.
+- Source media, DB, CSON, and logs have explicit ownership. BDMA may read approved finalized artifacts and controlled write-back fields; it may not modify source media, temp files, checksum content, active runtime state, or local logs.
+- Dependency direction points inward. UI/use cases depend on owned domain boundaries; Android, camera, filesystem, SQLite, Firebase, update, and vendor/provider details stay behind adapters.
+- Phase 1 begins with `:app` and `:core`; package-first growth is preferred. Maximum recommended Phase 1 modules are `:app`, `:core`, `:media`, `:storage`, and `:bdma-contract`, added only after documented extraction triggers.
+- One serialized recording authority owns camera state. Runtime services, hardware keys, UI, recovery, and remote commands cannot create parallel recording state machines.
+- Local-first operation is mandatory. Cloud, provisioning, remote config, crash upload, and update providers are optional adapters and cannot block capture/data integrity.
+- Feature activation combines setting, capability, permission, policy authority, safety guard, and temporary availability. Unsupported or degraded behavior is explicit, never silently assumed.
+- Device identity separates `serial_number`, `dcam_cloud_device_id`, and recovery lookup `android_id_hash`; no raw Android identifier becomes business identity.
+- Production dedicated-device direction uses local Device Owner/DPC plus Lock Task where supported; missing required authority produces controlled policy-required/degraded state.
+- Security protects credentials, identity, config, update, and media boundaries. Exact encryption algorithms, keys, rotation, and BDMA decryption remain security-profile decisions, not invented defaults.
 
 The [Architecture Delivery Profile](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/50626744) is **Approved 1.1** (page version 4, updated 2026-07-09). It is the guardrail for converting that larger target architecture into current implementation work: Phase 1 stays deliberately small and proves a runnable recording/storage/BDMA slice before platform expansion.
 

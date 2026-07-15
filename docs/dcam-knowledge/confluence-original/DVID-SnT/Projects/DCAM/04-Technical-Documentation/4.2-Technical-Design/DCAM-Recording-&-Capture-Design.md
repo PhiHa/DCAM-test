@@ -1,7 +1,7 @@
 # DCAM Recording & Capture Design
 
 **Page ID**: 48529484  
-**Version**: 12  
+**Version**: 14  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/48529484
 
@@ -24,7 +24,7 @@ Technical Design
 
 Version
 
-1.2
+1.3
 
 Status
 
@@ -56,7 +56,11 @@ Tech Lead, Android Developers, QA, BDMA Team, Support
 
 Last Updated
 
-2026-07-13
+2026-07-14
+
+Related Jira
+
+None
 
 Related Documents
 

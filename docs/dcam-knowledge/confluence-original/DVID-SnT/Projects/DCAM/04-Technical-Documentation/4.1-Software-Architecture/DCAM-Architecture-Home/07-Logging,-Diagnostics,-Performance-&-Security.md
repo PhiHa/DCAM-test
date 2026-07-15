@@ -1,7 +1,7 @@
 # 07 - Logging, Diagnostics, Performance & Security
 
 **Page ID**: 47185971  
-**Version**: 10  
+**Version**: 11  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47185971
 
@@ -24,11 +24,15 @@ Software Architecture Document / Operational Quality Architecture
 
 Version
 
-Approved 1.7
+Approved 1.8
 
 Status
 
 Approved
+
+Approval Scope
+
+Operational quality architecture boundaries cho logging, diagnostics, performance và security; detailed rules thuộc Requirements/Design/QA sources.
 
 Owner
 
@@ -52,7 +56,7 @@ PM/BA, Tech Lead, Android Developers, Backend Developers, QA, BDMA Team, Support
 
 Last Updated
 
-2026-07-10
+2026-07-14
 
 Related Jira
 

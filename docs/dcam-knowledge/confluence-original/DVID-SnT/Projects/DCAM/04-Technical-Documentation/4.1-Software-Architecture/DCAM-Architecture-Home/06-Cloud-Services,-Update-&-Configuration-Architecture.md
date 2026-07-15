@@ -1,7 +1,7 @@
 # 06 - Cloud Services, Update & Configuration Architecture
 
 **Page ID**: 47120459  
-**Version**: 27  
+**Version**: 28  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47120459
 
@@ -24,11 +24,15 @@ Software Architecture Document / Cloud, Update & Configuration Architecture
 
 Version
 
-Approved 3.2
+Approved 3.3
 
 Status
 
 Approved
+
+Approval Scope
+
+Cloud, update và configuration architecture boundaries; exact API/schema thuộc Contract, security values thuộc Security Design.
 
 Owner
 
@@ -52,7 +56,11 @@ PM/BA, Tech Lead, Android Developers, Web/Backend Developers, QA, Factory, Cloud
 
 Last Updated
 
-2026-07-10
+2026-07-14
+
+Related Jira
+
+None
 
 Related Documents
 

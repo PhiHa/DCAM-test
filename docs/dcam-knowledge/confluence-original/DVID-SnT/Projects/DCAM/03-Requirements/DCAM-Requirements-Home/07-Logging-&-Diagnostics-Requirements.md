@@ -1,7 +1,7 @@
 # 07 - Logging & Diagnostics Requirements
 
 **Page ID**: 47776094  
-**Version**: 7  
+**Version**: 8  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47776094
 
@@ -24,7 +24,7 @@ Functional Requirements
 
 Version
 
-Approved 1.5
+Approved 1.6
 
 Status
 
@@ -824,7 +824,7 @@ Approved
 
 LOG-B01-OP-001
 
-BUILD01_OPERATOR / Build 0.1 Operator tại nơi log schema yêu cầu; không được diễn giải là authenticated identity.
+B01OPR / Build 0.1 Operator tại nơi log schema yêu cầu; không được diễn giải là authenticated identity.
 
 Approved
 

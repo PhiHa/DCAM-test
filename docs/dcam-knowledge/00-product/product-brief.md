@@ -1,5 +1,7 @@
 # Product brief and PM intent
 
+Source refresh: **2026-07-15**. Build 0.1 scope is governed by Release & Build Applicability Matrix plus DEC-01-DEC-07 Decision Brief; long-term product direction does not make deferred features release blockers.
+
 ## One-sentence definition
 
 DCAM is a dedicated, Java-first Android application for DVID BodyCamera devices that reliably records video and captures images at the source, creates structured local media and metadata, and exposes that data for BDMA Desktop to ingest and manage.

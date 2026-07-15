@@ -1,12 +1,18 @@
 package com.dvid.dcam.app;
 
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.net.ConnectivityManager;
+import android.net.NetworkCapabilities;
+import android.net.wifi.WifiManager;
+import android.os.BatteryManager;
 import android.os.Bundle;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.StatFs;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -32,7 +38,6 @@ import com.dvid.dcam.app.presentation.MainViewModel;
 import com.dvid.dcam.app.presentation.MainViewModelFactory;
 import com.dvid.dcam.core.config.domain.DcamConfig;
 import com.dvid.dcam.core.feature.domain.FeatureGate;
-import com.dvid.dcam.core.input.domain.ButtonRole;
 import com.dvid.dcam.databinding.ActivityMainBinding;
 import com.dvid.dcam.databinding.ItemMediaEntryBinding;
 import com.dvid.dcam.databinding.ScreenCameraBinding;
@@ -53,6 +58,7 @@ import com.dvid.dcam.feature.settings.application.usecase.StorageSettingsUseCase
 import com.dvid.dcam.feature.settings.domain.StorageMode;
 import com.dvid.dcam.feature.settings.domain.AppLanguage;
 import com.dvid.dcam.feature.settings.presentation.DemoSettingsState;
+import com.dvid.dcam.feature.settings.presentation.DeveloperButtonBindingsScreen;
 import com.dvid.dcam.feature.settings.presentation.SettingId;
 import com.dvid.dcam.feature.settings.presentation.SettingItem;
 import com.dvid.dcam.feature.settings.presentation.SettingsControlRenderer;
@@ -61,12 +67,14 @@ import com.dvid.dcam.feature.settings.presentation.SettingsSection;
 import com.dvid.dcam.platform.config.AndroidLanguagePreferenceStoreImpl;
 import com.dvid.dcam.platform.camera.CameraXCameraGatewayImpl;
 import com.dvid.dcam.platform.device.DcamKioskController;
-import com.dvid.dcam.platform.input.DeveloperHardwareButtonSettings;
+import com.dvid.dcam.platform.input.HardwareButtonLayout;
 import com.dvid.dcam.platform.input.HardwareButtonRouter;
 import com.dvid.dcam.platform.logging.DcamLogger;
+import com.dvid.dcam.platform.database.AppDatabase;
 import com.dvid.dcam.platform.permission.DcamPermissions;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -81,6 +89,7 @@ public final class MainActivity extends ComponentActivity {
     private final Runnable cameraClockTick = new Runnable() {
         @Override public void run() {
             updateCameraClock();
+            updateManagedTopBar();
             cameraClock.postDelayed(this, 1_000L);
         }
     };
@@ -93,7 +102,7 @@ public final class MainActivity extends ComponentActivity {
     private OpenMediaUseCase openMedia;
     private LanguageSettingsUseCase languageSettings;
     private DeveloperFeatureToggles developerFeatureToggles;
-    private DeveloperHardwareButtonSettings developerHardwareButtons;
+    private DeveloperButtonBindingsScreen developerButtonBindingsScreen;
     private MediaEncryptionSettingsUseCase mediaEncryptionSettings;
     private VideoMd5SettingsUseCase videoMd5Settings;
     private StorageSettingsUseCase storageSettings;
@@ -125,7 +134,14 @@ public final class MainActivity extends ComponentActivity {
         composition = AppComposition.create(this);
         languageSettings = composition.languageSettingsUseCase();
         developerFeatureToggles = composition.developerFeatureToggles();
-        developerHardwareButtons = composition.developerHardwareButtonSettings();
+        developerButtonBindingsScreen = new DeveloperButtonBindingsScreen(
+                this,
+                composition.developerHardwareButtonSettings(),
+                composition::applyDeveloperHardwareButtonLayout,
+                composition::hasDeveloperHardwareButtonDefaults,
+                composition::resetDeveloperHardwareButtonLayout,
+                this::updateHardwareButtonLayout,
+                message -> FloatingNotice.show(this, message));
         mediaEncryptionSettings = composition.mediaEncryptionSettingsUseCase();
         videoMd5Settings = composition.videoMd5SettingsUseCase();
         storageSettings = composition.storageSettingsUseCase();
@@ -141,6 +157,7 @@ public final class MainActivity extends ComponentActivity {
         activityBinding = ActivityMainBinding.inflate(getLayoutInflater());
         root = activityBinding.contentRoot;
         setContentView(activityBinding.getRoot());
+        updateManagedTopBar();
         bindSystemNavigationInset();
         hideSystemStatusBar();
 
@@ -199,6 +216,8 @@ public final class MainActivity extends ComponentActivity {
             if (decor == null) return;
             WindowInsetsController controller = decor.getWindowInsetsController();
             if (controller != null) {
+                controller.setSystemBarsBehavior(
+                        WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
                 controller.hide(WindowInsets.Type.statusBars());
             }
             return;
@@ -208,6 +227,52 @@ public final class MainActivity extends ComponentActivity {
                         | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
                         | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
                         | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+    }
+
+    private void updateManagedTopBar() {
+        if (activityBinding == null || kioskController == null) return;
+        boolean visible = kioskController.isDeviceOwner();
+        activityBinding.managedTopBar.setVisibility(visible ? View.VISIBLE : View.GONE);
+        FrameLayout.LayoutParams contentLayout =
+                (FrameLayout.LayoutParams) activityBinding.contentRoot.getLayoutParams();
+        int topMargin = visible ? dp(24) : 0;
+        if (contentLayout.topMargin != topMargin) {
+            contentLayout.topMargin = topMargin;
+            activityBinding.contentRoot.setLayoutParams(contentLayout);
+        }
+        if (!visible) return;
+
+        BatteryManager battery = getSystemService(BatteryManager.class);
+        int batteryPercent = battery == null ? -1
+                : battery.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
+        activityBinding.managedBatteryStatus.setPercent(batteryPercent);
+        activityBinding.managedBatteryStatus.setContentDescription(batteryPercent < 0
+                ? getString(R.string.battery_unknown)
+                : getString(R.string.battery_percent, batteryPercent));
+
+        ConnectivityManager connectivity = getSystemService(ConnectivityManager.class);
+        NetworkCapabilities capabilities = connectivity == null ? null
+                : connectivity.getNetworkCapabilities(connectivity.getActiveNetwork());
+        boolean wifiConnected = capabilities != null
+                && capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI);
+        int wifiLevel = 0;
+        if (wifiConnected) {
+            int rssi = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+                    ? capabilities.getSignalStrength()
+                    : NetworkCapabilities.SIGNAL_STRENGTH_UNSPECIFIED;
+            if (rssi == NetworkCapabilities.SIGNAL_STRENGTH_UNSPECIFIED) {
+                WifiManager wifi = getSystemService(WifiManager.class);
+                if (wifi != null && wifi.getConnectionInfo() != null) {
+                    rssi = wifi.getConnectionInfo().getRssi();
+                }
+            }
+            wifiLevel = rssi == NetworkCapabilities.SIGNAL_STRENGTH_UNSPECIFIED
+                    ? 1 : WifiManager.calculateSignalLevel(rssi, 4) + 1;
+        }
+        activityBinding.managedWifiStatus.setSignal(wifiConnected, wifiLevel);
+        activityBinding.managedWifiStatus.setContentDescription(wifiConnected
+                ? getString(R.string.wifi_signal_level, wifiLevel)
+                : getString(R.string.wifi_disconnected));
     }
 
     private void bindSystemNavigationInset() {
@@ -277,8 +342,17 @@ public final class MainActivity extends ComponentActivity {
     private void renderCamera() {
         ensureCaptureRuntime();
         clearScreenBindings();
-        root.removeAllViews();
-        cameraScreen = ScreenCameraBinding.inflate(getLayoutInflater(), root, false);
+        removeNonCameraScreens();
+        ensureCameraScreen();
+        cameraScreen.getRoot().setAlpha(1f);
+        updateCameraClock();
+    }
+
+    private void ensureCameraScreen() {
+        if (cameraScreen == null) {
+            cameraScreen = ScreenCameraBinding.inflate(getLayoutInflater(), root, false);
+            root.addView(cameraScreen.getRoot(), 0);
+        }
         DcamConfig config = viewModel.getConfig();
         cameraScreen.accountId.setText("CAM " + config.getAccountUserId());
         cameraScreen.operatorId.setText("USER " + config.getPoliceUserId());
@@ -287,23 +361,43 @@ public final class MainActivity extends ComponentActivity {
                 cameraScreen.captureAction,
                 FeatureGate.IMAGE_CAPTURE,
                 () -> captureRuntime.photoCapture().takePhoto());
-        if (captureRuntime.cameraPreview().getParent() instanceof ViewGroup) {
-            ((ViewGroup) captureRuntime.cameraPreview().getParent()).removeView(captureRuntime.cameraPreview());
+        if (captureRuntime.cameraPreview().getParent() == null) {
+            cameraScreen.previewContainer.addView(captureRuntime.cameraPreview(), new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         }
-        cameraScreen.previewContainer.addView(captureRuntime.cameraPreview(), new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        root.addView(cameraScreen.getRoot());
-        updateCameraClock();
+        if (cameraScreen.getRoot().getParent() == null) {
+            root.addView(cameraScreen.getRoot(), 0);
+        }
+        /*
+         * Keep CameraXPreviewView attached while other screens cover it. Reparenting
+         * destroys its surface and causes black-screen startup delay on return.
+         */
+        if (captureRuntime.cameraPreview().getParent() instanceof ViewGroup
+                && captureRuntime.cameraPreview().getParent() != cameraScreen.previewContainer) {
+            ((ViewGroup) captureRuntime.cameraPreview().getParent()).removeView(captureRuntime.cameraPreview());
+            cameraScreen.previewContainer.addView(captureRuntime.cameraPreview(), new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        }
     }
 
     private void renderLogin() {
-        releaseCaptureRuntime();
+        ensureCaptureRuntime();
+        ensureCameraScreen();
         clearScreenBindings();
-        root.removeAllViews();
+        removeNonCameraScreens();
         loginScreen = ScreenLoginBinding.inflate(getLayoutInflater(), root, false);
         View.OnClickListener login = view ->
                 viewModel.loginPassword(loginScreen.password.getText().toString());
         loginScreen.loginAction.setOnClickListener(login);
+        loginScreen.resetDatabaseAction.setOnClickListener(view -> new AlertDialog.Builder(this)
+                .setTitle(R.string.reset_login_database_title)
+                .setMessage(R.string.reset_login_database_message)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(R.string.reset, (dialog, which) -> {
+                    AppDatabase.reset(this);
+                    android.os.Process.killProcess(android.os.Process.myPid());
+                })
+                .show());
         loginScreen.password.setOnEditorActionListener((view, actionId, event) -> {
             login.onClick(view);
             return true;
@@ -313,7 +407,7 @@ public final class MainActivity extends ComponentActivity {
 
     private void renderMenu() {
         clearScreenBindings();
-        root.removeAllViews();
+        removeNonCameraScreens();
         menuScreen = ScreenMenuBinding.inflate(getLayoutInflater(), root, false);
         List<View> visibleTiles = new ArrayList<>();
         for (MainMenuTile tile : menuModel.visibleTiles(this::isMenuTileVisible)) {
@@ -350,19 +444,18 @@ public final class MainActivity extends ComponentActivity {
 
     private void renderFileExplorer() {
         clearScreenBindings();
-        root.removeAllViews();
+        removeNonCameraScreens();
         fileExplorerScreen = ScreenFileExplorerBinding.inflate(getLayoutInflater(), root, false);
         root.addView(fileExplorerScreen.getRoot());
     }
 
     private void renderDeveloperUsers() {
         clearScreenBindings();
-        root.removeAllViews();
+        removeNonCameraScreens();
         developerUsersScreen = ScreenDeveloperUsersBinding.inflate(getLayoutInflater(), root, false);
         developerUsersScreen.saveAction.setOnClickListener(view -> viewModel.provisionUser(
                 new UserProvisioningRequest(
                         developerUsersScreen.userId.getText().toString(),
-                        developerUsersScreen.loginName.getText().toString(),
                         developerUsersScreen.displayName.getText().toString(),
                         developerUsersScreen.password.getText().toString(),
                         UserSource.DEVELOPER)));
@@ -371,7 +464,7 @@ public final class MainActivity extends ComponentActivity {
 
     private void renderSettingsDetail(MainScreen screen) {
         clearScreenBindings();
-        root.removeAllViews();
+        removeNonCameraScreens();
         ScreenSettingsDetailBinding detail = ScreenSettingsDetailBinding.inflate(
                 getLayoutInflater(), root, false);
         detail.title.setText(settingsTitle(screen));
@@ -380,7 +473,11 @@ public final class MainActivity extends ComponentActivity {
             detail.title.setFocusable(true);
             detail.title.setOnClickListener(view -> handleAboutSecretTap());
         }
-        renderSettingsControls(screen, detail.settingsList);
+        if (screen == MainScreen.DEVELOPER_BUTTON_BINDINGS) {
+            developerButtonBindingsScreen.render(detail.settingsList);
+        } else {
+            renderSettingsControls(screen, detail.settingsList);
+        }
         if (screen == MainScreen.DEVELOPER_SETTINGS) {
             Button bindings = new Button(this);
             bindings.setText(R.string.edit_key_bindings);
@@ -405,12 +502,9 @@ public final class MainActivity extends ComponentActivity {
         if (screen == MainScreen.DEVELOPER_SETTINGS) {
             return developerFeatureToggles.developerSettings();
         }
-        if (screen == MainScreen.DEVELOPER_BUTTON_BINDINGS) {
-            return new SettingsScreenModel(List.of(developerHardwareButtonSection()));
-        }
         SettingsScreenModel model;
         if (screen == MainScreen.RECORD_SETTINGS) model = demoSettings.recording();
-        else if (screen == MainScreen.STORAGE_SETTINGS) model = demoSettings.storage();
+        else if (screen == MainScreen.STORAGE_SETTINGS) model = demoSettings.storage(storageOptions());
         else if (screen == MainScreen.USER_SETTINGS) {
             demoSettings.setVideoEncryptionEnabled(mediaEncryptionSettings.isMediaEncryptionEnabled());
             model = demoSettings.security();
@@ -418,6 +512,36 @@ public final class MainActivity extends ComponentActivity {
         else if (screen == MainScreen.DEVICE_SETTINGS) model = withLanguage(demoSettings.device());
         else model = demoSettings.readOnly(visibleReadOnlySettings(screen));
         return filterUnavailableSettings(screen, model);
+    }
+
+    private List<String> storageOptions() {
+        File[] roots = getExternalFilesDirs(null);
+        File internal = roots.length == 0 ? getFilesDir() : roots[0];
+        File external = roots.length < 2 ? null : roots[1];
+        return List.of(
+                storageOption("Internal", internal),
+                storageOption("External", external),
+                "Auto\nPrioritize External; fallback to Internal before recording");
+    }
+
+    private String storageOption(String label, File root) {
+        if (root == null) return label + "\nUnavailable";
+        try {
+            StatFs stats = new StatFs(root.getAbsolutePath());
+            long total = stats.getTotalBytes();
+            long free = stats.getAvailableBytes();
+            long used = Math.max(0L, total - free);
+            int freePercent = total <= 0L ? 0 : (int) Math.round(free * 100.0 / total);
+            return label + "\nUsed " + storageSize(used) + " / " + storageSize(total)
+                    + "\nFree " + storageSize(free) + " (" + freePercent + "%)";
+        } catch (RuntimeException failure) {
+            return label + "\nUnavailable";
+        }
+    }
+
+    private static String storageSize(long bytes) {
+        double gib = bytes / (1024.0 * 1024.0 * 1024.0);
+        return String.format(Locale.US, "%.1f GB", gib);
     }
 
     private String[] visibleReadOnlySettings(MainScreen screen) {
@@ -568,19 +692,6 @@ public final class MainActivity extends ComponentActivity {
     }
 
     private void selectSetting(SettingId id, int selectedIndex) {
-        ButtonRole buttonRole = developerButtonRole(id);
-        if (buttonRole != null) {
-            developerHardwareButtons.select(buttonRole, selectedIndex);
-            if (hardwareButtons != null) {
-                hardwareButtons.updateLayout(composition.applyDeveloperHardwareButtonLayout());
-            } else {
-                composition.applyDeveloperHardwareButtonLayout();
-            }
-            renderedScreen = null;
-            render(latestState);
-            FloatingNotice.show(this, "Button fallback applied");
-            return;
-        }
         if (id == SettingId.LANGUAGE) {
             if (selectedIndex >= 0 && selectedIndex < renderedLanguages.length) {
                 changeLanguage(renderedLanguages[selectedIndex]);
@@ -608,38 +719,8 @@ public final class MainActivity extends ComponentActivity {
         }
     }
 
-    private SettingsSection developerHardwareButtonSection() {
-        List<String> options = developerHardwareButtons.optionLabels();
-        return new SettingsSection("Button-role bindings", List.of(
-                developerButtonChoice(SettingId.DEV_BUTTON_RECORD, "Record", ButtonRole.RECORD, options),
-                developerButtonChoice(SettingId.DEV_BUTTON_IMPORTANT_RECORDING,
-                        "Important recording", ButtonRole.IMPORTANT_RECORDING, options),
-                developerButtonChoice(SettingId.DEV_BUTTON_PHOTO_CAPTURE,
-                        "Photo capture", ButtonRole.PHOTO_CAPTURE, options),
-                developerButtonChoice(SettingId.DEV_BUTTON_AUDIO_CAPTURE,
-                        "Audio capture", ButtonRole.AUDIO_CAPTURE, options),
-                developerButtonChoice(SettingId.DEV_BUTTON_PTT, "PTT", ButtonRole.PTT, options),
-                developerButtonChoice(SettingId.DEV_BUTTON_SOS, "SOS", ButtonRole.SOS, options),
-                developerButtonChoice(SettingId.DEV_BUTTON_POWER, "Power", ButtonRole.POWER, options),
-                SettingItem.text("Activation", "Applied immediately")));
-    }
-
-    private SettingItem developerButtonChoice(
-            SettingId id, String label, ButtonRole role, List<String> options) {
-        return SettingItem.choice(id, label, options, developerHardwareButtons.selectedIndex(role));
-    }
-
-    private static ButtonRole developerButtonRole(SettingId id) {
-        switch (id) {
-            case DEV_BUTTON_RECORD: return ButtonRole.RECORD;
-            case DEV_BUTTON_IMPORTANT_RECORDING: return ButtonRole.IMPORTANT_RECORDING;
-            case DEV_BUTTON_PHOTO_CAPTURE: return ButtonRole.PHOTO_CAPTURE;
-            case DEV_BUTTON_AUDIO_CAPTURE: return ButtonRole.AUDIO_CAPTURE;
-            case DEV_BUTTON_PTT: return ButtonRole.PTT;
-            case DEV_BUTTON_SOS: return ButtonRole.SOS;
-            case DEV_BUTTON_POWER: return ButtonRole.POWER;
-            default: return null;
-        }
+    private void updateHardwareButtonLayout(HardwareButtonLayout layout) {
+        if (hardwareButtons != null) hardwareButtons.updateLayout(layout);
     }
 
     private void updateNumberSetting(SettingId id, int value) {
@@ -920,6 +1001,9 @@ public final class MainActivity extends ComponentActivity {
     }
 
     @Override public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (renderedScreen == MainScreen.DEVELOPER_BUTTON_BINDINGS) {
+            if (developerButtonBindingsScreen.onKeyDown(keyCode)) return true;
+        }
         boolean handled = hardwareButtons != null
                 && hardwareButtons.onKeyDown(keyCode, event.getRepeatCount(), event.getEventTime());
         if (handled && event.getRepeatCount() == 0 && hardwareButtons.isSosButton(keyCode)) {
@@ -932,6 +1016,9 @@ public final class MainActivity extends ComponentActivity {
     }
 
     @Override public boolean onKeyUp(int keyCode, KeyEvent event) {
+        if (renderedScreen == MainScreen.DEVELOPER_BUTTON_BINDINGS) {
+            if (developerButtonBindingsScreen.onKeyUp(keyCode)) return true;
+        }
         if (hardwareButtons != null && hardwareButtons.isSosButton(keyCode)
                 && sosHoldAction != null) {
             cameraClock.removeCallbacks(sosHoldAction);
@@ -978,16 +1065,24 @@ public final class MainActivity extends ComponentActivity {
         }
         captureRuntime.release();
         captureRuntime = null;
+        cameraScreen = null;
         hardwareButtons = null;
         if (sosHoldAction != null) cameraClock.removeCallbacks(sosHoldAction);
         sosHoldAction = null;
     }
 
     private void clearScreenBindings() {
-        cameraScreen = null;
         loginScreen = null;
         developerUsersScreen = null;
         fileExplorerScreen = null;
         menuScreen = null;
+    }
+
+    private void removeNonCameraScreens() {
+        if (cameraScreen != null) cameraScreen.getRoot().setAlpha(0f);
+        for (int index = root.getChildCount() - 1; index >= 0; index--) {
+            View child = root.getChildAt(index);
+            if (cameraScreen == null || child != cameraScreen.getRoot()) root.removeViewAt(index);
+        }
     }
 }

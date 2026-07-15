@@ -32,11 +32,11 @@ final class OperatorAuthUseCaseTest {
 
         new ManageOperatorUsersUseCaseImpl(repository).ensureDefaultUser();
         LoginResult result = new AuthenticateOperatorUseCaseImpl(repository, boot, memory)
-                .execute(LoginCredentials.passwordOnly("000000"));
+                .execute(LoginCredentials.usernameAndPassword("B01OPR", "000000"));
 
         assertTrue(result.isSuccess());
-        assertEquals("000000", result.getSession().getUserId());
-        assertEquals("000000", result.getSession().getFileUserId());
+        assertEquals("B01OPR", result.getSession().getUserId());
+        assertEquals("B01OPR", result.getSession().getFileUserId());
         assertSame(result.getSession(), memory.current());
     }
 
@@ -54,25 +54,21 @@ final class OperatorAuthUseCaseTest {
         assertFalse(memory.hasActiveSession());
     }
 
-    @Test void duplicatePasswordRequiresIdentifierButIdentifierResolvesFutureUsernameFlow() {
+    @Test void duplicatePasswordRequiresUserId() {
         FakeRepository repository = new FakeRepository();
-        repository.upsert(account("111111", "alpha", UserSource.DEVELOPER), "123456");
-        repository.upsert(account("222222", "bravo", UserSource.CLOUD), "123456");
+        repository.upsert(account("111111", UserSource.DEVELOPER), "123456");
+        repository.upsert(account("222222", UserSource.CLOUD), "123456");
         AuthenticateOperatorUseCaseImpl authenticate = new AuthenticateOperatorUseCaseImpl(
                 repository, new MutableBootIdentity("boot-a"), new OperatorSessionMemory());
 
         LoginResult ambiguous = authenticate.execute(LoginCredentials.passwordOnly("123456"));
-        LoginResult byLoginName = authenticate.execute(
-                LoginCredentials.usernameAndPassword("BRAVO", "123456"));
         LoginResult byUserId = authenticate.execute(
-                LoginCredentials.usernameAndPassword("111111", "123456"));
+                LoginCredentials.usernameAndPassword("222222", "123456"));
 
         assertFalse(ambiguous.isSuccess());
         assertEquals(LoginFailure.USERNAME_REQUIRED, ambiguous.getFailure());
-        assertTrue(byLoginName.isSuccess());
-        assertEquals("222222", byLoginName.getSession().getUserId());
         assertTrue(byUserId.isSuccess());
-        assertEquals("111111", byUserId.getSession().getUserId());
+        assertEquals("222222", byUserId.getSession().getUserId());
     }
 
     @Test void provisioningValidatesAndKeepsDeveloperAndCloudUsersAtSameBoundary() {
@@ -80,13 +76,13 @@ final class OperatorAuthUseCaseTest {
         ManageOperatorUsersUseCaseImpl users = new ManageOperatorUsersUseCaseImpl(repository);
 
         UserProvisioningResult badId = users.upsert(new UserProvisioningRequest(
-                "12345", "short", "Short", "123456", UserSource.DEVELOPER));
+                "12345", "Short", "123456", UserSource.DEVELOPER));
         UserProvisioningResult noPassword = users.upsert(new UserProvisioningRequest(
-                "123456", "nopass", "No Pass", "", UserSource.DEVELOPER));
+                "123456", "No Pass", "", UserSource.DEVELOPER));
         UserProvisioningResult developer = users.upsert(new UserProvisioningRequest(
-                "123456", "Alice", "Alice Dev", "111111", UserSource.DEVELOPER));
+                "123456", "Alice Dev", "111111", UserSource.DEVELOPER));
         UserProvisioningResult cloud = users.upsert(new UserProvisioningRequest(
-                "654321", "Bob", "Bob Cloud", "222222", UserSource.CLOUD));
+                "654321", "Bob Cloud", "222222", UserSource.CLOUD));
 
         assertFalse(badId.isSuccessful());
         assertEquals("USER_ID_MUST_BE_SIX_DIGITS", badId.getErrorCode());
@@ -95,9 +91,7 @@ final class OperatorAuthUseCaseTest {
         assertTrue(developer.isSuccessful());
         assertTrue(cloud.isSuccessful());
         assertEquals(UserSource.DEVELOPER, repository.accounts.get("123456").getSource());
-        assertEquals("alice", repository.accounts.get("123456").getLoginName());
         assertEquals(UserSource.CLOUD, repository.accounts.get("654321").getSource());
-        assertEquals("bob", repository.accounts.get("654321").getLoginName());
     }
 
     @Test void sessionRestoreHonorsBootAndLogoutClearsActiveSession() {
@@ -127,8 +121,8 @@ final class OperatorAuthUseCaseTest {
         assertEquals("LOGOUT", repository.lastEndReason);
     }
 
-    private static OperatorAccount account(String userId, String loginName, UserSource source) {
-        return new OperatorAccount(userId, userId, loginName, userId, source, true);
+    private static OperatorAccount account(String userId, UserSource source) {
+        return new OperatorAccount(userId, userId, userId, source, true);
     }
 
     private static final class MutableBootIdentity implements BootIdentitySource {
@@ -158,10 +152,6 @@ final class OperatorAuthUseCaseTest {
                 if (existing.getUserId().equals(account.getUserId())) continue;
                 if (existing.getFileUserId().equals(account.getFileUserId())) {
                     throw new IllegalStateException("duplicate file user id");
-                }
-                if (account.getLoginName() != null
-                        && account.getLoginName().equals(existing.getLoginName())) {
-                    throw new IllegalStateException("duplicate login name");
                 }
             }
             accounts.put(account.getUserId(), account);
@@ -216,8 +206,7 @@ final class OperatorAuthUseCaseTest {
                 String normalizedIdentifier) {
             if (normalizedIdentifier == null) return true;
             if (account.getUserId().toLowerCase(Locale.ROOT).equals(normalizedIdentifier)) return true;
-            return account.getLoginName() != null
-                    && account.getLoginName().toLowerCase(Locale.ROOT).equals(normalizedIdentifier);
+            return false;
         }
     }
 }

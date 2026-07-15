@@ -105,7 +105,6 @@ public final class RoomOperatorAuthRepositoryImpl implements OperatorAuthReposit
         return new UserProfileEntity(
                 account.getUserId(),
                 account.getFileUserId(),
-                account.getLoginName(),
                 account.getDisplayName(),
                 account.isActive() ? "ACTIVE" : "DISABLED",
                 account.getSource().name(),
@@ -151,7 +150,6 @@ public final class RoomOperatorAuthRepositoryImpl implements OperatorAuthReposit
         return new OperatorAccount(
                 entity.userId,
                 entity.fileUserId,
-                entity.loginName,
                 entity.displayName,
                 source,
                 "ACTIVE".equals(entity.status));

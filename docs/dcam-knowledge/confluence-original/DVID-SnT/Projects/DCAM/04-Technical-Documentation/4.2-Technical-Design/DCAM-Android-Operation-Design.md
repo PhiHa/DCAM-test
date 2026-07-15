@@ -1,7 +1,7 @@
 # DCAM Android Operation Design
 
 **Page ID**: 48562239  
-**Version**: 21  
+**Version**: 23  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/48562239
 
@@ -24,11 +24,15 @@ Technical Design
 
 Version
 
-Approved 1.9
+2.1
 
 Status
 
-Approved
+Approved Provisional Baseline
+
+Approval Scope
+
+Build 0.1 operation overlay; reference-device behavior Pending Device POC
 
 Owner
 
@@ -52,11 +56,15 @@ Tech Lead, Android Developers, QA, Support, Cloud/WebServer Team
 
 Last Updated
 
-2026-07-10
+2026-07-14
+
+Related Jira
+
+None
 
 Related Documents
 
-DCAM Release & Build Applicability Matrix, DCAM Android Device Owner & Kiosk Policy Design, DCAM Device Provisioning Web Portal Design, DCAM Web Portal & Device API Contract, DCAM SQLite Database Design, DCAM Recording & Capture Design, DCAM Storage Design, DCAM State Machine Design, DCAM Security & Encryption Design
+DCAM Release & Build Applicability Matrix, DCAM Android Device Owner & Kiosk Policy Design, DCAM Device Provisioning Web Portal Design, DCAM Web Portal & Device API Contract, DCAM SQLite Database Design, DCAM Recording & Capture Design, DCAM Storage Design, DCAM State Machine Design, DCAM Security & Encryption Design, Decision Brief – DCAM MVP Internal Build 0.1 – Working Recording Slice
 
 ## 1. Current Runtime Baseline
 
@@ -248,3 +256,38 @@ TBD / Android + Security + QA
 
 Policy-missing behavior, identity restore and startup budgets are defined.
 Remaining TBDs are OEM, lifecycle scheduling and explicit exception details.
+## 12. Build 0.1 Operation Overlay
+
+Operation Area
+
+Build 0.1 Behavior
+
+Startup
+
+Không hiển thị login UI; dùng static Build 0.1 operator context.
+
+Recording Pre-check
+
+Camera/permission và Internal storage pre-check phải đạt.
+
+Storage Failure
+
+Safe-stop và finalize MP4 nếu còn khả năng.
+
+Finalization
+
+Finalize MP4, tạo MD5 bất đồng bộ, chỉ BDMA_READY sau success.
+
+Device Status
+
+Hiển thị/report battery level, Internal free storage, GPS Available/Unavailable/Unsupported.
+
+GPS Failure
+
+Unavailable/Unsupported không làm fail WRS nếu reporting chính xác.
+
+Device Coverage
+
+Chỉ NCC-036V / Android 12 / API 31 / 877AOOAKN1_RK2_V009; Pending Device POC.
+
+Target-state login/operator behavior không áp dụng cho Build 0.1.

@@ -1,7 +1,7 @@
 # DCAM Architecture Home
 
 **Page ID**: 47185929  
-**Version**: 38  
+**Version**: 39  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47185929
 
@@ -24,11 +24,15 @@ Software Architecture Home
 
 Version
 
-Approved 1.32
+Approved 1.33
 
 Status
 
 Approved
+
+Approval Scope
+
+Architecture/Technical Design navigation, reading order và current-summary only; không sở hữu mutable version/status table.
 
 Owner
 
@@ -52,7 +56,11 @@ PM/BA, Tech Lead, Developers, QA, BDMA Team, Cloud/WebServer Team, Factory, Supp
 
 Last Updated
 
-2026-07-10
+2026-07-14
+
+Related Jira
+
+None
 
 Related Documents
 

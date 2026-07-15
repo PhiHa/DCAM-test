@@ -1,7 +1,7 @@
 # 03 - Media Management Requirements
 
 **Page ID**: 47710534  
-**Version**: 3  
+**Version**: 4  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47710534
 
@@ -24,11 +24,15 @@ Functional Requirements
 
 Version
 
-Approved 1.1
+Approved 1.2
 
 Status
 
 Approved
+
+Approval Scope
+
+Media management requirement behavior; build applicability thuộc Matrix, filename/data exchange rules thuộc DCAM-BDMA Data Contract.
 
 Owner
 
@@ -52,7 +56,7 @@ PM/BA, Tech Lead, Android Developers, QA, BDMA Developers
 
 Last Updated
 
-2026-07-07
+2026-07-14
 
 Related Jira
 

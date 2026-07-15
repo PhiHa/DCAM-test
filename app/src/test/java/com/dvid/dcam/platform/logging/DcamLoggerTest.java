@@ -16,6 +16,7 @@ class DcamLoggerTest {
 
         assertTrue(payload.contains("\"message\":\"Recording started\\nCamera \\\"front\\\"\""));
         assertTrue(payload.contains("\"timestamp\":\""));
+        assertTrue(payload.contains("+07:00\""));
         assertFalse(payload.contains("\"message\":\"20"));
         assertFalse(payload.contains(" thread=\\\"capture-thread\\\""));
         assertFalse(payload.contains(" source=CaptureController"));

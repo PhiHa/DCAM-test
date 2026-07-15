@@ -1,7 +1,7 @@
 # DCAM Security & Encryption Design
 
 **Page ID**: 48496720  
-**Version**: 16  
+**Version**: 17  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/48496720
 
@@ -24,7 +24,7 @@ Technical Design
 
 Version
 
-1.5
+1.6
 
 Status
 
@@ -56,7 +56,11 @@ Tech Lead, Developers, QA, Security Reviewer, Factory, Support
 
 Last Updated
 
-2026-07-10
+2026-07-14
+
+Related Jira
+
+None
 
 Related Documents
 

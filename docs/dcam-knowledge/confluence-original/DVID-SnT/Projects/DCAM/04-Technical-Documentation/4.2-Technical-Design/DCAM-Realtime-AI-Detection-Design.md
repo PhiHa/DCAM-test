@@ -1,7 +1,7 @@
 # DCAM Realtime AI Detection Design
 
 **Page ID**: 48595090  
-**Version**: 7  
+**Version**: 8  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/48595090
 
@@ -24,23 +24,47 @@ Technical Design
 
 Version
 
-Draft 0.7
+Draft 0.8
 
 Status
 
 Draft
 
+Approval Scope
+
+Draft realtime AI design only; không phải approved implementation, Build 0.1 hoặc Production baseline.
+
 Owner
 
 Hoàng Ngọc Quyền
 
+Technical Reviewer
+
+Tech Lead / Android Lead / QA Lead
+
+Approver
+
+Hoàng Ngọc Quyền
+
+Parent Folder
+
+4.2 - Technical Design
+
 Last Updated
 
-2026-07-08
+2026-07-14
+
+Related Jira
+
+None
 
 Related Documents
 
 DCAM Android Operation Design, DCAM Device Capability & Feature Eligibility Design, DCAM State Machine Design, DCAM Recording & Capture Design, 09 - System Settings Requirements, DCAM Security & Encryption Design
+
+Target Audience
+
+Tech Lead, Android Developers, AI/ML Engineer, QA, Security Reviewer
 
 ## 1. Purpose
 

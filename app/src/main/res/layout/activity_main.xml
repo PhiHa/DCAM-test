@@ -10,6 +10,32 @@
         android:layout_height="match_parent" />
 
     <LinearLayout
+        android:id="@+id/managed_top_bar"
+        android:layout_width="match_parent"
+        android:layout_height="24dp"
+        android:layout_gravity="top"
+        android:background="#000000"
+        android:gravity="center_vertical|end"
+        android:orientation="horizontal"
+        android:paddingStart="10dp"
+        android:paddingEnd="28dp"
+        android:visibility="gone">
+
+        <com.dvid.dcam.app.WifiSignalView
+            android:id="@+id/managed_wifi_status"
+            android:layout_width="28dp"
+            android:layout_height="18dp"
+            android:translationY="-1dp" />
+
+        <com.dvid.dcam.app.BatteryStatusView
+            android:id="@+id/managed_battery_status"
+            android:layout_width="36dp"
+            android:layout_height="18dp"
+            android:layout_marginStart="8dp"
+            android:translationY="1dp" />
+    </LinearLayout>
+
+    <LinearLayout
         android:id="@+id/custom_status_bar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

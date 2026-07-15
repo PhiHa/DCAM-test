@@ -35,7 +35,7 @@ public abstract class OperatorAuthDao {
             + "JOIN user_profile u ON u.user_id = a.user_id "
             + "WHERE u.status = 'ACTIVE' AND a.status = 'ACTIVE' "
             + "AND a.method_type = 'PASSWORD_HASH' "
-            + "AND (:identifier IS NULL OR u.user_id = :identifier OR u.login_name = :identifier) "
+            + "AND (:identifier IS NULL OR LOWER(u.user_id) = :identifier) "
             + "ORDER BY u.user_id")
     public abstract List<UserAuthMethodEntity> credentialCandidates(String identifier);
 

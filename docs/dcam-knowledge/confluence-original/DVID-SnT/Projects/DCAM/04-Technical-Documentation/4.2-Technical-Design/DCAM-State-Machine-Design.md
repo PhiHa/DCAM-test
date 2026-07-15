@@ -1,7 +1,7 @@
 # DCAM State Machine Design
 
 **Page ID**: 48496753  
-**Version**: 12  
+**Version**: 14  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/48496753
 
@@ -24,11 +24,15 @@ Technical Design
 
 Version
 
-Approved 1.9
+2.1
 
 Status
 
-Approved
+Approved Provisional Baseline
+
+Approval Scope
+
+Target-state model với approved Build 0.1 no-login/checksum overlay
 
 Owner
 
@@ -52,7 +56,7 @@ Tech Lead, Android Developers, QA, Support
 
 Last Updated
 
-2026-07-08
+2026-07-13
 
 Related Jira
 
@@ -60,7 +64,7 @@ None
 
 Related Documents
 
-05 - User & Device Operation Requirements, DCAM Device Capability & Feature Eligibility Design, DCAM Android Device Owner & Kiosk Policy Design, DCAM In-App Operation, Device Settings & Media Console Design, DCAM Android Operation Design, DCAM Recording & Capture Design, DCAM Storage Design, DCAM SQLite Database Design, DCAM Sensor & Location Monitoring Design, DCAM Realtime AI Detection Design, DCAM Self Update Design, DCAM Security & Encryption Design, 09 - System Settings Requirements
+05 - User & Device Operation Requirements, DCAM Device Capability & Feature Eligibility Design, DCAM Android Device Owner & Kiosk Policy Design, DCAM In-App Operation, Device Settings & Media Console Design, DCAM Android Operation Design, DCAM Recording & Capture Design, DCAM Storage Design, DCAM SQLite Database Design, DCAM Sensor & Location Monitoring Design, DCAM Realtime AI Detection Design, DCAM Self Update Design, DCAM Security & Encryption Design, 09 - System Settings Requirements, Decision Brief – DCAM MVP Internal Build 0.1 – Working Recording Slice
 
 ## 1. Purpose
 
@@ -748,3 +752,21 @@ Detailed recording, storage, DB, Android operation, kiosk policy, auth/security,
 State Machine Design sở hữu cross-runtime coordination và guard rule.
 
 Domain-specific state/behavior vẫn thuộc Android Operation, Kiosk Policy, In-App Console, Self Update, Recording, SQLite, Storage và Device Capability Design. Project baseline được reference từ Project Home, Architecture Home và ADR; trang này không restate baseline đó.
+
+## 16. Build 0.1 State Overlay
+
+Login/Auth/Operator Session gate là Not Applicable cho Build 0.1 normal recording/capture.
+
+State Coordinator sử dụng static operator B01OPR / Build 0.1 Operator.
+
+Placeholder không tạo authenticated session hoặc authorization claim.
+
+Storage pre-check failure giữ flow ngoài Recording state.
+
+Runtime storage failure chuyển sang controlled safe-stop/finalization/recovery.
+
+MP4 không chuyển sang BDMA_READY trước MD5 success; missing/mismatch/failure giữ trạng thái blocked/recoverable.
+
+Exact enum/state name cần Technical Review; behavior boundary đã được PM approve.
+
+Target-state authentication flow phía trên vẫn áp dụng cho build sau.

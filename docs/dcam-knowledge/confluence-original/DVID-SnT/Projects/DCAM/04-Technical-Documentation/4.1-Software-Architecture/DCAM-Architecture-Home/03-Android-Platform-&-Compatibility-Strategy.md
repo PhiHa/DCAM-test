@@ -1,7 +1,7 @@
 # 03 - Android Platform & Compatibility Strategy
 
 **Page ID**: 47120437  
-**Version**: 11  
+**Version**: 12  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47120437
 
@@ -24,11 +24,15 @@ Software Architecture Document / Platform Compatibility Strategy
 
 Version
 
-Approved 1.5
+Approved 1.6
 
 Status
 
 Approved
+
+Approval Scope
+
+Global platform strategy với Build 0.1 reference profile Pending Device POC
 
 Owner
 
@@ -52,7 +56,7 @@ PM/BA, Tech Lead, Android Developers, AI/ML Engineer, QA
 
 Last Updated
 
-2026-07-08
+2026-07-13
 
 Related Jira
 
@@ -60,7 +64,7 @@ None
 
 Related Documents
 
-DCAM Architecture Home, 04 - Application & Module Architecture, 10 - Android Device Operation Requirements, DCAM Android Device Owner & Kiosk Policy Design, DCAM In-App Operation, Device Settings & Media Console Design, DCAM Self Update Design, ADR - DCAM Android Dedicated Device / Device Owner / Lock Task Decision, DCAM Android Operation Design, DCAM Device Capability & Feature Eligibility Design, DCAM Non-functional Requirements, DCAM Device POC & Hardware Validation Report
+DCAM Architecture Home, 04 - Application & Module Architecture, 10 - Android Device Operation Requirements, DCAM Android Device Owner & Kiosk Policy Design, DCAM In-App Operation, Device Settings & Media Console Design, DCAM Self Update Design, ADR - DCAM Android Dedicated Device / Device Owner / Lock Task Decision, DCAM Android Operation Design, DCAM Device Capability & Feature Eligibility Design, DCAM Non-functional Requirements, DCAM Device POC & Hardware Validation Report, Decision Brief – DCAM MVP Internal Build 0.1 – Working Recording Slice
 
 ## 1. Purpose
 
@@ -104,7 +108,7 @@ Approved
 
 Dedicated-device Policy First
 
-Production kiosk control phải dựa trên DCAM-as-DPC/local Device Owner nếu khả thi, Lock Task Mode và User Restrictions; fullscreen/Home app không đ��.
+Production kiosk control phải dựa trên DCAM-as-DPC/local Device Owner nếu khả thi, Lock Task Mode và User Restrictions; fullscreen/Home app không đủ.
 
 Approved Direction
 
@@ -500,3 +504,38 @@ Degrade only when approved
 Keep recording and emergency evidence stable
 Use adapter abstractions for platform-specific and policy-specific access
 Validate Device Owner / Lock Task / User Restrictions / Self Update on real BodyCamera firmware
+## 11. Build 0.1 Reference Platform Profile
+
+Item
+
+Build 0.1 Baseline
+
+Model
+
+NCC-036V
+
+Android
+
+Android 12
+
+API Level
+
+31
+
+Firmware / Build
+
+877AOOAKN1_RK2_V009
+
+Camera Integration
+
+Android platform Camera API
+
+Vendor SDK
+
+Not Applicable
+
+Qualification
+
+Pending Device POC
+
+Profile này không thay đổi global Android compatibility strategy. Camera1/Camera2 và capability thực tế phải được xác nhận bằng Device POC. Kết quả không đại diện cho model/firmware khác.

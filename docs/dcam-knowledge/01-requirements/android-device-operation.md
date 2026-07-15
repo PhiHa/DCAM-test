@@ -1,6 +1,6 @@
 # Android device operation requirements
 
-Source status: **Approved 1.8**, Confluence page version 9, updated 2026-07-08. This is a local implementation-oriented digest; the [Confluence requirement](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/48496661) remains authoritative.
+Source status: current Confluence page version 10, last registry review 2026-07-14. This is a local implementation-oriented digest; the [Confluence requirement](https://ducviet.atlassian.net/wiki/spaces/DVID/pages/48496661) remains authoritative.
 
 ## Approved operating model
 

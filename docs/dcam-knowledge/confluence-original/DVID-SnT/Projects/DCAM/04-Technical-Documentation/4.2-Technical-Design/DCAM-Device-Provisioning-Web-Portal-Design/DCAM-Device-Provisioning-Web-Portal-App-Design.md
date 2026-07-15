@@ -1,7 +1,7 @@
 # DCAM Device Provisioning Web Portal App Design
 
 **Page ID**: 50692194  
-**Version**: 4  
+**Version**: 5  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/50692194
 
@@ -24,11 +24,15 @@ Web App Design
 
 Version
 
-Approved 1.2
+Approved 1.3
 
 Status
 
 Approved
+
+Approval Scope
+
+Approved Web Portal application flow/UI baseline; implementation/deployment details thuộc Implementation Design và approved Security/API contracts.
 
 Owner
 
@@ -52,7 +56,11 @@ Web Developers, Backend Developers, Android Developers, Factory Worker, Factory 
 
 Last Updated
 
-2026-07-10
+2026-07-14
+
+Related Jira
+
+None
 
 Related Documents
 

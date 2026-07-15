@@ -1,7 +1,7 @@
 # DCAM Device Provisioning Web Portal Design
 
 **Page ID**: 49315858  
-**Version**: 11  
+**Version**: 12  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/49315858
 
@@ -24,11 +24,15 @@ Technical Design / Business Flow Design
 
 Version
 
-Approved 1.1
+Approved 1.2
 
 Status
 
 Approved
+
+Approval Scope
+
+Approved provisioning business-flow baseline; UI behavior thuộc App Design, implementation thuộc Implementation Design, API/schema thuộc API Contract.
 
 Owner
 
@@ -52,7 +56,11 @@ PM/BA, Tech Lead, Android Developers, Web Developers, Backend Team, QA, Factory 
 
 Last Updated
 
-2026-07-10
+2026-07-14
+
+Related Jira
+
+None
 
 Related Documents
 

@@ -1,7 +1,7 @@
 # DCAM Web Portal & Device API Contract
 
 **Page ID**: 49873154  
-**Version**: 9  
+**Version**: 10  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/49873154
 
@@ -24,11 +24,15 @@ Technical Design / API Contract
 
 Version
 
-Approved 0.7
+Approved 0.8
 
 Status
 
-Approved 
+Approved
+
+Approval Scope
+
+Approved web/device API and data-contract boundary; deployment và security enforcement phải theo approved Implementation/Security sources.
 
 Owner
 
@@ -52,7 +56,11 @@ Android Developers, Web Developers, Backend Team, QA, Security Reviewer, Factory
 
 Last Updated
 
-2026-07-10
+2026-07-14
+
+Related Jira
+
+None
 
 Related Documents
 

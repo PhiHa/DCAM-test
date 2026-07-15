@@ -1,8 +1,10 @@
 # Data, storage, and DCAM–BDMA boundary
 
-Data Contract status: **Approved 1.6**, updated 2026-07-08. The [contract digest](../01-requirements/data-contract.md) is authoritative over earlier proposed directions in this architecture summary.
+Data Contract status: current Confluence page version 13, last registry review 2026-07-14. The [contract digest](../01-requirements/data-contract.md) is authoritative over earlier proposed directions in this architecture summary.
 
 ## Core boundary decision
+
+Build 0.1 controlling profile: internal storage only, finalized media only for BDMA, and MP4 MD5 success before affected item becomes `BDMA_READY`.
 
 **DCAM is a passive data producer. BDMA is an active data consumer and manager.**
 

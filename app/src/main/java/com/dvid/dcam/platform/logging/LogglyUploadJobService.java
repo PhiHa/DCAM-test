@@ -19,8 +19,12 @@ public final class LogglyUploadJobService extends JobService {
                 LogglyDiagnostics.write(getApplicationContext(), "ERROR", "Loggly job failed", error);
                 retryAt = System.currentTimeMillis() + 10_000L;
             }
-            jobFinished(parameters, false);
-            LogUploadScheduler.scheduleRetryWake(getApplicationContext(), retryAt);
+            if (retryAt != null && LogUploadScheduler.isRetryJob(parameters.getJobId())) {
+                jobFinished(parameters, true);
+            } else {
+                jobFinished(parameters, false);
+                LogUploadScheduler.scheduleRetryWake(getApplicationContext(), retryAt);
+            }
         });
         return true;
     }

@@ -1,5 +1,6 @@
 package com.dvid.dcam.architecture;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -36,6 +37,9 @@ final class LayerDependencyTest {
             "^(android\\.|com\\.google\\.|com\\.dvid\\.dcam\\.platform\\.)");
     private static final Pattern PLATFORM_FORBIDDEN = Pattern.compile(
             "^com\\.dvid\\.dcam\\.app\\.");
+    private static final Pattern DIRECT_LOGGING = Pattern.compile(
+            "import\\s+android\\.util\\.Log|\\bLog\\.(v|d|i|w|e|wtf)\\s*\\(|"
+                    + "System\\.(out|err)\\.(print|println)\\s*\\(|printStackTrace\\s*\\(");
 
     @Test void dependenciesPointInwardAcrossCleanArchitectureLayers() throws IOException {
         Path root = mainJavaRoot().resolve("com/dvid/dcam");
@@ -110,6 +114,34 @@ final class LayerDependencyTest {
         }
         assertTrue(violations.isEmpty(),
                 "Production classes outside app/core/feature/platform:\n" + String.join("\n", violations));
+    }
+
+    @Test void productionLoggingUsesDcamLoggerBoundary() throws IOException {
+        List<String> violations = new ArrayList<>();
+        collectDirectLoggingViolations(mainJavaRoot().resolve("com/dvid/dcam"), violations);
+        assertTrue(violations.isEmpty(),
+                "Production code must use DcamLogger; direct logging found:\n"
+                        + String.join("\n", violations));
+    }
+
+    private static void collectDirectLoggingViolations(Path root, List<String> violations)
+            throws IOException {
+        try (Stream<Path> files = Files.walk(root)) {
+            for (Path file : files.filter(LayerDependencyTest::isJava).toList()) {
+                if (normalized(file).endsWith("platform/logging/DcamLogger.java")) continue;
+                String source = Files.readString(file, StandardCharsets.UTF_8);
+                if (DIRECT_LOGGING.matcher(source).find()) violations.add(normalized(file));
+            }
+        }
+    }
+
+    @Test void mainActivityRemainsDeveloperBindingScreenAgnostic() throws IOException {
+        Path mainActivity = mainJavaRoot().resolve("com/dvid/dcam/app/MainActivity.java");
+        String source = Files.readString(mainActivity, StandardCharsets.UTF_8);
+        assertFalse(source.contains("DEV_BUTTON_"),
+                "Developer button setting IDs belong in DeveloperButtonBindingsScreen");
+        assertFalse(source.contains("Reset device defaults"),
+                "Developer button reset UI belongs in DeveloperButtonBindingsScreen");
     }
 
     @Test void alwaysOnInfrastructureDoesNotDependOnDeveloperFeatureGates() throws IOException {

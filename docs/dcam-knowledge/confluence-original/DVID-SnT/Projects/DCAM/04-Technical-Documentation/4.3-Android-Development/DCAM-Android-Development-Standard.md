@@ -1,7 +1,7 @@
 # DCAM Android Development Standard
 
 **Page ID**: 47120580  
-**Version**: 13  
+**Version**: 14  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47120580
 
@@ -24,11 +24,15 @@ Project-specific Android Development Standard
 
 Version
 
-Approved 1.10
+Approved 1.11
 
 Status
 
 Approved
+
+Approval Scope
+
+Project-specific Android engineering standard; không thay đổi product scope, requirement hoặc approved architecture.
 
 Owner
 
@@ -52,7 +56,11 @@ Android Developers, Java Desktop Developers, Tech Lead, QA, Cloud/WebServer Team
 
 Last Updated
 
-2026-07-09
+2026-07-14
+
+Related Jira
+
+None
 
 Related Documents
 
@@ -101,7 +109,7 @@ Rule quan trọng:
 
 UI và ViewModel không được gọi trực tiếp Android hardware SDK,
 vendor SDK, DevicePolicyManager, file system, SQLite runtime tables,
-identity provider, credential/auth storage ho���c cloud/webserver SDK.
+identity provider, credential/auth storage hoặc cloud/webserver SDK.
 MVP interpretation:
 
 Keep the same dependency direction.

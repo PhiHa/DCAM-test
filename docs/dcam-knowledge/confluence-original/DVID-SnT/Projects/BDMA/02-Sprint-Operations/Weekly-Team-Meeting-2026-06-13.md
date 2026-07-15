@@ -218,4 +218,4 @@ Cả Team
 
 Hỗ trợ onboard thành viên mới
 
-Chuẩn bị tài liệu và hướng d��n
+Chuẩn bị tài liệu và hướng dẫn

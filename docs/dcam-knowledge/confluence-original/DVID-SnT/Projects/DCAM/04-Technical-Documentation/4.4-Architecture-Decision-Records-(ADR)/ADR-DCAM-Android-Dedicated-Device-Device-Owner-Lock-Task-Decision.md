@@ -1,7 +1,7 @@
 # ADR - DCAM Android Dedicated Device / Device Owner / Lock Task Decision
 
 **Page ID**: 49774787  
-**Version**: 4  
+**Version**: 5  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/49774787
 
@@ -22,9 +22,17 @@ Document Type
 
 Architecture Decision Record
 
+Version
+
+Approved Direction 1.0
+
 Status
 
 Approved Direction
+
+Approval Scope
+
+Dedicated-device, local Device Owner và Lock Task architecture direction; exact DPC component, OEM/firmware feasibility và policy evidence còn phụ thuộc Device POC/Security Review.
 
 Decision Date
 
@@ -32,7 +40,11 @@ Decision Date
 
 Last Updated
 
-2026-07-09
+2026-07-14
+
+Related Jira
+
+None
 
 Owner
 
@@ -49,6 +61,10 @@ Hoàng Ngọc Quyền
 Parent Folder
 
 4.4 - Architecture Decision Records (ADR)
+
+Target Audience
+
+PM/BA, Tech Lead, Android Developers, QA, Security Reviewer, Factory, Support
 
 Related Documents
 

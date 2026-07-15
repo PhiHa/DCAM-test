@@ -7,6 +7,5 @@ public enum ButtonRole {
     PHOTO_CAPTURE,
     AUDIO_CAPTURE,
     PTT,
-    SOS,
-    POWER
+    SOS
 }

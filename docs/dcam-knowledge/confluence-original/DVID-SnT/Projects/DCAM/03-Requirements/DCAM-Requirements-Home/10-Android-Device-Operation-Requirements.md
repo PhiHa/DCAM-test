@@ -1,7 +1,7 @@
 # 10 - Android Device Operation Requirements
 
 **Page ID**: 48496661  
-**Version**: 9  
+**Version**: 10  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/48496661
 
@@ -24,11 +24,15 @@ Functional Requirements
 
 Version
 
-Approved 1.8
+Approved 1.9
 
 Status
 
 Approved
+
+Approval Scope
+
+Android device-operation target requirements; active subset thuộc Matrix, hardware behavior phụ thuộc Device POC khi được nêu.
 
 Owner
 
@@ -52,7 +56,7 @@ PM/BA, Tech Lead, Android Developers, AI/ML Engineer, QA
 
 Last Updated
 
-2026-07-08
+2026-07-14
 
 Related Jira
 

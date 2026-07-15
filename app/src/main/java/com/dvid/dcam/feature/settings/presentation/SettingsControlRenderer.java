@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.text.TextUtils;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -149,7 +150,9 @@ public final class SettingsControlRenderer {
         TextView selectedValue = value(choiceText(options.get(initialSelection)));
         selectedValue.setSingleLine(true);
         selectedValue.setEllipsize(TextUtils.TruncateAt.END);
-        selectedValue.setMinWidth(dp(48));
+        selectedValue.setMinHeight(dp(48));
+        selectedValue.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
+        selectedValue.setPadding(dp(8), 0, 0, 0);
         selectedValue.setClickable(true);
         selectedValue.setFocusable(true);
         selectedValue.setOnClickListener(view -> showChoicePopup(
@@ -168,14 +171,28 @@ public final class SettingsControlRenderer {
         ListView list = new ListView(context);
         list.setDivider(new ColorDrawable(Color.rgb(56, 69, 83)));
         list.setDividerHeight(1);
-        list.setBackgroundColor(Color.rgb(27, 34, 43));
-        list.setAdapter(new DarkChoiceAdapter(context, options, selectedIndex));
+        list.setSelector(new ColorDrawable(Color.TRANSPARENT));
+        list.setBackgroundColor(Color.TRANSPARENT);
+        DarkChoiceAdapter adapter = new DarkChoiceAdapter(context, options, selectedIndex);
+        list.setAdapter(adapter);
 
-        int width = dp(176);
+        int width = choicePopupWidth(options);
         PopupWindow popup = new PopupWindow(
                 list, width, ViewGroup.LayoutParams.WRAP_CONTENT, true);
-        popup.setBackgroundDrawable(new ColorDrawable(Color.rgb(27, 34, 43)));
+        popup.setBackgroundDrawable(context.getDrawable(R.drawable.bg_choice_popup));
         popup.setOutsideTouchable(true);
+        list.setOnTouchListener((view, event) -> {
+            int action = event.getActionMasked();
+            int position = action == MotionEvent.ACTION_CANCEL
+                    ? ListView.INVALID_POSITION
+                    : list.pointToPosition((int) event.getX(), (int) event.getY());
+            adapter.setHighlightedIndex(position);
+            if (action == MotionEvent.ACTION_UP) {
+                if (position != ListView.INVALID_POSITION) onSelected.accept(position);
+                popup.dismiss();
+            }
+            return true;
+        });
         list.setOnItemClickListener((parent, view, position, id) -> {
             onSelected.accept(position);
             popup.dismiss();
@@ -230,7 +247,7 @@ public final class SettingsControlRenderer {
         row.setOrientation(LinearLayout.VERTICAL);
         row.addView(label(label));
         RadioGroup group = new RadioGroup(context);
-        group.setOrientation(RadioGroup.HORIZONTAL);
+        group.setOrientation(RadioGroup.VERTICAL);
         int checkedIndex = clamp(selectedIndex, 0, options.size() - 1);
         for (int i = 0; i < options.size(); i++) {
             RadioButton button = new RadioButton(context);
@@ -239,7 +256,8 @@ public final class SettingsControlRenderer {
             button.setTextSize(14);
             button.setId(View.generateViewId());
             button.setTag(i);
-            group.addView(button, wrap());
+            group.addView(button, new RadioGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
             if (i == checkedIndex) group.check(button.getId());
         }
         group.setOnCheckedChangeListener((radioGroup, checkedId) -> {
@@ -310,6 +328,16 @@ public final class SettingsControlRenderer {
         return Math.round(value * context.getResources().getDisplayMetrics().density);
     }
 
+    private int choicePopupWidth(List<String> options) {
+        TextView measureView = new TextView(context);
+        measureView.setTextSize(14);
+        float widestText = 0;
+        for (String option : options) {
+            widestText = Math.max(widestText, measureView.getPaint().measureText(option));
+        }
+        return Math.max(dp(96), (int) Math.ceil(widestText) + dp(34));
+    }
+
     private static int clamp(int value, int min, int max) {
         if (max < min) return min;
         return Math.max(min, Math.min(max, value));
@@ -320,11 +348,12 @@ public final class SettingsControlRenderer {
     }
 
     private static String choiceText(String value) {
-        return value + "  \u25BE";
+        return value + "  \u25BC";
     }
 
     private static final class DarkChoiceAdapter extends ArrayAdapter<String> {
         private final int selectedIndex;
+        private int highlightedIndex = ListView.INVALID_POSITION;
 
         private DarkChoiceAdapter(Context context, List<String> values, int selectedIndex) {
             super(context, android.R.layout.simple_list_item_1, values);
@@ -333,12 +362,22 @@ public final class SettingsControlRenderer {
 
         @Override public View getView(int position, View convertView, ViewGroup parent) {
             TextView view = (TextView) super.getView(position, convertView, parent);
+            view.setSingleLine(true);
             view.setTextColor(position == selectedIndex ? Color.rgb(142, 200, 255) : Color.WHITE);
             view.setTextSize(14);
             view.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
-            view.setBackgroundColor(Color.rgb(27, 34, 43));
-            view.setPadding(16, 14, 16, 14);
+            view.setBackgroundResource(R.drawable.bg_choice_option);
+            view.setActivated(position == highlightedIndex);
+            int horizontalPadding = Math.round(16 * getContext().getResources().getDisplayMetrics().density);
+            int verticalPadding = Math.round(14 * getContext().getResources().getDisplayMetrics().density);
+            view.setPadding(horizontalPadding, verticalPadding, horizontalPadding, verticalPadding);
             return view;
+        }
+
+        private void setHighlightedIndex(int position) {
+            if (highlightedIndex == position) return;
+            highlightedIndex = position;
+            notifyDataSetChanged();
         }
     }
 }

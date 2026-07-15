@@ -1,7 +1,7 @@
 # DCAM Concurrency & Threading Model Design
 
 **Page ID**: 50725012  
-**Version**: 4  
+**Version**: 5  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/50725012
 
@@ -24,7 +24,7 @@ Technical Design
 
 Version
 
-Draft 0.3
+Draft 0.4
 
 Status
 
@@ -32,7 +32,7 @@ Draft
 
 Approval Scope
 
-Candidate Build 0.1 required execution lanes; cần Technical Review trước khi chuyển `Approved Provisional Baseline`.
+Build 0.1 required subset; exact executor sizing/queue policy Pending Technical Review và Device POC
 
 Owner
 
@@ -68,7 +68,7 @@ Tech Lead/Android Lead/DB Reviewer/QA Lead Technical Review; Jira/PR/build/test 
 
 Related Documents
 
-DCAM Architecture Home, DCAM Architecture Delivery Profile, DCAM Performance Budget & Resource Constraints, DCAM Android Development Standard, DCAM State Machine Design, DCAM Android Operation Design, DCAM Recording & Capture Design, DCAM Storage Design, DCAM SQLite Database Design, DCAM Self Update Design, DCAM Android Device Owner & Kiosk Policy Design, 09 - System Settings Requirements, DCAM-BDMA Data Contract
+DCAM Architecture Home, DCAM Architecture Delivery Profile, DCAM Performance Budget & Resource Constraints, DCAM Android Development Standard, DCAM State Machine Design, DCAM Android Operation Design, DCAM Recording & Capture Design, DCAM Storage Design, DCAM SQLite Database Design, DCAM Self Update Design, DCAM Android Device Owner & Kiosk Policy Design, 09 - System Settings Requirements, DCAM-BDMA Data Contract, Decision Brief – DCAM MVP Internal Build 0.1 – Working Recording Slice
 
 ## 1. Purpose
 
@@ -834,7 +834,7 @@ File finalization runs on FileIoExecutor.
 DB writes run on DbExecutor.
 MainThread never blocks on recording/file/DB work.
 BDMA_READY is marked only after final file and DB update succeed.
-Checksum does not block BDMA_READY.
+For Build 0.1, checksum success gates BDMA_READY.
 ### 13.1 Build 0.1 Review Candidate
 
 Execution Boundary
@@ -1159,3 +1159,37 @@ Only the coordinator mutates runtime state.
 Specialized executors do work and return results.
 No executor blocks another executor while holding state or DB transaction.
 Performance targets are defined by DCAM Performance Budget & Resource Constraints.
+## 15. Build 0.1 Required Concurrency Subset
+
+Component
+
+Required Responsibility
+
+MainThread
+
+UI/state rendering only; không camera/file/DB/hash blocking work.
+
+State Coordinator
+
+Serialize recording/storage/finalization/checksum/readiness transitions.
+
+CameraExecutor
+
+Android platform Camera API operations; vendor SDK Not Applicable.
+
+FileIoExecutor
+
+Temp/final file I/O và async MD5 sau MP4 finalization.
+
+DbExecutor
+
+Persist media/session/finalization/checksum/recovery/operator state.
+
+Build 0.1 sequence:
+
+Camera/File finalization
+  → persist finalized/checksum-pending
+  → async MD5 on FileIoExecutor
+  → persist checksum success
+  → publish BDMA_READY
+Nếu MD5 fail, persist failed/pending state, giữ MP4, log và không publish BDMA_READY. Exact executor count, queue capacity, timeout và state enum vẫn Pending Technical Review; page giữ Draft.

@@ -27,10 +27,10 @@ Nơi lưu trữ tài liệu chung các dự án của phòng Giải Pháp và C�
              
         
         
-                            [DCAM-BDMA Data Contract](/wiki/spaces/DVID/pages/47743153/DCAM-BDMA+Data+Contract)
+                            [DCAM Document Status Registry](/wiki/spaces/DVID/pages/51085647/DCAM+Document+Status+Registry)
             
             
-                less than a minute ago • contributed by [Hoàng Ngọc Quyền](/wiki/display/~712020%3Ae466d315-3c2d-406d-b324-8f8eb35ccb48)            
+                yesterday at 9:00 AM • contributed by [Hoàng Ngọc Quyền](/wiki/display/~712020%3Ae466d315-3c2d-406d-b324-8f8eb35ccb48)            
         
     
         
@@ -38,10 +38,10 @@ Nơi lưu trữ tài liệu chung các dự án của phòng Giải Pháp và C�
              
         
         
-                            [07 - Logging & Diagnostics Requirements](/wiki/spaces/DVID/pages/47776094/07+-+Logging+Diagnostics+Requirements)
+                            [DCAM Requirement–Design–Test Traceability Matrix](/wiki/spaces/DVID/pages/51085669/DCAM+Requirement+Design+Test+Traceability+Matrix)
             
             
-                less than a minute ago • contributed by [Hoàng Ngọc Quyền](/wiki/display/~712020%3Ae466d315-3c2d-406d-b324-8f8eb35ccb48)            
+                yesterday at 8:59 AM • contributed by [Hoàng Ngọc Quyền](/wiki/display/~712020%3Ae466d315-3c2d-406d-b324-8f8eb35ccb48)            
         
     
         
@@ -49,54 +49,10 @@ Nơi lưu trữ tài liệu chung các dự án của phòng Giải Pháp và C�
              
         
         
-                            [06 - BDMA Integration Requirements](/wiki/spaces/DVID/pages/47743376/06+-+BDMA+Integration+Requirements)
+                            [DCAM QA Test Strategy & Test Matrix](/wiki/spaces/DVID/pages/49545345/DCAM+QA+Test+Strategy+Test+Matrix)
             
             
-                less than a minute ago • contributed by [Hoàng Ngọc Quyền](/wiki/display/~712020%3Ae466d315-3c2d-406d-b324-8f8eb35ccb48)            
-        
-    
-        
-        
-             
-        
-        
-                            [04 - Device Configuration Requirements](/wiki/spaces/DVID/pages/47710554/04+-+Device+Configuration+Requirements)
-            
-            
-                less than a minute ago • contributed by [Hoàng Ngọc Quyền](/wiki/display/~712020%3Ae466d315-3c2d-406d-b324-8f8eb35ccb48)            
-        
-    
-        
-        
-             
-        
-        
-                            [05 - User & Device Operation Requirements](/wiki/spaces/DVID/pages/47710574/05+-+User+Device+Operation+Requirements)
-            
-            
-                less than a minute ago • contributed by [Hoàng Ngọc Quyền](/wiki/display/~712020%3Ae466d315-3c2d-406d-b324-8f8eb35ccb48)            
-        
-    
-        
-        
-             
-        
-        
-                            [02 - Media Storage Requirements](/wiki/spaces/DVID/pages/47808901/02+-+Media+Storage+Requirements)
-            
-            
-                less than a minute ago • contributed by [Hoàng Ngọc Quyền](/wiki/display/~712020%3Ae466d315-3c2d-406d-b324-8f8eb35ccb48)            
-        
-    
-        
-        
-             
-        
-        
-                            [01 - Recording & Capture Requirements](/wiki/spaces/DVID/pages/47743356/01+-+Recording+Capture+Requirements)
-            
-            
-                less than a minute ago • contributed by [Hoàng Ngọc Quyền](/wiki/display/~712020%3Ae466d315-3c2d-406d-b324-8f8eb35ccb48)            
+                yesterday at 8:59 AM • contributed by [Hoàng Ngọc Quyền](/wiki/display/~712020%3Ae466d315-3c2d-406d-b324-8f8eb35ccb48)            
         
     
         
@@ -107,7 +63,7 @@ Nơi lưu trữ tài liệu chung các dự án của phòng Giải Pháp và C�
                             [DCAM Release & Build Applicability Matrix](/wiki/spaces/DVID/pages/51020012/DCAM+Release+Build+Applicability+Matrix)
             
             
-                3 minutes ago • contributed by [Hoàng Ngọc Quyền](/wiki/display/~712020%3Ae466d315-3c2d-406d-b324-8f8eb35ccb48)            
+                yesterday at 8:59 AM • contributed by [Hoàng Ngọc Quyền](/wiki/display/~712020%3Ae466d315-3c2d-406d-b324-8f8eb35ccb48)            
         
     
         
@@ -115,10 +71,10 @@ Nơi lưu trữ tài liệu chung các dự án của phòng Giải Pháp và C�
              
         
         
-                            [DCAM MVP Scope](/wiki/spaces/DVID/pages/42532866/DCAM+MVP+Scope)
+                            [DCAM Project Home](/wiki/spaces/DVID/pages/41648280/DCAM+Project+Home)
             
             
-                3 minutes ago • contributed by [Hoàng Ngọc Quyền](/wiki/display/~712020%3Ae466d315-3c2d-406d-b324-8f8eb35ccb48)            
+                yesterday at 8:25 AM • contributed by [Hoàng Ngọc Quyền](/wiki/display/~712020%3Ae466d315-3c2d-406d-b324-8f8eb35ccb48)            
         
     
         
@@ -126,12 +82,56 @@ Nơi lưu trữ tài liệu chung các dự án của phòng Giải Pháp và C�
              
         
         
-                            [Decision Brief – DCAM MVP Internal Build 0.1 – Working Recording Slice](/wiki/spaces/DVID/pages/51642452/Decision+Brief+DCAM+MVP+Internal+Build+0.1+Working+Recording+Slice)
+                            [DCAM Device Provisioning Web Portal Implementation Design](/wiki/spaces/DVID/pages/51019802/DCAM+Device+Provisioning+Web+Portal+Implementation+Design)
             
             
-                4 minutes ago • contributed by [Hoàng Ngọc Quyền](/wiki/display/~712020%3Ae466d315-3c2d-406d-b324-8f8eb35ccb48)            
+                yesterday at 8:25 AM • contributed by [Hoàng Ngọc Quyền](/wiki/display/~712020%3Ae466d315-3c2d-406d-b324-8f8eb35ccb48)            
+        
+    
+        
+        
+             
+        
+        
+                            [DCAM In-App Operation, Device Settings & Media Console Design](/wiki/spaces/DVID/pages/49840330/DCAM+In-App+Operation+Device+Settings+Media+Console+Design)
+            
+            
+                yesterday at 8:25 AM • contributed by [Hoàng Ngọc Quyền](/wiki/display/~712020%3Ae466d315-3c2d-406d-b324-8f8eb35ccb48)            
+        
+    
+        
+        
+             
+        
+        
+                            [DCAM Device Provisioning Web Portal App Design](/wiki/spaces/DVID/pages/50692194/DCAM+Device+Provisioning+Web+Portal+App+Design)
+            
+            
+                yesterday at 8:25 AM • contributed by [Hoàng Ngọc Quyền](/wiki/display/~712020%3Ae466d315-3c2d-406d-b324-8f8eb35ccb48)            
+        
+    
+        
+        
+             
+        
+        
+                            [DCAM DSetup Factory Tool Design](/wiki/spaces/DVID/pages/50626624/DCAM+DSetup+Factory+Tool+Design)
+            
+            
+                yesterday at 8:25 AM • contributed by [Hoàng Ngọc Quyền](/wiki/display/~712020%3Ae466d315-3c2d-406d-b324-8f8eb35ccb48)            
+        
+    
+        
+        
+             
+        
+        
+                            [DCAM Web Portal & Device API Contract](/wiki/spaces/DVID/pages/49873154/DCAM+Web+Portal+Device+API+Contract)
+            
+            
+                yesterday at 8:25 AM • contributed by [Hoàng Ngọc Quyền](/wiki/display/~712020%3Ae466d315-3c2d-406d-b324-8f8eb35ccb48)            
         
     
     
 
-    [Show More](/wiki/plugins/recently-updated/changes.action?theme=concise&pageSize=10&startIndex=10&searchToken=1&spaceKeys=DVID&contentType=page,whiteboard,database,blog&cursor=_t_WzE3ODM5MTc0NzMwMDAsIlx0NTE2NDI0NTIgPXVgOy9iOTBSaFdFLV5MMEhHJCogY3AiXQ%3D%3D_h_W10%3D)
+    [Show More](/wiki/plugins/recently-updated/changes.action?theme=concise&pageSize=10&startIndex=10&searchToken=1&spaceKeys=DVID&contentType=page,whiteboard,database,blog&cursor=_t_WzE3ODM5OTIzMDkwMDAsIlx0NDk4NzMxNTQgPXVgOy9iOTBSaFdFLV5MMEhHJCogY3AiXQ%3D%3D_h_W10%3D)

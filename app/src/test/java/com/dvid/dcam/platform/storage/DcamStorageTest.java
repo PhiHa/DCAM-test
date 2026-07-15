@@ -62,7 +62,7 @@ public class DcamStorageTest {
         assertEquals("InternalAppData/Config/dcam_config.cson", path(storage.configsFile()));
     }
 
-    @Test public void durableAudioStagesInternalThenPublishesToSelectedExternal(
+    @Test public void durableAudioStagesAndPublishesOnSelectedExternal(
             @TempDir Path root) throws Exception {
         File internal = root.resolve("internal").toFile();
         File external = root.resolve("external").toFile();
@@ -75,7 +75,7 @@ public class DcamStorageTest {
 
         File published = new DcamMediaFinalizer(storage).finalizeMedia(media);
 
-        assertTrue(path(media.getFile()).contains("internal/DurableAudioTemp/"));
+        assertTrue(path(media.getFile()).contains("external/Temp/"));
         assertTrue(path(published).contains("external/Media/Audio/"));
         assertEquals(3L, published.length());
         assertFalse(new File(media.getFile().getParentFile(),

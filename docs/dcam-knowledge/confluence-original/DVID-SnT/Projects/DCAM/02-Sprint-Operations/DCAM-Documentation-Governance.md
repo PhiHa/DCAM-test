@@ -1,7 +1,7 @@
 # DCAM Documentation Governance
 
 **Page ID**: 47120620  
-**Version**: 16  
+**Version**: 18  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47120620
 
@@ -24,23 +24,47 @@ Documentation Governance
 
 Version
 
-Approved 1.14
+Approved 1.16
 
 Status
 
 Approved
 
+Approval Scope
+
+Documentation ownership, status taxonomy, approval integrity, traceability và Registry inclusion/exclusion/coverage rules.
+
 Owner
 
 Hoàng Ngọc Quyền
 
+Technical Reviewer
+
+Tech Lead / Documentation Owner
+
+Approver
+
+Hoàng Ngọc Quyền
+
+Parent Folder
+
+02 - Sprint Operations
+
 Last Updated
 
-2026-07-10
+2026-07-14
+
+Related Jira
+
+None
 
 Related Documents
 
 DCAM Document Status Registry, DCAM Requirement–Design–Test Traceability Matrix, DCAM Release & Build Applicability Matrix, DCAM Project Home, DCAM Architecture Home, DCAM Requirements Home
+
+Target Audience
+
+PM/BA, Tech Lead, Document Owners, QA, Reviewers, Approvers
 
 ## 1. Authoritative Document Rule
 
@@ -338,6 +362,88 @@ Each page owns its own current metadata.
 DCAM Document Status Registry is the only cross-document version/status summary.
 Project Home, Architecture Home and Requirements Home must not copy mutable version/status tables.
 When page metadata and registry differ, page metadata is the immediate source; the registry discrepancy must be corrected in the same change window.
+
+### 5.3.1 Registry Coverage Scope
+
+Rule ID
+
+Rule
+
+REG-SCOPE-001
+
+Mọi current Confluence page trong space DVID có page metadata `Project` bắt đầu bằng `DCAM` phải có đúng một row trong **Current Document Register**.
+
+REG-SCOPE-002
+
+Scope bao gồm Home/navigation page, Governance, Registry, Requirements, Architecture, ADR, Technical Design, Contract, Standard/SOP, QA và report; áp dụng cho cả `Draft`, qualified status và `Approved`.
+
+REG-SCOPE-003
+
+Scope không bao gồm folder/container không có DCAM document metadata, template/meeting note, non-DCAM page, hoặc content ở trạng thái archived/deleted/trashed. Historical `Superseded / Archived` entry phải được quản lý tách khỏi current coverage.
+
+REG-SCOPE-004
+
+Page metadata sở hữu `Version`, `Status` và `Approval Scope` của chính page; Registry chỉ tổng hợp và không được nâng status hoặc mở rộng approval scope.
+
+REG-SCOPE-005
+
+Khi page metadata thiếu `Version` hoặc `Approval Scope`, Registry phải ghi rõ `Missing in page metadata`; không tự suy diễn giá trị và phải mở metadata-cleanup finding.
+
+REG-SCOPE-006
+
+Mỗi current page chỉ có một Registry row, được nhận diện bằng current page title và link trực tiếp tới page; duplicate title phải được xử lý trước khi coi coverage là complete.
+
+REG-SCOPE-007
+
+Page metadata change và Registry synchronization phải hoàn tất trong cùng controlled change window.
+
+REG-SCOPE-008
+
+Current coverage = số unique Registry rows khớp current in-scope pages / tổng số current in-scope pages tại Data cut-off.
+
+### 5.3.2 Dangling Hierarchy Entry Rule
+
+Rule ID
+
+Rule
+
+REG-DANGLING-001
+
+Một hierarchy entry được coi là `Dangling` khi live descendants/tree vẫn trả entry nhưng direct page fetch trả `404` và CQL không tìm thấy current content.
+
+REG-DANGLING-002
+
+`Dangling` entry không được tính vào Registry coverage của named, retrievable DCAM pages và không được dùng làm navigation destination.
+
+REG-DANGLING-003
+
+Project Home hoặc Registry phải ghi page ID, observed parent và validation evidence để audit cho đến khi entry được restore hoặc xóa khỏi live tree.
+
+REG-DANGLING-004
+
+Không rename, move, archive hoặc delete bằng blind write khi page object không retrievable; Confluence admin phải xác nhận physical cleanup hoặc access restoration.
+
+REG-DANGLING-005
+
+Chỉ bỏ documented exclusion khi page có title, retrievable current content, required metadata và Registry row hợp lệ, hoặc khi entry không còn xuất hiện trong live tree.
+
+Current documented exclusion:
+
+Page ID
+
+Observed Parent
+
+Evidence
+
+Registry Treatment
+
+`49774716`
+
+`4.4 - Architecture Decision Records (ADR)` / parent ID `41189399`
+
+Live descendants trả entry; direct fetch `404`; CQL trả 0 result ngày 2026-07-14.
+
+Excluded from `62/62` named-page coverage; Confluence admin cleanup required.
 
 ### 5.4 Reference Naming Rule
 

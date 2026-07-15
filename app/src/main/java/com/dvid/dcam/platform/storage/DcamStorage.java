@@ -5,7 +5,6 @@ import android.os.Environment;
 import com.dvid.dcam.BuildConfig;
 import com.dvid.dcam.feature.settings.domain.StorageMode;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -143,21 +142,13 @@ public final class DcamStorage {
     public DcamMediaFile durableAudioMediaFile(
             String accountUserId, String policeUserId, LocalDateTime at, boolean encrypted)
             throws IOException {
-        DcamMediaFile target = mediaFile(
+        DcamMediaFile staging = mediaFile(
                 DcamFileType.AUDIO, accountUserId, policeUserId, at, encrypted);
-        File privateRoot = context == null ? internalRoot : context.getFilesDir();
-        File staging = new File(new File(privateRoot, "DurableAudioTemp"), target.getFileName());
-        File parent = staging.getParentFile();
+        File parent = staging.getFile().getParentFile();
         if (parent == null || (!parent.isDirectory() && !parent.mkdirs())) {
             throw new IOException("Cannot create durable audio staging directory: " + parent);
         }
-        byte[] targetPath = finalFile(target).getAbsolutePath().getBytes(StandardCharsets.UTF_8);
-        try (FileOutputStream marker = new FileOutputStream(targetMarker(staging))) {
-            marker.write(targetPath);
-            marker.flush();
-            marker.getFD().sync();
-        }
-        return new DcamMediaFile(DcamFileType.AUDIO, target.getFileName(), staging, at);
+        return staging;
     }
 
     public File prepareFile(DcamMediaFile mediaFile) {

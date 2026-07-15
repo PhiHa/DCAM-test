@@ -6,10 +6,9 @@ import com.dvid.dcam.feature.auth.domain.UserProvisioningRequest;
 import com.dvid.dcam.feature.auth.domain.UserProvisioningResult;
 import com.dvid.dcam.feature.auth.domain.UserSource;
 import java.util.List;
-import java.util.Locale;
 
 public final class ManageOperatorUsersUseCaseImpl implements ManageOperatorUsersUseCase {
-    public static final String DEFAULT_USER_ID = "000000";
+    public static final String DEFAULT_USER_ID = "B01OPR";
     public static final String DEFAULT_PASSWORD = "000000";
 
     private final OperatorAuthRepository repository;
@@ -24,7 +23,6 @@ public final class ManageOperatorUsersUseCaseImpl implements ManageOperatorUsers
                 new OperatorAccount(
                         DEFAULT_USER_ID,
                         DEFAULT_USER_ID,
-                        "default",
                         "Default Operator",
                         UserSource.DEFAULT,
                         true),
@@ -42,13 +40,12 @@ public final class ManageOperatorUsersUseCaseImpl implements ManageOperatorUsers
         if (password == null || password.isEmpty()) {
             return UserProvisioningResult.failure("PASSWORD_REQUIRED");
         }
-        String loginName = normalizeOptional(request.getLoginName());
         String displayName = trim(request.getDisplayName());
         if (displayName == null) displayName = userId;
         UserSource source = request.getSource() == null ? UserSource.DEVELOPER : request.getSource();
         try {
             repository.upsert(
-                    new OperatorAccount(userId, userId, loginName, displayName, source, true),
+                    new OperatorAccount(userId, userId, displayName, source, true),
                     password);
             return UserProvisioningResult.success();
         } catch (RuntimeException error) {
@@ -66,8 +63,4 @@ public final class ManageOperatorUsersUseCaseImpl implements ManageOperatorUsers
         return value.trim();
     }
 
-    private static String normalizeOptional(String value) {
-        String trimmed = trim(value);
-        return trimmed == null ? null : trimmed.toLowerCase(Locale.ROOT);
-    }
 }

@@ -1,7 +1,7 @@
 # DCAM Self Update Design
 
 **Page ID**: 48529439  
-**Version**: 11  
+**Version**: 12  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/48529439
 
@@ -24,11 +24,15 @@ Technical Design
 
 Version
 
-Draft 1.0
+Draft 1.1
 
 Status
 
 Draft
+
+Approval Scope
+
+Draft self-update design only; không phải approved implementation, release hoặc Production baseline.
 
 Owner
 
@@ -52,7 +56,7 @@ Tech Lead, Android Developers, QA, Support, Factory/Admin Users
 
 Last Updated
 
-2026-07-09
+2026-07-14
 
 Related Jira
 

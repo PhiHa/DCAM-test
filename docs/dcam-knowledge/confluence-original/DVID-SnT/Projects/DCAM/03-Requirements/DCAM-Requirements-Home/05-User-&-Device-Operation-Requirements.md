@@ -1,7 +1,7 @@
 # 05 - User & Device Operation Requirements
 
 **Page ID**: 47710574  
-**Version**: 6  
+**Version**: 7  
 **Type**: page  
 **URL**: https://ducviet.atlassian.net/wiki/spaces/DVID/pages/47710574
 
@@ -24,7 +24,7 @@ Functional Requirements
 
 Version
 
-Approved 1.4
+Approved 1.5
 
 Status
 
@@ -667,7 +667,7 @@ Approved for Build DCAM MVP Internal Build 0.1
 
 UDO-B01-002
 
-operator_id luôn là BUILD01_OPERATOR và operator_name luôn là Build 0.1 Operator.
+operator_id luôn là B01OPR và operator_name luôn là Build 0.1 Operator.
 
 Approved for Build DCAM MVP Internal Build 0.1
 

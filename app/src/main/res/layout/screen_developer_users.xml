@@ -36,17 +36,6 @@
             android:textColorHint="#999999" />
 
         <EditText
-            android:id="@+id/login_name"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="@string/login_name_optional"
-            android:inputType="text"
-            android:maxLength="64"
-            android:singleLine="true"
-            android:textColor="#FFFFFF"
-            android:textColorHint="#999999" />
-
-        <EditText
             android:id="@+id/display_name"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
