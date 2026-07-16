@@ -56,4 +56,9 @@
     <string name="gps_mode_gps_agps">GPS + AGPS</string>
     <string name="gps_mode_gmap">GMAP</string>
     <string name="gps_settings_unavailable">Kh&#244;ng th&#7875; m&#7903; c&#224;i &#273;&#7863;t Location</string>
-</resources>
+    <string name="gps_permission_required">C&#7847;n quy&#7873;n truy c&#7853;p GPS</string>
+    <string name="gps_location_disabled">Location &#273;ang t&#7855;t</string>
+    <string name="gps_unavailable">GPS kh&#244;ng kh&#7843; d&#7909;ng</string>
+    <string name="gps_provider_error">L&#7895;i provider GPS</string>
+    <string name="gps_waiting_for_fix">Đang chờ tín hiệu GPS</string>
+  </resources>

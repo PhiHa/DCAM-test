@@ -12,6 +12,7 @@ import com.dvid.dcam.feature.location.domain.LocationSystemState;
 import com.dvid.dcam.platform.device.DcamDeviceAdminReceiver;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
+import java.util.List;
 
 /** Reads Android Location state and changes it only when Device Owner policy permits it. */
 public final class AndroidLocationControlGatewayImpl implements LocationControlGateway {
@@ -45,10 +46,10 @@ public final class AndroidLocationControlGatewayImpl implements LocationControlG
         PackageManager packageManager = context.getPackageManager();
         if (mode == GpsMode.GMAP) {
             return hasLocationCapability()
-                    && googleApiAvailability.isGooglePlayServicesAvailable(context)
-                    == ConnectionResult.SUCCESS;
+                    && (googleApiAvailability.isGooglePlayServicesAvailable(context)
+                    == ConnectionResult.SUCCESS || hasSystemFusedCapability());
         }
-        if (mode == GpsMode.GPS) {
+        if (mode == GpsMode.GPS || mode == GpsMode.GPS_AGPS) {
             return packageManager.hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS);
         }
         return packageManager.hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS)
@@ -70,6 +71,19 @@ public final class AndroidLocationControlGatewayImpl implements LocationControlG
         PackageManager packageManager = context.getPackageManager();
         return packageManager.hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS)
                 || packageManager.hasSystemFeature(PackageManager.FEATURE_LOCATION_NETWORK);
+    }
+
+    private boolean hasSystemFusedCapability() {
+        if (locationManager == null) return false;
+        try {
+            List<String> providers = locationManager.getAllProviders();
+            if (providers == null) return false;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                    && providers.contains(LocationManager.FUSED_PROVIDER)) return true;
+            return providers.contains(LocationManager.NETWORK_PROVIDER);
+        } catch (RuntimeException ignored) {
+            return false;
+        }
     }
 
     private boolean anyProviderEnabled() {

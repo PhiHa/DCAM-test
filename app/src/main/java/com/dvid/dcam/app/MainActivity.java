@@ -43,6 +43,7 @@ import com.dvid.dcam.app.presentation.MainMenuTile;
 import com.dvid.dcam.app.presentation.MainUiState;
 import com.dvid.dcam.app.presentation.MainViewModel;
 import com.dvid.dcam.app.presentation.MainViewModelFactory;
+import com.dvid.dcam.app.presentation.LocationTrackingCoordinator;
 import com.dvid.dcam.core.config.domain.DcamConfig;
 import com.dvid.dcam.core.feature.domain.FeatureGate;
 import com.dvid.dcam.databinding.ActivityMainBinding;
@@ -63,6 +64,7 @@ import com.dvid.dcam.feature.location.domain.GpsCoordinate;
 import com.dvid.dcam.feature.location.domain.GpsMode;
 import com.dvid.dcam.feature.location.domain.GpsSettings;
 import com.dvid.dcam.feature.location.domain.LocationSystemState;
+import com.dvid.dcam.feature.location.domain.LocationTrackingState;
 import com.dvid.dcam.feature.media.application.usecase.OpenMediaUseCase;
 import com.dvid.dcam.feature.media.domain.MediaEntry;
 import com.dvid.dcam.feature.settings.application.usecase.LanguageSettingsUseCase;
@@ -124,13 +126,17 @@ public final class MainActivity extends ComponentActivity {
     private LocationSettingsUseCase locationSettings;
     private LocationControlUseCase locationControl;
     private LocationTrackingUseCase locationTracking;
+    private LocationTrackingCoordinator locationTrackingCoordinator;
     private GpsCoordinate currentGpsCoordinate;
+    private LocationTrackingState locationTrackingState = LocationTrackingState.STOPPED;
     private Switch gpsSwitch;
     private boolean syncingGpsSwitch;
     private SettingsControlRenderer settingsRenderer;
     private SettingsUiState settingsUiState;
     private MainMenuModel menuModel;
     private ActivityResultLauncher<String[]> permissionLauncher;
+    private ActivityResultLauncher<String[]> locationPermissionLauncher;
+    private boolean locationPermissionRequestInFlight;
     private DcamKioskController kioskController;
     private AndroidDeviceSettings deviceSettings;
     private MainUiState latestState;
@@ -178,6 +184,14 @@ public final class MainActivity extends ComponentActivity {
         locationSettings = composition.locationSettingsUseCase();
         locationControl = composition.locationControlUseCase();
         locationTracking = composition.locationTrackingUseCase();
+        locationTrackingCoordinator = new LocationTrackingCoordinator(
+                locationSettings,
+                locationControl,
+                locationTracking,
+                () -> developerFeatureToggles.isEffectivelyEnabled(FeatureGate.GPS),
+                () -> DcamPermissions.locationGranted(this),
+                () -> DcamPermissions.fineLocationGranted(this),
+                this::onLocationTrackingStateChanged);
         deviceSettings = composition.deviceSettings();
         settingsRenderer = new SettingsControlRenderer(this);
         settingsUiState = new SettingsUiState(mediaEncryptionSettings.isMediaEncryptionEnabled(),
@@ -200,16 +214,27 @@ public final class MainActivity extends ComponentActivity {
         permissionLauncher = registerForActivityResult(
                 new ActivityResultContracts.RequestMultiplePermissions(),
                 result -> {
-                    CameraXCameraGatewayImpl.warmUp(this);
-                    if (captureRuntime != null) captureRuntime.bindCameraIfPermitted();
+                    if (DcamPermissions.cameraGranted(this)) {
+                        CameraXCameraGatewayImpl.warmUp(this);
+                        if (captureRuntime != null) captureRuntime.bindCameraIfPermitted();
+                    }
                     refreshLocationTracking();
+                });
+        locationPermissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestMultiplePermissions(),
+                result -> {
+                    locationPermissionRequestInFlight = false;
+                    refreshLocationTracking();
+                    syncGpsSwitch();
+                    renderedScreen = null;
+                    if (latestState != null) render(latestState);
                 });
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override public void handleOnBackPressed() { navigateBack(); }
         });
 
-        if (!DcamPermissions.allRuntimeGranted(this)) {
-            permissionLauncher.launch(DcamPermissions.runtime());
+        if (!DcamPermissions.coreRuntimeGranted(this)) {
+            permissionLauncher.launch(DcamPermissions.coreRuntime());
         } else {
             CameraXCameraGatewayImpl.warmUp(this);
         }
@@ -852,8 +877,12 @@ public final class MainActivity extends ComponentActivity {
     private void updateBooleanSetting(SettingId id, boolean checked) {
         if (developerFeatureToggles.setEnabled(id, checked)) {
             if (id == SettingId.FEATURE_GPS) {
-                if (checked) refreshLocationTracking();
-                else stopLocationTracking();
+                if (checked) {
+                    if (!hasRequiredLocationPermission()) requestLocationPermission();
+                    else refreshLocationTracking();
+                } else {
+                    stopLocationTracking();
+                }
             }
             renderedScreen = null;
             render(latestState);
@@ -1129,7 +1158,18 @@ public final class MainActivity extends ComponentActivity {
     }
 
     private String gpsCoordinatesText() {
-        return currentGpsCoordinate == null ? "000.00 000.00" : currentGpsCoordinate.toString();
+        if (currentGpsCoordinate != null) return currentGpsCoordinate.toString();
+        switch (locationTrackingState) {
+            case PERMISSION_REQUIRED: return getString(R.string.gps_permission_required);
+            case LOCATION_DISABLED: return getString(R.string.gps_location_disabled);
+            case LOCATION_UNAVAILABLE:
+            case NO_PROVIDER: return getString(R.string.gps_unavailable);
+            case ERROR: return getString(R.string.gps_provider_error);
+            case WAITING_FOR_FIX:
+            case AVAILABLE: return getString(R.string.gps_waiting_for_fix);
+            case STOPPED:
+            default: return getString(R.string.gps_unavailable);
+        }
     }
 
     private void updateGpsStatusLine() {
@@ -1141,6 +1181,12 @@ public final class MainActivity extends ComponentActivity {
 
     private void handleLocationSwitchChanged(boolean enabled) {
         if (locationControl == null) return;
+        if (enabled && !hasRequiredLocationPermission()) {
+            requestLocationPermission();
+            renderedScreen = null;
+            render(latestState);
+            return;
+        }
         boolean changed = locationControl.setEnabledIfPermitted(enabled);
         renderedScreen = null;
         render(latestState);
@@ -1167,18 +1213,9 @@ public final class MainActivity extends ComponentActivity {
     }
 
     private void refreshLocationTracking() {
-        if (locationTracking == null || locationControl == null || locationSettings == null) return;
-        GpsSettings settings = locationSettings.currentSettings();
-        boolean shouldTrack = developerFeatureToggles != null
-                && developerFeatureToggles.isEffectivelyEnabled(FeatureGate.GPS)
-                && locationControl.currentState() == LocationSystemState.ENABLED
-                && locationControl.isModeAvailable(settings.getMode())
-                && DcamPermissions.locationGranted(this);
-        if (!shouldTrack) {
-            stopLocationTracking();
-            return;
-        }
-        locationTracking.start(this::onGpsCoordinate);
+        if (locationTrackingCoordinator == null) return;
+        locationTrackingCoordinator.refresh();
+        syncLocationTrackingPresentation();
     }
 
     private void restartLocationTracking() {
@@ -1187,16 +1224,44 @@ public final class MainActivity extends ComponentActivity {
     }
 
     private void stopLocationTracking() {
-        if (locationTracking != null) locationTracking.stop();
-        currentGpsCoordinate = null;
-        updateGpsStatusLine();
+        if (locationTrackingCoordinator != null) locationTrackingCoordinator.stop();
+        else if (locationTracking != null) locationTracking.stop();
+        syncLocationTrackingPresentation();
     }
 
-    private void onGpsCoordinate(GpsCoordinate coordinate) {
+    private void onLocationTrackingStateChanged() {
         runOnUiThread(() -> {
-            currentGpsCoordinate = coordinate;
+            syncLocationTrackingPresentation();
             updateGpsStatusLine();
         });
+    }
+
+    private void syncLocationTrackingPresentation() {
+        if (locationTrackingCoordinator == null) {
+            currentGpsCoordinate = null;
+            locationTrackingState = LocationTrackingState.STOPPED;
+            return;
+        }
+        currentGpsCoordinate = locationTrackingCoordinator.currentCoordinate();
+        locationTrackingState = locationTrackingCoordinator.currentState();
+    }
+
+    private void requestLocationPermission() {
+        if (locationPermissionLauncher == null || locationPermissionRequestInFlight
+                || hasRequiredLocationPermission()) return;
+        locationPermissionRequestInFlight = true;
+        locationPermissionLauncher.launch(DcamPermissions.locationRuntime());
+    }
+
+    private boolean hasRequiredLocationPermission() {
+        return hasRequiredLocationPermission(locationSettings == null
+                ? GpsMode.GPS : locationSettings.currentSettings().getMode());
+    }
+
+    private boolean hasRequiredLocationPermission(GpsMode mode) {
+        return mode == GpsMode.GMAP
+                ? DcamPermissions.locationGranted(this)
+                : DcamPermissions.fineLocationGranted(this);
     }
 
     private void navigateBack() {

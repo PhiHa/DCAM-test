@@ -80,4 +80,9 @@
     <string name="gps_mode_gps_agps">GPS + AGPS</string>
     <string name="gps_mode_gmap">GMAP</string>
     <string name="gps_settings_unavailable">Location settings are unavailable</string>
-</resources>
+    <string name="gps_permission_required">GPS permission required</string>
+    <string name="gps_location_disabled">Location is disabled</string>
+    <string name="gps_unavailable">GPS is unavailable</string>
+    <string name="gps_provider_error">GPS provider error</string>
+    <string name="gps_waiting_for_fix">Waiting for GPS fix</string>
+  </resources>
