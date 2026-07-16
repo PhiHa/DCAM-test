@@ -15,6 +15,10 @@ import android.widget.ListView;
 import android.widget.PopupWindow;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.ProgressBar;
+import android.os.StatFs;
+import java.io.File;
+import java.util.ArrayList;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import com.dvid.dcam.R;
@@ -60,8 +64,13 @@ public final class SettingsControlRenderer {
                                 value -> onNumber.accept(item.getId(), value));
                         break;
                     case RADIO:
-                        radio(parent, item.getLabel(), item.getOptions(), item.getSelectedIndex(),
-                                selected -> onSelection.accept(item.getId(), selected));
+                        if (item.getId() == SettingId.DEFAULT_STORAGE) {
+                            storageRadio(parent, item.getLabel(), item.getOptions(), item.getSelectedIndex(),
+                                    selected -> onSelection.accept(item.getId(), selected));
+                        } else {
+                            radio(parent, item.getLabel(), item.getOptions(), item.getSelectedIndex(),
+                                    selected -> onSelection.accept(item.getId(), selected));
+                        }
                         break;
                     case ACTION:
                         action(parent, item.getLabel(), () -> {
@@ -268,6 +277,71 @@ public final class SettingsControlRenderer {
         });
         row.addView(group);
         parent.addView(row);
+    }
+
+    private void storageRadio(
+            LinearLayout parent, String label, List<String> options, int selectedIndex,
+            IntConsumer onSelected) {
+        LinearLayout row = baseRow();
+        row.setOrientation(LinearLayout.VERTICAL);
+        row.addView(label(label));
+        RadioGroup group = new RadioGroup(context);
+        group.setOrientation(RadioGroup.VERTICAL);
+        int checkedIndex = clamp(selectedIndex, 0, options.size() - 1);
+        File[] roots = context.getExternalFilesDirs(null);
+        List<RadioButton> buttons = new ArrayList<>();
+        for (int i = 0; i < options.size(); i++) {
+            LinearLayout option = new LinearLayout(context);
+            option.setOrientation(LinearLayout.VERTICAL);
+            RadioButton button = new RadioButton(context);
+            button.setText(options.get(i).split("\\n", 2)[0]);
+            button.setTextColor(Color.WHITE);
+            button.setTextSize(14);
+            button.setId(View.generateViewId());
+            button.setTag(i);
+            buttons.add(button);
+            button.setOnClickListener(view -> {
+                for (RadioButton candidate : buttons) candidate.setChecked(candidate == view);
+                if (onSelected != null) onSelected.accept((Integer) view.getTag());
+            });
+            option.addView(button);
+            if (i < 2) addStorageBar(option, i == 0
+                    ? (roots.length > 0 ? roots[0] : null)
+                    : roots.length > 1 ? roots[1] : null);
+            group.addView(option, new RadioGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+            button.setChecked(i == checkedIndex);
+        }
+        row.addView(group);
+        parent.addView(row);
+    }
+
+    private void addStorageBar(LinearLayout option, File root) {
+        long total = 0L;
+        long free = 0L;
+        if (root != null) {
+            try {
+                StatFs stats = new StatFs(root.getAbsolutePath());
+                total = stats.getTotalBytes();
+                free = stats.getAvailableBytes();
+            } catch (RuntimeException ignored) {}
+        }
+        long used = Math.max(0L, total - free);
+        TextView usage = value(root == null ? "Unavailable" : "Used " + formatStorage(used)
+                + " / " + formatStorage(total));
+        usage.setPadding(dp(52), 0, dp(4), 0);
+        option.addView(usage);
+        ProgressBar bar = new ProgressBar(context, null, android.R.attr.progressBarStyleHorizontal);
+        bar.setMax(1000);
+        bar.setProgress(total <= 0L ? 0 : (int) Math.min(1000.0, used * 1000.0 / total));
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(10));
+        params.setMargins(dp(52), 0, dp(4), dp(6));
+        option.addView(bar, params);
+    }
+
+    private String formatStorage(long bytes) {
+        return String.format(java.util.Locale.US, "%.1f GB", bytes / (1024.0 * 1024.0 * 1024.0));
     }
 
     public void action(LinearLayout parent, String label, Runnable onClick) {

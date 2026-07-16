@@ -5,7 +5,7 @@ import java.util.List;
  * In-memory settings state used until operational settings persistence is connected.
  * The UI still follows normal get/update/render flow.
  */
-public final class DemoSettingsState {
+public final class SettingsUiState {
     private static final List<String> RECORD_RESOLUTIONS = List.of("720p", "1080p", "1440p", "4K");
     private static final List<String> STORAGE_OPTIONS = List.of("Internal", "External", "Auto");
     private static final List<String> USB_OPTIONS = List.of("Off", "Password", "Admin only");
@@ -22,11 +22,16 @@ public final class DemoSettingsState {
     private int usbAccessIndex;
     private boolean fullScreenDisplay;
     private boolean statusLightsEnabled = true;
+    private boolean autoRotateEnabled;
+    private boolean wifiEnabled;
 
-    public DemoSettingsState(boolean videoEncryptionEnabled, boolean videoMd5Enabled, int defaultStorageIndex) {
+    public SettingsUiState(boolean videoEncryptionEnabled, boolean videoMd5Enabled, int defaultStorageIndex,
+            boolean autoRotateEnabled, boolean wifiEnabled) {
         this.videoEncryptionEnabled = videoEncryptionEnabled;
         this.videoMd5Enabled = videoMd5Enabled;
         this.defaultStorageIndex = clamp(defaultStorageIndex, STORAGE_OPTIONS.size());
+        this.autoRotateEnabled = autoRotateEnabled;
+        this.wifiEnabled = wifiEnabled;
     }
 
     public void select(SettingId id, int selectedIndex) {
@@ -81,6 +86,12 @@ public final class DemoSettingsState {
             case STATUS_LIGHTS:
                 statusLightsEnabled = checked;
                 break;
+            case AUTO_ROTATE:
+                autoRotateEnabled = checked;
+                break;
+            case WIFI_ENABLED:
+                wifiEnabled = checked;
+                break;
             default:
                 throw new IllegalArgumentException("Setting " + id + " is not boolean");
         }
@@ -129,12 +140,17 @@ public final class DemoSettingsState {
                                 "USB access protection", USB_OPTIONS, usbAccessIndex)))));
     }
 
-    public SettingsScreenModel device() {
+    public SettingsScreenModel device(String autoRotateLabel, String wifiLabel, String wifiConnectLabel) {
         return new SettingsScreenModel(List.of(new SettingsSection("Device", List.of(
                 SettingItem.checkbox(SettingId.FULL_SCREEN_DISPLAY,
                         "Full-screen display", fullScreenDisplay),
                 SettingItem.checkbox(SettingId.STATUS_LIGHTS,
-                        "Status lights", statusLightsEnabled)))));
+                        "Status lights", statusLightsEnabled),
+                SettingItem.checkbox(SettingId.AUTO_ROTATE,
+                        autoRotateLabel, autoRotateEnabled),
+                SettingItem.checkbox(SettingId.WIFI_ENABLED,
+                        wifiLabel, wifiEnabled),
+                SettingItem.action(SettingId.WIFI_CONNECT, wifiConnectLabel)))));
     }
 
     public SettingsScreenModel readOnly(String[] fallbackLabels) {
