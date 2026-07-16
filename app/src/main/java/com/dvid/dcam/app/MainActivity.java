@@ -2,17 +2,21 @@ package com.dvid.dcam.app;
 
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.BroadcastReceiver;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.NetworkCapabilities;
 import android.net.wifi.WifiManager;
+import android.content.pm.ActivityInfo;
 import android.os.BatteryManager;
 import android.os.Bundle;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.StatFs;
+import android.provider.Settings;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,6 +31,7 @@ import androidx.activity.ComponentActivity;
 import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.core.content.ContextCompat;
 import androidx.lifecycle.ViewModelProvider;
 import com.dvid.dcam.R;
 import com.dvid.dcam.app.feature.DeveloperFeatureToggles;
@@ -57,7 +62,7 @@ import com.dvid.dcam.feature.settings.application.usecase.VideoMd5SettingsUseCas
 import com.dvid.dcam.feature.settings.application.usecase.StorageSettingsUseCase;
 import com.dvid.dcam.feature.settings.domain.StorageMode;
 import com.dvid.dcam.feature.settings.domain.AppLanguage;
-import com.dvid.dcam.feature.settings.presentation.DemoSettingsState;
+import com.dvid.dcam.feature.settings.presentation.SettingsUiState;
 import com.dvid.dcam.feature.settings.presentation.DeveloperButtonBindingsScreen;
 import com.dvid.dcam.feature.settings.presentation.SettingId;
 import com.dvid.dcam.feature.settings.presentation.SettingItem;
@@ -67,6 +72,7 @@ import com.dvid.dcam.feature.settings.presentation.SettingsSection;
 import com.dvid.dcam.platform.config.AndroidLanguagePreferenceStoreImpl;
 import com.dvid.dcam.platform.camera.CameraXCameraGatewayImpl;
 import com.dvid.dcam.platform.device.DcamKioskController;
+import com.dvid.dcam.platform.device.AndroidDeviceSettings;
 import com.dvid.dcam.platform.input.HardwareButtonLayout;
 import com.dvid.dcam.platform.input.HardwareButtonRouter;
 import com.dvid.dcam.platform.logging.DcamLogger;
@@ -107,10 +113,11 @@ public final class MainActivity extends ComponentActivity {
     private VideoMd5SettingsUseCase videoMd5Settings;
     private StorageSettingsUseCase storageSettings;
     private SettingsControlRenderer settingsRenderer;
-    private DemoSettingsState demoSettings;
+    private SettingsUiState settingsUiState;
     private MainMenuModel menuModel;
     private ActivityResultLauncher<String[]> permissionLauncher;
     private DcamKioskController kioskController;
+    private AndroidDeviceSettings deviceSettings;
     private MainUiState latestState;
     private MainScreen renderedScreen;
     private ScreenCameraBinding cameraScreen;
@@ -124,6 +131,14 @@ public final class MainActivity extends ComponentActivity {
     private boolean audioRecording;
     private Long audioStartedAtMillis;
     private Runnable sosHoldAction;
+    private final BroadcastReceiver wifiStateReceiver = new BroadcastReceiver() {
+        @Override public void onReceive(Context context, Intent intent) {
+            int state = intent.getIntExtra(WifiManager.EXTRA_WIFI_STATE, WifiManager.WIFI_STATE_UNKNOWN);
+            if (state == WifiManager.WIFI_STATE_ENABLED || state == WifiManager.WIFI_STATE_DISABLED) {
+                refreshWifiSetting();
+            }
+        }
+    };
 
     @Override protected void attachBaseContext(Context newBase) {
         super.attachBaseContext(AndroidLanguagePreferenceStoreImpl.localizedContext(newBase));
@@ -145,10 +160,13 @@ public final class MainActivity extends ComponentActivity {
         mediaEncryptionSettings = composition.mediaEncryptionSettingsUseCase();
         videoMd5Settings = composition.videoMd5SettingsUseCase();
         storageSettings = composition.storageSettingsUseCase();
+        deviceSettings = composition.deviceSettings();
         settingsRenderer = new SettingsControlRenderer(this);
-        demoSettings = new DemoSettingsState(mediaEncryptionSettings.isMediaEncryptionEnabled(),
+        settingsUiState = new SettingsUiState(mediaEncryptionSettings.isMediaEncryptionEnabled(),
                 videoMd5Settings.isVideoMd5Enabled(),
-                storageSettings.currentMode().ordinal());
+                storageSettings.currentMode().ordinal(), deviceSettings.isAutoRotateEnabled(),
+                deviceSettings.isWifiEnabled());
+        applyAutoRotate(deviceSettings.isAutoRotateEnabled());
         menuModel = new MainMenuModel();
         kioskController = new DcamKioskController(this);
         kioskController.applyActiveKioskPolicy();
@@ -186,11 +204,15 @@ public final class MainActivity extends ComponentActivity {
                         composition.manageOperatorUsersUseCase()))
                 .get(MainViewModel.class);
         viewModel.state().observe(this, this::render);
+        ContextCompat.registerReceiver(this, wifiStateReceiver,
+                new IntentFilter(WifiManager.WIFI_STATE_CHANGED_ACTION),
+                ContextCompat.RECEIVER_NOT_EXPORTED);
     }
 
     @Override protected void onResume() {
         super.onResume();
         hideSystemStatusBar();
+        refreshWifiSetting();
         if (kioskController != null) {
             kioskController.applyActiveKioskPolicy();
             kioskController.enterLockTaskIfAllowed(this);
@@ -286,6 +308,15 @@ public final class MainActivity extends ComponentActivity {
                 return insets;
             });
             activityBinding.getRoot().requestApplyInsets();
+        }
+    }
+
+    private void refreshWifiSetting() {
+        if (deviceSettings == null || settingsUiState == null) return;
+        settingsUiState.updateBoolean(SettingId.WIFI_ENABLED, deviceSettings.isWifiEnabled());
+        if (latestState != null && latestState.getScreen() == MainScreen.DEVICE_SETTINGS) {
+            renderedScreen = null;
+            render(latestState);
         }
     }
 
@@ -503,14 +534,18 @@ public final class MainActivity extends ComponentActivity {
             return developerFeatureToggles.developerSettings();
         }
         SettingsScreenModel model;
-        if (screen == MainScreen.RECORD_SETTINGS) model = demoSettings.recording();
-        else if (screen == MainScreen.STORAGE_SETTINGS) model = demoSettings.storage(storageOptions());
+        if (screen == MainScreen.RECORD_SETTINGS) model = settingsUiState.recording();
+        else if (screen == MainScreen.STORAGE_SETTINGS) model = settingsUiState.storage(storageOptions());
         else if (screen == MainScreen.USER_SETTINGS) {
-            demoSettings.setVideoEncryptionEnabled(mediaEncryptionSettings.isMediaEncryptionEnabled());
-            model = demoSettings.security();
+            settingsUiState.setVideoEncryptionEnabled(mediaEncryptionSettings.isMediaEncryptionEnabled());
+            model = settingsUiState.security();
         }
-        else if (screen == MainScreen.DEVICE_SETTINGS) model = withLanguage(demoSettings.device());
-        else model = demoSettings.readOnly(visibleReadOnlySettings(screen));
+        else if (screen == MainScreen.DEVICE_SETTINGS) {
+            model = withLanguage(settingsUiState.device(
+                    getString(R.string.auto_rotate), getString(R.string.wifi),
+                    getString(R.string.connect_wifi)));
+        }
+        else model = settingsUiState.readOnly(visibleReadOnlySettings(screen));
         return filterUnavailableSettings(screen, model);
     }
 
@@ -566,6 +601,8 @@ public final class MainActivity extends ComponentActivity {
     }
 
     private boolean isSettingVisible(MainScreen screen, SettingItem item) {
+        if ((item.getId() == SettingId.WIFI_ENABLED || item.getId() == SettingId.WIFI_CONNECT)
+                && !deviceSettings.isDeviceOwner()) return false;
         for (FeatureGate gate : requiredGatesForSetting(screen, item)) {
             if (!developerFeatureToggles.isEffectivelyEnabled(gate)) return false;
         }
@@ -580,7 +617,10 @@ public final class MainActivity extends ComponentActivity {
     }
 
     private static FeatureGate[] requiredGatesForSetting(MainScreen screen, SettingItem item) {
-        if (item.getId() == SettingId.LANGUAGE) return noGates();
+        if (item.getId() == SettingId.LANGUAGE
+                || item.getId() == SettingId.AUTO_ROTATE
+                || item.getId() == SettingId.WIFI_ENABLED
+                || item.getId() == SettingId.WIFI_CONNECT) return noGates();
         if (item.getId() == SettingId.CREATE_VIDEO_MD5) {
             return gates(FeatureGate.VIDEO_MD5);
         }
@@ -706,7 +746,7 @@ public final class MainActivity extends ComponentActivity {
             }
             return;
         }
-        demoSettings.select(id, selectedIndex);
+        settingsUiState.select(id, selectedIndex);
     }
 
     @Override protected void onNewIntent(Intent intent) {
@@ -724,7 +764,7 @@ public final class MainActivity extends ComponentActivity {
     }
 
     private void updateNumberSetting(SettingId id, int value) {
-        demoSettings.updateNumber(id, value);
+        settingsUiState.updateNumber(id, value);
     }
 
     private void updateBooleanSetting(SettingId id, boolean checked) {
@@ -733,16 +773,38 @@ public final class MainActivity extends ComponentActivity {
             render(latestState);
             return;
         }
-        demoSettings.updateBoolean(id, checked);
+        settingsUiState.updateBoolean(id, checked);
         if (id == SettingId.ENCRYPT_VIDEO_FILES && mediaEncryptionSettings != null) {
             mediaEncryptionSettings.setMediaEncryptionEnabled(checked);
         }
         if (id == SettingId.CREATE_VIDEO_MD5 && videoMd5Settings != null) {
             videoMd5Settings.setVideoMd5Enabled(checked);
         }
+        if (id == SettingId.AUTO_ROTATE) {
+            deviceSettings.setAutoRotateEnabled(checked);
+            applyAutoRotate(checked);
+        }
+        if (id == SettingId.WIFI_ENABLED && !deviceSettings.setWifiEnabled(checked)) {
+            settingsUiState.updateBoolean(id, deviceSettings.isWifiEnabled());
+            renderedScreen = null;
+            render(latestState);
+            FloatingNotice.show(this, getString(R.string.wifi_requires_device_owner));
+        }
+    }
+
+    private void applyAutoRotate(boolean enabled) {
+        setRequestedOrientation(enabled
+                ? ActivityInfo.SCREEN_ORIENTATION_FULL_USER
+                : ActivityInfo.SCREEN_ORIENTATION_LOCKED);
     }
 
     private void performSettingAction(SettingId id) {
+        if (id == SettingId.WIFI_CONNECT) {
+            Intent intent = new Intent(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+                    ? Settings.Panel.ACTION_WIFI : Settings.ACTION_WIFI_SETTINGS);
+            startActivity(intent);
+            return;
+        }
         if (id == SettingId.LOGOUT) {
             viewModel.logout();
             return;
@@ -1029,6 +1091,7 @@ public final class MainActivity extends ComponentActivity {
     }
 
     @Override protected void onDestroy() {
+        unregisterReceiver(wifiStateReceiver);
         DcamLogger.i("MainActivity destroyed");
         cameraClock.removeCallbacks(cameraClockTick);
         releaseCaptureRuntime();

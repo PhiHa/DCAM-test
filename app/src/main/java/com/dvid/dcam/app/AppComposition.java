@@ -63,6 +63,7 @@ import com.dvid.dcam.platform.config.AndroidStorageModePreferenceStoreImpl;
 import com.dvid.dcam.platform.config.CsonConfigurationSourceImpl;
 import com.dvid.dcam.platform.database.AppDatabase;
 import com.dvid.dcam.platform.device.AndroidDeviceRepositoryImpl;
+import com.dvid.dcam.platform.device.AndroidDeviceSettings;
 import com.dvid.dcam.platform.feature.AndroidFeatureGateSettingsFactory;
 import com.dvid.dcam.platform.input.AndroidHardwareDeviceIdentity;
 import com.dvid.dcam.platform.input.DeveloperHardwareButtonSettings;
@@ -102,8 +103,10 @@ public final class AppComposition {
     private volatile HardwareButtonLayout hardwareButtonLayout;
     private final HardwareButtonLayout builtInHardwareButtons;
     private final DeveloperHardwareButtonSettings developerHardwareButtons;
+    private final AndroidDeviceSettings deviceSettings;
 
     private AppComposition(Context context) {
+        deviceSettings = new AndroidDeviceSettings(context);
         storageSettings = new StorageSettingsUseCaseImpl(
                 new AndroidStorageModePreferenceStoreImpl(context, BuildConfig.STORAGE_MODE));
         storage = DcamStorage.from(context, storageSettings.currentMode());
@@ -189,6 +192,7 @@ public final class AppComposition {
     public MediaEncryptionSettingsUseCase mediaEncryptionSettingsUseCase() { return mediaEncryptionSettings; }
     public VideoMd5SettingsUseCase videoMd5SettingsUseCase() { return videoMd5Settings; }
     public StorageSettingsUseCase storageSettingsUseCase() { return storageSettings; }
+    public AndroidDeviceSettings deviceSettings() { return deviceSettings; }
     public AuthenticateOperatorUseCase authenticateOperatorUseCase() { return authenticateOperator; }
     public OperatorSessionUseCase operatorSessionUseCase() { return operatorSession; }
     public ManageOperatorUsersUseCase manageOperatorUsersUseCase() { return manageUsers; }
