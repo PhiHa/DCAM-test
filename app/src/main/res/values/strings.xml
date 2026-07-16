@@ -71,4 +71,13 @@
     <string name="wifi">Wi-Fi</string>
     <string name="wifi_requires_device_owner">Wi-Fi control requires Device Owner</string>
     <string name="connect_wifi">Connect Wi-Fi</string>
+    <string name="gps_use_location">Use GPS</string>
+    <string name="gps_sampling_section">GPS sampling</string>
+    <string name="gps_positioning_mode">Positioning mode</string>
+    <string name="gps_update_distance">Update distance (m)</string>
+    <string name="gps_report_interval">Report interval (s)</string>
+    <string name="gps_mode_gps">GPS</string>
+    <string name="gps_mode_gps_agps">GPS + AGPS</string>
+    <string name="gps_mode_gmap">GMAP</string>
+    <string name="gps_settings_unavailable">Location settings are unavailable</string>
 </resources>

@@ -27,6 +27,8 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.GridLayout;
 import android.widget.LinearLayout;
+import android.widget.Switch;
+import android.widget.TextView;
 import androidx.activity.ComponentActivity;
 import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
@@ -54,6 +56,13 @@ import com.dvid.dcam.databinding.ScreenSettingsDetailBinding;
 import com.dvid.dcam.feature.auth.domain.UserProvisioningRequest;
 import com.dvid.dcam.feature.auth.domain.UserSource;
 import com.dvid.dcam.feature.capture.domain.RecordingMode;
+import com.dvid.dcam.feature.location.application.usecase.LocationControlUseCase;
+import com.dvid.dcam.feature.location.application.usecase.LocationSettingsUseCase;
+import com.dvid.dcam.feature.location.application.usecase.LocationTrackingUseCase;
+import com.dvid.dcam.feature.location.domain.GpsCoordinate;
+import com.dvid.dcam.feature.location.domain.GpsMode;
+import com.dvid.dcam.feature.location.domain.GpsSettings;
+import com.dvid.dcam.feature.location.domain.LocationSystemState;
 import com.dvid.dcam.feature.media.application.usecase.OpenMediaUseCase;
 import com.dvid.dcam.feature.media.domain.MediaEntry;
 import com.dvid.dcam.feature.settings.application.usecase.LanguageSettingsUseCase;
@@ -112,6 +121,12 @@ public final class MainActivity extends ComponentActivity {
     private MediaEncryptionSettingsUseCase mediaEncryptionSettings;
     private VideoMd5SettingsUseCase videoMd5Settings;
     private StorageSettingsUseCase storageSettings;
+    private LocationSettingsUseCase locationSettings;
+    private LocationControlUseCase locationControl;
+    private LocationTrackingUseCase locationTracking;
+    private GpsCoordinate currentGpsCoordinate;
+    private Switch gpsSwitch;
+    private boolean syncingGpsSwitch;
     private SettingsControlRenderer settingsRenderer;
     private SettingsUiState settingsUiState;
     private MainMenuModel menuModel;
@@ -160,6 +175,9 @@ public final class MainActivity extends ComponentActivity {
         mediaEncryptionSettings = composition.mediaEncryptionSettingsUseCase();
         videoMd5Settings = composition.videoMd5SettingsUseCase();
         storageSettings = composition.storageSettingsUseCase();
+        locationSettings = composition.locationSettingsUseCase();
+        locationControl = composition.locationControlUseCase();
+        locationTracking = composition.locationTrackingUseCase();
         deviceSettings = composition.deviceSettings();
         settingsRenderer = new SettingsControlRenderer(this);
         settingsUiState = new SettingsUiState(mediaEncryptionSettings.isMediaEncryptionEnabled(),
@@ -184,6 +202,7 @@ public final class MainActivity extends ComponentActivity {
                 result -> {
                     CameraXCameraGatewayImpl.warmUp(this);
                     if (captureRuntime != null) captureRuntime.bindCameraIfPermitted();
+                    refreshLocationTracking();
                 });
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override public void handleOnBackPressed() { navigateBack(); }
@@ -218,6 +237,8 @@ public final class MainActivity extends ComponentActivity {
             kioskController.enterLockTaskIfAllowed(this);
         }
         if (viewModel != null) viewModel.refreshDeviceStatus();
+        refreshLocationTracking();
+        syncGpsSwitch();
         cameraClock.removeCallbacks(cameraClockTick);
         cameraClock.post(cameraClockTick);
     }
@@ -322,6 +343,7 @@ public final class MainActivity extends ComponentActivity {
 
     @Override protected void onPause() {
         cameraClock.removeCallbacks(cameraClockTick);
+        stopLocationTracking();
         super.onPause();
     }
 
@@ -523,6 +545,7 @@ public final class MainActivity extends ComponentActivity {
     }
 
     private void renderSettingsControls(MainScreen screen, LinearLayout settingsList) {
+        if (screen == MainScreen.GPS_SETTINGS) addGpsSwitchRow(settingsList);
         settingsRenderer.render(
                 settingsList, settingsModel(screen),
                 this::selectSetting, this::updateNumberSetting, this::updateBooleanSetting,
@@ -545,8 +568,42 @@ public final class MainActivity extends ComponentActivity {
                     getString(R.string.auto_rotate), getString(R.string.wifi),
                     getString(R.string.connect_wifi)));
         }
+        else if (screen == MainScreen.GPS_SETTINGS) model = locationSettingsModel();
         else model = settingsUiState.readOnly(visibleReadOnlySettings(screen));
         return filterUnavailableSettings(screen, model);
+    }
+
+    private SettingsScreenModel locationSettingsModel() {
+        GpsSettings current = locationSettings.currentSettings();
+        List<GpsMode> modes = locationSettings.supportedModes();
+        List<String> modeLabels = List.of(
+                getString(R.string.gps_mode_gps),
+                getString(R.string.gps_mode_gps_agps),
+                getString(R.string.gps_mode_gmap));
+        List<SettingItem> items = List.of(
+                        SettingItem.choice(SettingId.GPS_POSITIONING_MODE,
+                                getString(R.string.gps_positioning_mode), modeLabels,
+                                Math.max(0, modes.indexOf(current.getMode()))),
+                        SettingItem.slider(SettingId.GPS_UPDATE_DISTANCE_METERS,
+                                getString(R.string.gps_update_distance), 1, 30,
+                                current.getUpdateDistanceMeters(), "m"),
+                        SettingItem.slider(SettingId.GPS_REPORT_INTERVAL_SECONDS,
+                                getString(R.string.gps_report_interval), 1, 30,
+                                current.getReportIntervalSeconds(), "s"));
+        return new SettingsScreenModel(List.of(
+                new SettingsSection(getString(R.string.gps_sampling_section), items)));
+    }
+
+    private void addGpsSwitchRow(LinearLayout settingsList) {
+        View row = getLayoutInflater().inflate(R.layout.item_setting_switch_row, settingsList, false);
+        TextView label = row.findViewById(R.id.setting_switch_label);
+        label.setText(R.string.gps_use_location);
+        gpsSwitch = row.findViewById(R.id.setting_switch);
+        gpsSwitch.setOnCheckedChangeListener((button, checked) -> {
+            if (!syncingGpsSwitch) handleLocationSwitchChanged(checked);
+        });
+        settingsList.addView(row);
+        syncGpsSwitch();
     }
 
     private List<String> storageOptions() {
@@ -617,6 +674,12 @@ public final class MainActivity extends ComponentActivity {
     }
 
     private static FeatureGate[] requiredGatesForSetting(MainScreen screen, SettingItem item) {
+        if (item.getId() == SettingId.GPS_LOCATION_ENABLED
+                || item.getId() == SettingId.GPS_POSITIONING_MODE
+                || item.getId() == SettingId.GPS_UPDATE_DISTANCE_METERS
+                || item.getId() == SettingId.GPS_REPORT_INTERVAL_SECONDS) {
+            return gates(FeatureGate.GPS);
+        }
         if (item.getId() == SettingId.LANGUAGE
                 || item.getId() == SettingId.AUTO_ROTATE
                 || item.getId() == SettingId.WIFI_ENABLED
@@ -680,11 +743,12 @@ public final class MainActivity extends ComponentActivity {
     }
 
     private boolean isMenuTileVisible(MainScreen screen, FeatureGate gate) {
+        if (gate != null && !developerFeatureToggles.isEffectivelyEnabled(gate)) return false;
         if (screen == MainScreen.FILES) {
-            return gate == null || developerFeatureToggles.isEffectivelyEnabled(gate);
+            return true;
         }
         if (isSettingsScreen(screen)) return hasSettings(settingsModel(screen));
-        return gate == null || developerFeatureToggles.isEffectivelyEnabled(gate);
+        return true;
     }
 
     private static boolean isSettingsScreen(MainScreen screen) {
@@ -746,6 +810,14 @@ public final class MainActivity extends ComponentActivity {
             }
             return;
         }
+        if (id == SettingId.GPS_POSITIONING_MODE) {
+            List<GpsMode> modes = locationSettings.supportedModes();
+            if (selectedIndex >= 0 && selectedIndex < modes.size()) {
+                locationSettings.changeMode(modes.get(selectedIndex));
+                restartLocationTracking();
+            }
+            return;
+        }
         settingsUiState.select(id, selectedIndex);
     }
 
@@ -764,13 +836,31 @@ public final class MainActivity extends ComponentActivity {
     }
 
     private void updateNumberSetting(SettingId id, int value) {
+        if (id == SettingId.GPS_UPDATE_DISTANCE_METERS) {
+            locationSettings.changeUpdateDistanceMeters(value);
+            restartLocationTracking();
+            return;
+        }
+        if (id == SettingId.GPS_REPORT_INTERVAL_SECONDS) {
+            locationSettings.changeReportIntervalSeconds(value);
+            restartLocationTracking();
+            return;
+        }
         settingsUiState.updateNumber(id, value);
     }
 
     private void updateBooleanSetting(SettingId id, boolean checked) {
         if (developerFeatureToggles.setEnabled(id, checked)) {
+            if (id == SettingId.FEATURE_GPS) {
+                if (checked) refreshLocationTracking();
+                else stopLocationTracking();
+            }
             renderedScreen = null;
             render(latestState);
+            return;
+        }
+        if (id == SettingId.GPS_LOCATION_ENABLED) {
+            handleLocationSwitchChanged(checked);
             return;
         }
         settingsUiState.updateBoolean(id, checked);
@@ -1038,8 +1128,8 @@ public final class MainActivity extends ComponentActivity {
         return String.format(Locale.ROOT, "%02d:%02d:%02d", hours, minutes, seconds);
     }
 
-    private static String gpsCoordinatesText() {
-        return "000.00 000.00";
+    private String gpsCoordinatesText() {
+        return currentGpsCoordinate == null ? "000.00 000.00" : currentGpsCoordinate.toString();
     }
 
     private void updateGpsStatusLine() {
@@ -1047,6 +1137,66 @@ public final class MainActivity extends ComponentActivity {
         boolean enabled = developerFeatureToggles.isEffectivelyEnabled(FeatureGate.GPS);
         cameraScreen.gpsStatus.setVisibility(enabled ? View.VISIBLE : View.GONE);
         cameraScreen.gpsStatus.setText(enabled ? gpsCoordinatesText() : "");
+    }
+
+    private void handleLocationSwitchChanged(boolean enabled) {
+        if (locationControl == null) return;
+        boolean changed = locationControl.setEnabledIfPermitted(enabled);
+        renderedScreen = null;
+        render(latestState);
+        if (!changed) {
+            try {
+                startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+            } catch (RuntimeException ignored) {
+                FloatingNotice.show(this, R.string.gps_settings_unavailable);
+            }
+            return;
+        }
+        refreshLocationTracking();
+    }
+
+    private void syncGpsSwitch() {
+        if (gpsSwitch == null || locationControl == null) return;
+        LocationSystemState state = locationControl.currentState();
+        boolean known = state == LocationSystemState.ENABLED
+                || state == LocationSystemState.DISABLED;
+        syncingGpsSwitch = true;
+        gpsSwitch.setEnabled(known);
+        gpsSwitch.setChecked(state == LocationSystemState.ENABLED);
+        syncingGpsSwitch = false;
+    }
+
+    private void refreshLocationTracking() {
+        if (locationTracking == null || locationControl == null || locationSettings == null) return;
+        GpsSettings settings = locationSettings.currentSettings();
+        boolean shouldTrack = developerFeatureToggles != null
+                && developerFeatureToggles.isEffectivelyEnabled(FeatureGate.GPS)
+                && locationControl.currentState() == LocationSystemState.ENABLED
+                && locationControl.isModeAvailable(settings.getMode())
+                && DcamPermissions.locationGranted(this);
+        if (!shouldTrack) {
+            stopLocationTracking();
+            return;
+        }
+        locationTracking.start(this::onGpsCoordinate);
+    }
+
+    private void restartLocationTracking() {
+        if (locationTracking == null) return;
+        refreshLocationTracking();
+    }
+
+    private void stopLocationTracking() {
+        if (locationTracking != null) locationTracking.stop();
+        currentGpsCoordinate = null;
+        updateGpsStatusLine();
+    }
+
+    private void onGpsCoordinate(GpsCoordinate coordinate) {
+        runOnUiThread(() -> {
+            currentGpsCoordinate = coordinate;
+            updateGpsStatusLine();
+        });
     }
 
     private void navigateBack() {
@@ -1094,6 +1244,7 @@ public final class MainActivity extends ComponentActivity {
         unregisterReceiver(wifiStateReceiver);
         DcamLogger.i("MainActivity destroyed");
         cameraClock.removeCallbacks(cameraClockTick);
+        stopLocationTracking();
         releaseCaptureRuntime();
         super.onDestroy();
     }

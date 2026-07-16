@@ -43,6 +43,13 @@ import com.dvid.dcam.feature.media.application.usecase.BrowseMediaUseCase;
 import com.dvid.dcam.feature.media.application.usecase.BrowseMediaUseCaseImpl;
 import com.dvid.dcam.feature.media.application.usecase.OpenMediaUseCase;
 import com.dvid.dcam.feature.media.application.usecase.OpenMediaUseCaseImpl;
+import com.dvid.dcam.feature.location.application.port.GpsSettingsStore;
+import com.dvid.dcam.feature.location.application.usecase.LocationControlUseCase;
+import com.dvid.dcam.feature.location.application.usecase.LocationControlUseCaseImpl;
+import com.dvid.dcam.feature.location.application.usecase.LocationSettingsUseCase;
+import com.dvid.dcam.feature.location.application.usecase.LocationSettingsUseCaseImpl;
+import com.dvid.dcam.feature.location.application.usecase.LocationTrackingUseCase;
+import com.dvid.dcam.feature.location.application.usecase.LocationTrackingUseCaseImpl;
 import com.dvid.dcam.feature.settings.application.usecase.LanguageSettingsUseCase;
 import com.dvid.dcam.feature.settings.application.usecase.LanguageSettingsUseCaseImpl;
 import com.dvid.dcam.feature.settings.application.usecase.MediaEncryptionSettingsUseCase;
@@ -72,6 +79,9 @@ import com.dvid.dcam.platform.input.HardwareButtonProfiles;
 import com.dvid.dcam.platform.input.HardwareButtonRouter;
 import com.dvid.dcam.platform.logging.DcamLogSinkImpl;
 import com.dvid.dcam.platform.logging.DcamLogger;
+import com.dvid.dcam.platform.location.AndroidLocationControlGatewayImpl;
+import com.dvid.dcam.platform.location.AndroidLocationSourceImpl;
+import com.dvid.dcam.platform.location.OperationalGpsSettingsStoreImpl;
 import com.dvid.dcam.platform.storage.AndroidMediaOpenerImpl;
 import com.dvid.dcam.platform.storage.DcamMediaOutput;
 import com.dvid.dcam.platform.storage.DcamMediaOutputImpl;
@@ -95,6 +105,9 @@ public final class AppComposition {
     private final MediaEncryptionSettingsUseCase mediaEncryptionSettings;
     private final VideoMd5SettingsUseCase videoMd5Settings;
     private final StorageSettingsUseCase storageSettings;
+    private final LocationSettingsUseCase locationSettings;
+    private final LocationControlUseCase locationControl;
+    private final LocationTrackingUseCase locationTracking;
     private final AuthenticateOperatorUseCase authenticateOperator;
     private final OperatorSessionUseCase operatorSession;
     private final ManageOperatorUsersUseCase manageUsers;
@@ -146,6 +159,12 @@ public final class AppComposition {
                         + ", preserved=" + report.getPreserved()
                         + ", duplicates=" + report.getDuplicates()));
         AppDatabase database = AppDatabase.get(context);
+        GpsSettingsStore gpsSettingsStore = new OperationalGpsSettingsStoreImpl(context);
+        locationSettings = new LocationSettingsUseCaseImpl(gpsSettingsStore);
+        locationControl = new LocationControlUseCaseImpl(
+                new AndroidLocationControlGatewayImpl(context), gpsSettingsStore);
+        locationTracking = new LocationTrackingUseCaseImpl(
+                locationSettings, new AndroidLocationSourceImpl(context));
         OperatorAuthRepository authRepository =
                 new RoomOperatorAuthRepositoryImpl(database.operatorAuth());
         BootIdentitySource bootIdentity = new AndroidBootIdentitySourceImpl(context);
@@ -192,6 +211,9 @@ public final class AppComposition {
     public MediaEncryptionSettingsUseCase mediaEncryptionSettingsUseCase() { return mediaEncryptionSettings; }
     public VideoMd5SettingsUseCase videoMd5SettingsUseCase() { return videoMd5Settings; }
     public StorageSettingsUseCase storageSettingsUseCase() { return storageSettings; }
+    public LocationSettingsUseCase locationSettingsUseCase() { return locationSettings; }
+    public LocationControlUseCase locationControlUseCase() { return locationControl; }
+    public LocationTrackingUseCase locationTrackingUseCase() { return locationTracking; }
     public AndroidDeviceSettings deviceSettings() { return deviceSettings; }
     public AuthenticateOperatorUseCase authenticateOperatorUseCase() { return authenticateOperator; }
     public OperatorSessionUseCase operatorSessionUseCase() { return operatorSession; }

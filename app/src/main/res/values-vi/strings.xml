@@ -47,4 +47,13 @@
     <string name="wifi">Wi-Fi</string>
     <string name="wifi_requires_device_owner">C&#7847;n quy&#7873;n Ch&#7911; s&#7903; h&#7919;u thi&#7871;t b&#7883; &#273;&#7875; &#273;i&#7873;u khi&#7875;n Wi-Fi</string>
     <string name="connect_wifi">K&#7871;t n&#7889;i Wi-Fi</string>
+    <string name="gps_use_location">S&#7917; d&#7909;ng GPS</string>
+    <string name="gps_sampling_section">L&#7845;y m&#7851;u GPS</string>
+    <string name="gps_positioning_mode">Ch&#7871; &#273;&#7897; &#273;&#7883;nh v&#7883;</string>
+    <string name="gps_update_distance">Kho&#7843;ng c&#225;ch c&#7853;p nh&#7853;t (m)</string>
+    <string name="gps_report_interval">T&#7847;n su&#7845;t b&#225;o c&#225;o (gi&#226;y)</string>
+    <string name="gps_mode_gps">GPS</string>
+    <string name="gps_mode_gps_agps">GPS + AGPS</string>
+    <string name="gps_mode_gmap">GMAP</string>
+    <string name="gps_settings_unavailable">Kh&#244;ng th&#7875; m&#7903; c&#224;i &#273;&#7863;t Location</string>
 </resources>

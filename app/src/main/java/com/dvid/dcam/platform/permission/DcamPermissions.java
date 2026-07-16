@@ -14,6 +14,8 @@ public final class DcamPermissions {
         List<String> permissions = new ArrayList<>();
         permissions.add(Manifest.permission.CAMERA);
         permissions.add(Manifest.permission.RECORD_AUDIO);
+        permissions.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+        permissions.add(Manifest.permission.ACCESS_FINE_LOCATION);
         if (Build.VERSION.SDK_INT >= 33) {
             permissions.add(Manifest.permission.POST_NOTIFICATIONS);
         }
@@ -29,5 +31,12 @@ public final class DcamPermissions {
             if (context.checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) return false;
         }
         return true;
+    }
+
+    public static boolean locationGranted(Context context) {
+        return context.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+                        == PackageManager.PERMISSION_GRANTED
+                || context.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION)
+                        == PackageManager.PERMISSION_GRANTED;
     }
 }

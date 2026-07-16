@@ -49,6 +49,9 @@ android {
     }
 
     buildTypes {
+        debug {
+            applicationIdSuffix ".debug"
+        }
         release {
             optimization {
                 enable = false
@@ -82,6 +85,7 @@ dependencies {
     implementation "androidx.room:room-runtime:${roomVersion}"
     annotationProcessor "androidx.room:room-compiler:${roomVersion}"
     implementation 'org.springframework.security:spring-security-crypto:6.3.1'
+    implementation 'com.google.android.gms:play-services-location:21.3.0'
 
     testImplementation "org.junit.jupiter:junit-jupiter:${junitVersion}"
     testRuntimeOnly "org.junit.platform:junit-platform-launcher:${junitVersion}"
